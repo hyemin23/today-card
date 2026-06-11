@@ -26,7 +26,6 @@ export default function CardFace({ card, magazine, ctx, hint = true }: { card: C
   const align = ALIGN[alignIndex(card.align)];
   const num = `0${card.idx + 1} / 05`;
   const mono = { fontFamily: 'var(--mono)' } as const;
-  const srcLine = card.source ? `출처 · ${card.source}` : '';
 
   return (
     <div style={{ position: 'absolute', inset: 0, background: bg, color: fg, overflow: 'hidden' }}>
@@ -62,21 +61,13 @@ export default function CardFace({ card, magazine, ctx, hint = true }: { card: C
         )}
 
         <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', justifyContent: align.v, textAlign: align.t }}>
-          <div style={{ fontFamily: 'var(--serif)', fontWeight: 800, letterSpacing: '-.035em', lineHeight: 1.08, fontSize: titleSize, marginTop: align.v === 'flex-start' ? (ctx === 'thumb' ? 14 : 16) : 0 }}>
+          <div style={{ fontFamily: 'var(--serif)', fontWeight: 800, letterSpacing: '-.035em', lineHeight: 1.08, fontSize: titleSize, whiteSpace: 'pre-line', marginTop: align.v === 'flex-start' ? (ctx === 'thumb' ? 14 : 16) : 0 }}>
             {card.title}
           </div>
-          {ctx !== 'thumb' && card.kind === 'cover' && srcLine && (
-            <div style={{ ...mono, fontSize: ctx === 'canvas' ? 11 : 9, opacity: 0.6, marginTop: ctx === 'canvas' ? 16 : 12, letterSpacing: '.05em' }}>
-              {srcLine} · {magazine.handle}
-            </div>
-          )}
           {ctx !== 'thumb' && card.kind === 'body' && card.body && (
             <>
               <div style={{ height: 1, background: 'currentColor', opacity: 0.16, margin: `${ctx === 'canvas' ? 16 : 10}px 0` }} />
-              <div style={{ fontSize: ctx === 'canvas' ? 15 : 11, lineHeight: 1.55, opacity: 0.78 }}>{card.body}</div>
-              {srcLine && (
-                <div style={{ ...mono, fontSize: ctx === 'canvas' ? 11 : 9, opacity: 0.55, marginTop: ctx === 'canvas' ? 14 : 10 }}>{srcLine}</div>
-              )}
+              <div style={{ fontSize: ctx === 'canvas' ? 15 : 11, lineHeight: 1.55, opacity: 0.78, whiteSpace: 'pre-line' }}>{card.body}</div>
             </>
           )}
           {ctx !== 'thumb' && card.kind === 'cta' && (

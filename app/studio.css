@@ -321,8 +321,24 @@ body.studio-body { height: 100%; background: var(--wash); overflow: hidden; }
   .stagewrap { overflow: visible; }
   .stage-pane { position: relative; }
   .stage-pane:not(.is-active) { display: none; }
-  .editor { grid-template-columns: 1fr; }
-  .rail { flex-direction: row; border-right: 0; border-bottom: 1px solid var(--line); }
-  .thumbs { flex-direction: row; }
+
+  /* editor stacks into natural page flow — no fixed-height inner scroll panes
+     (those caused the footer to overlap the body on mobile) */
+  .editor { grid-template-columns: 1fr; height: auto; }
+  .stage { overflow: visible; padding: 16px; }
+  .stage__bar { max-width: 100%; }
+  .canvas { max-width: 100%; }
+
+  /* rail → touch-friendly horizontal card strip */
+  .rail { flex-direction: row; align-items: center; gap: 10px; padding: 10px 14px; border-right: 0; border-bottom: 1px solid var(--line); overflow-x: auto; }
+  .rail__lb { display: none; }
+  .thumbs { flex-direction: row; gap: 10px; padding: 0; overflow: visible; flex: none; }
+  .thumb { width: 76px; flex: none; }
+  .rail__add { margin: 0; flex: none; white-space: nowrap; padding: 12px 16px; }
+
+  /* inspector flows naturally; action footer becomes a fixed bottom bar
+     (fixed is more reliable than sticky inside the mobile scroll container) */
   .insp { border-left: 0; border-top: 1px solid var(--line); }
+  .insp__body { overflow: visible; flex: none; padding-bottom: 90px; }
+  .insp__foot { position: fixed; left: 0; right: 0; bottom: 0; background: var(--paper); border-top: 1px solid var(--line); box-shadow: 0 -8px 22px -16px rgba(17,17,16,.45); z-index: 40; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); }
 }

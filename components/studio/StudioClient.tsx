@@ -44,6 +44,7 @@ export default function StudioClient() {
 
   const wrapRef = useRef<HTMLDivElement>(null);
   const genTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mounted = useRef(false);
 
   // studio.css ships body{overflow:hidden} — scope it to this route so it
   // doesn't leak to the landing page after a client-side navigation
@@ -65,14 +66,24 @@ export default function StudioClient() {
     });
   }, []);
 
-  // prototype resets scroll on every stage switch (studio.js setStage)
+  // prototype resets scroll on every stage switch (studio.js setStage);
+  // also move focus to the newly active pane so SR/keyboard users get context.
   useEffect(() => {
     window.scrollTo(0, 0);
     const wrap = wrapRef.current;
     if (!wrap) return;
     wrap.scrollTop = 0;
     wrap.querySelectorAll<HTMLElement>('.stage-pane').forEach((p) => { p.scrollTop = 0; });
+    // skip the initial mount so first load doesn't yank focus off the skip link
+    if (!mounted.current) { mounted.current = true; return; }
+    const active = wrap.querySelector<HTMLElement>('.stage-pane.is-active');
+    active?.focus({ preventScroll: true });
   }, [stage]);
+
+  // block interaction with the stages behind the full-screen generating overlay
+  useEffect(() => {
+    if (wrapRef.current) wrapRef.current.inert = generating;
+  }, [generating]);
 
   useEffect(() => () => { if (genTimeout.current) clearTimeout(genTimeout.current); }, []);
 
@@ -140,6 +151,7 @@ export default function StudioClient() {
 
   return (
     <div className="studio">
+      <a href="#studio-main" className="skip-link">본문으로 건너뛰기</a>
       <Topbar
         stage={stage}
         maxReached={maxReached}
@@ -148,16 +160,16 @@ export default function StudioClient() {
         onOpenDrawer={() => setDrawerOpen(true)}
       />
 
-      <div className="stagewrap" ref={wrapRef}>
-        <section className={`stage-pane ${stage === 1 ? 'is-active' : ''}`}>
+      <div className="stagewrap" id="studio-main" role="main" ref={wrapRef}>
+        <section className={`stage-pane ${stage === 1 ? 'is-active' : ''}`} tabIndex={-1} aria-label="1단계: 주제" aria-hidden={stage !== 1}>
           <TopicStage initialTopic={initialTopic} onPick={pickArticle} />
         </section>
-        <section className={`stage-pane ${stage === 2 ? 'is-active' : ''}`}>
+        <section className={`stage-pane ${stage === 2 ? 'is-active' : ''}`} tabIndex={-1} aria-label="2단계: 편집" aria-hidden={stage !== 2}>
           {cards.length > 0 && (
             <EditorStage cards={cards} sel={sel} setSel={setSel} updateCard={updateCard} magazine={magazine} onGo={setStage} />
           )}
         </section>
-        <section className={`stage-pane ${stage === 3 ? 'is-active' : ''}`}>
+        <section className={`stage-pane ${stage === 3 ? 'is-active' : ''}`} tabIndex={-1} aria-label="3단계: 내보내기" aria-hidden={stage !== 3}>
           {cards.length > 0 && (
             <ExportStage cards={cards} magazine={magazine} caption={caption} hashtags={hashtags} source={source} onGo={setStage} />
           )}

@@ -21,6 +21,8 @@ export interface Article {
   sourceUrl?: string;
   category: string;
   date: string;
+  /** result-list thumbnail scraped from the source (not embedded in cards) */
+  thumb?: string | null;
 }
 
 export interface Card {

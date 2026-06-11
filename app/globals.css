@@ -18,7 +18,7 @@
 :root {
   --ink:        #111110;
   --ink-2:      #4a4945;
-  --ink-3:      #8c8a83;
+  --ink-3:      #706e66;   /* WCAG AA (≥4.5:1) for small text on both white and --wash (was #8c8a83 ≈3:1) */
   --line:       #e4e1d9;
   --line-2:     #d4d0c6;
   --paper:      #ffffff;

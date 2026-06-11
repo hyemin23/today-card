@@ -65,10 +65,11 @@ body.studio-body { height: 100%; background: var(--wash); overflow: hidden; }
 .topicfield input { flex: 1; border: none; outline: none; background: none; font-size: 15.5px; font-weight: 500; padding: 13px 0; }
 .topicfield input::placeholder { color: var(--ink-3); font-weight: 400; }
 
-.seltags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.seltags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; list-style: none; }
 .seltags:empty { display: none; }
 .seltag { display: inline-flex; align-items: center; gap: 8px; background: var(--ink); color: var(--paper); border-radius: 100px; padding: 7px 9px 7px 14px; font-size: 12.5px; font-weight: 600; animation: pop .25s var(--ease); }
-.seltag b { color: rgba(255,255,255,.55); cursor: pointer; font-weight: 400; font-size: 14px; }
+.seltag button { color: rgba(255,255,255,.65); cursor: pointer; font-weight: 400; font-size: 14px; line-height: 1; padding: 2px; }
+.seltag button:hover { color: #fff; }
 @keyframes pop { from { transform: scale(.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
 .picker { margin-top: 22px; padding-top: 20px; border-top: 1px solid var(--line); }
@@ -103,13 +104,18 @@ body.studio-body { height: 100%; background: var(--wash); overflow: hidden; }
 .resbar h2 b { font-family: var(--mono); font-weight: 700; }
 .resbar .sort { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; color: var(--ink-3); display: flex; gap: 14px; }
 .resbar .sort .on { color: var(--ink); }
-.arts { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
-.art { background: var(--paper); padding: 24px; cursor: pointer; transition: background .2s var(--ease); }
+.arts { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; list-style: none; }
+.art { background: var(--paper); padding: 24px; cursor: pointer; transition: background .2s var(--ease); display: flex; gap: 16px; width: 100%; text-align: left; }
 .art:hover { background: var(--wash); }
+/* inset ring instead of outline so the focus indicator isn't clipped by .arts overflow:hidden */
+.art:focus-visible { outline: none; box-shadow: inset 0 0 0 2.5px var(--ink); }
+.art__thumb { flex: none; width: 88px; height: 88px; border-radius: 8px; overflow: hidden; background: var(--wash-2); align-self: flex-start; }
+.art__thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.art__body { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .art__top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
 .art__cat { font-family: var(--mono); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; border: 1px solid var(--line-2); border-radius: 100px; padding: 4px 10px; white-space: nowrap; }
 .art__date { font-family: var(--mono); font-size: 11px; color: var(--ink-3); }
-.art__title { font-family: var(--serif); font-weight: 700; font-size: 21px; line-height: 1.2; letter-spacing: -.025em; margin-bottom: 9px; }
+.art__title { font-family: var(--serif); font-weight: 700; font-size: 21px; line-height: 1.2; letter-spacing: -.025em; margin-bottom: 9px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .art__sum { font-size: 13.5px; color: var(--ink-2); line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .art__foot { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
 .art__src { font-size: 12px; color: var(--ink-3); }
@@ -124,6 +130,8 @@ body.studio-body { height: 100%; background: var(--wash); overflow: hidden; }
 .thumbs { display: flex; flex-direction: column; gap: 11px; padding: 0 16px; overflow: auto; }
 .thumb { border: 1px solid var(--line-2); border-radius: 6px; aspect-ratio: 1; cursor: pointer; position: relative; overflow: hidden; transition: all .18s var(--ease); }
 .thumb.is-on { border-color: var(--ink); box-shadow: 0 0 0 2px var(--ink); }
+/* inset ring so the focus indicator isn't clipped by .thumbs overflow:auto */
+.thumb:focus-visible { outline: none; box-shadow: inset 0 0 0 2.5px var(--ink); }
 .thumb .tnum { position: absolute; top: 6px; left: 7px; font-family: var(--mono); font-size: 9px; color: var(--ink-3); z-index: 2; }
 .thumb.dark { background: var(--ink); }
 .thumb.dark .tnum { color: rgba(255,255,255,.6); }
@@ -157,7 +165,7 @@ body.studio-body { height: 100%; background: var(--wash); overflow: hidden; }
 
 .insp { background: var(--paper); border-left: 1px solid var(--line); display: flex; flex-direction: column; min-height: 0; }
 .insp__head { padding: 16px 20px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; }
-.insp__head h3 { font-size: 14px; font-weight: 600; }
+.insp__head h2, .insp__head h3 { font-size: 14px; font-weight: 600; }
 .insp__head .badge { font-family: var(--mono); font-size: 10px; letter-spacing: .08em; color: var(--ink-3); border: 1px solid var(--line-2); border-radius: 100px; padding: 3px 9px; }
 .insp__body { padding: 4px 20px 20px; overflow: auto; flex: 1; }
 .ig { padding: 18px 0; border-bottom: 1px solid var(--line); }
@@ -230,8 +238,11 @@ body.studio-body { height: 100%; background: var(--wash); overflow: hidden; }
 /* ---------- Magazine drawer ---------- */
 .scrim { position: fixed; inset: 0; background: rgba(17,17,16,.36); opacity: 0; visibility: hidden; transition: opacity .3s var(--ease), visibility .3s; z-index: 60; }
 .scrim.show { opacity: 1; visibility: visible; }
-.drawer { position: fixed; top: 0; right: 0; height: 100%; width: 480px; max-width: 92vw; background: var(--paper); z-index: 61; transform: translateX(100%); transition: transform .4s var(--ease); display: flex; flex-direction: column; box-shadow: -30px 0 60px -30px rgba(17,17,16,.4); }
-.drawer.show { transform: none; }
+/* visibility kept out of tab order when closed; asymmetric transition so it
+   becomes visible immediately on open (focus works) but stays visible through
+   the .4s slide-out when closing. */
+.drawer { position: fixed; top: 0; right: 0; height: 100%; width: 480px; max-width: 92vw; background: var(--paper); z-index: 61; transform: translateX(100%); visibility: hidden; transition: transform .4s var(--ease), visibility 0s linear .4s; display: flex; flex-direction: column; box-shadow: -30px 0 60px -30px rgba(17,17,16,.4); }
+.drawer.show { transform: none; visibility: visible; transition: transform .4s var(--ease), visibility 0s; }
 .drawer__head { flex: none; padding: 20px 24px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; }
 .drawer__head h2 { font-family: var(--serif); font-weight: 800; letter-spacing: -.03em; font-size: 22px; }
 .drawer__head .x { width: 34px; height: 34px; border: 1px solid var(--line-2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 15px; }
@@ -247,7 +258,7 @@ body.studio-body { height: 100%; background: var(--wash); overflow: hidden; }
 .fset__t h3 { font-size: 15px; font-weight: 600; }
 .field { margin-bottom: 16px; }
 .field:last-child { margin-bottom: 0; }
-.field > label { display: block; font-size: 12.5px; font-weight: 600; color: var(--ink-2); margin-bottom: 7px; }
+.field > label, .field > .field-label { display: block; font-size: 12.5px; font-weight: 600; color: var(--ink-2); margin-bottom: 7px; }
 .field .hint { font-size: 11.5px; color: var(--ink-3); margin-top: 6px; }
 .input, .textarea { width: 100%; border: 1px solid var(--line-2); border-radius: var(--radius); padding: 11px 13px; font-size: 14px; background: var(--paper); transition: border-color .18s, box-shadow .18s; }
 .input:focus, .textarea:focus { outline: none; border-color: var(--ink); box-shadow: 0 0 0 3px rgba(17,17,16,.06); }
@@ -260,14 +271,15 @@ body.studio-body { height: 100%; background: var(--wash); overflow: hidden; }
 .mag-card .sw { width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--line-2); flex: none; }
 .mag-card .nm { font-size: 13px; font-weight: 600; }
 .mag-card.add { border-style: dashed; color: var(--ink-2); font-weight: 600; font-size: 12.5px; justify-content: center; }
-.uploader { border: 1px dashed var(--line-2); border-radius: var(--radius); padding: 18px; text-align: center; cursor: pointer; transition: all .18s; }
+.uploader { border: 1px dashed var(--line-2); border-radius: var(--radius); padding: 18px; text-align: center; cursor: pointer; transition: all .18s; display: block; width: 100%; }
 .uploader:hover { border-color: var(--ink); background: var(--wash); }
 .uploader .ic { width: 30px; height: 30px; border: 1px solid var(--ink); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; }
-.uploader p { font-size: 12.5px; font-weight: 600; }
-.uploader span { font-size: 11px; color: var(--ink-3); }
-.taglist { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 9px; }
+.uploader .up-t { display: block; font-size: 12.5px; font-weight: 600; }
+.uploader .up-s { display: block; font-size: 11px; color: var(--ink-3); }
+.taglist { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 9px; list-style: none; }
 .taglist .t { background: var(--wash); border: 1px solid var(--line); border-radius: 100px; padding: 6px 12px; font-size: 12px; display: flex; gap: 7px; align-items: center; }
-.taglist .t span { color: var(--ink-3); cursor: pointer; }
+.taglist .t button { color: var(--ink-3); cursor: pointer; line-height: 1; }
+.taglist .t button:hover { color: var(--ink); }
 .swatches { display: flex; gap: 9px; flex-wrap: wrap; }
 .swatch { width: 34px; height: 34px; border-radius: 50%; cursor: pointer; border: 1px solid var(--line-2); position: relative; transition: transform .15s; }
 .swatch:hover { transform: scale(1.08); }

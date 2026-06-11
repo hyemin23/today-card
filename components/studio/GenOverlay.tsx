@@ -16,8 +16,8 @@ export default function GenOverlay({ show }: { show: boolean }) {
   }, [show]);
 
   return (
-    <div className={`genover ${show ? 'show' : ''}`}>
-      <div className="gcard" />
+    <div className={`genover ${show ? 'show' : ''}`} role="status" aria-live="polite" aria-hidden={!show}>
+      <div className="gcard" aria-hidden="true" />
       <h3>AI가 카드뉴스를 만들고 있어요</h3>
       <p>{msg}</p>
     </div>

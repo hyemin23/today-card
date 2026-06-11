@@ -1,9 +1,22 @@
 'use client';
 
-import { useRef } from 'react';
+import { useId, useRef } from 'react';
 import type { Card, Magazine } from '@/types/db';
 import CardFace, { alignIndex } from './CardFace';
 import { TEXT_COLORS } from './data';
+
+const COLOR_LABELS: Record<string, string> = {
+  '#ffffff': '흰색',
+  '#111110': '검정',
+  '#e7d9b8': '베이지',
+  '#b8c6e7': '연한 파랑',
+};
+
+const ALIGN_LABELS = ['좌상단', '상단 가운데', '우상단', '좌측 가운데', '정중앙', '우측 가운데', '좌하단', '하단 가운데', '우하단'];
+
+function kindLabelOf(kind: Card['kind']) {
+  return kind === 'cover' ? '표지' : kind === 'cta' ? 'CTA' : '본문';
+}
 
 export default function EditorStage({
   cards,
@@ -21,10 +34,12 @@ export default function EditorStage({
   onGo: (n: number) => void;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
+  const titleId = useId();
   const card = cards[sel];
   if (!card) return null;
 
-  const kindLabel = card.kind === 'cover' ? '표지' : card.kind === 'cta' ? 'CTA' : '본문';
+  const kindLabel = kindLabelOf(card.kind);
+  const sizePx = Math.round(42 * card.fontScale);
 
   function releaseImage(url?: string | null) {
     if (url?.startsWith('blob:')) URL.revokeObjectURL(url);
@@ -35,7 +50,7 @@ export default function EditorStage({
       releaseImage(card.imageUrl);
       updateCard(sel, { imageUrl: URL.createObjectURL(f) });
     }
-    e.target.value = ''; // allow re-selecting the same file
+    e.target.value = '';
   }
   function onResetImage() {
     releaseImage(card.imageUrl);
@@ -44,73 +59,95 @@ export default function EditorStage({
 
   return (
     <div className="editor">
+      <h1 className="sr-only">2단계 · 카드 편집</h1>
       {/* rail */}
-      <aside className="rail">
-        <div className="rail__lb">5컷 · 카드</div>
-        <div className="thumbs">
+      <nav className="rail" aria-label="카드 5컷">
+        <div className="rail__lb" aria-hidden="true">5컷 · 카드</div>
+        <div className="thumbs" role="group" aria-label="카드 선택">
           {cards.map((c, i) => (
-            <div
+            <button
               key={i}
+              type="button"
+              aria-pressed={i === sel}
+              aria-label={`${String(i + 1).padStart(2, '0')} ${kindLabelOf(c.kind)} 카드${c.title ? `: ${c.title}` : ''}`}
               className={`thumb ${c.kind !== 'body' ? 'dark' : ''} ${i === sel ? 'is-on' : ''}`}
               onClick={() => setSel(i)}
             >
-              <span className="tnum">0{i + 1} {c.kind === 'cover' ? '표지' : c.kind === 'cta' ? 'CTA' : '본문'}</span>
+              <span className="tnum" aria-hidden="true">{String(i + 1).padStart(2, '0')} {kindLabelOf(c.kind)}</span>
               <CardFace card={c} magazine={magazine} ctx="thumb" />
-            </div>
+            </button>
           ))}
         </div>
-        <div className="rail__add">＋ 카드 추가</div>
-      </aside>
+        <button type="button" className="rail__add">＋ 카드 추가</button>
+      </nav>
 
       {/* canvas */}
       <div className="stage">
         <div className="stage__bar">
-          <div className="aiflag"><span className="dot" /> AI가 5컷을 생성했어요 · 자유롭게 다듬어보세요</div>
-          <div className="zoom"><button>−</button><span>72%</span><button>+</button></div>
+          <p className="aiflag"><span className="dot" aria-hidden="true" /> AI가 5컷을 생성했어요 · 자유롭게 다듬어보세요</p>
+          <div className="zoom" aria-hidden="true"><button type="button">−</button><span>72%</span><button type="button">+</button></div>
         </div>
-        <div className="canvas">
+        <div className="canvas" role="img" aria-label={`${kindLabel} 카드 미리보기: ${card.title}`}>
           <CardFace card={card} magazine={magazine} ctx="canvas" />
         </div>
         <div className="stage__nav">
-          <button className="btn btn--ghost btn--sm" onClick={() => setSel(Math.max(0, sel - 1))}>← 이전 카드</button>
-          <button className="btn btn--ghost btn--sm" onClick={() => setSel(Math.min(cards.length - 1, sel + 1))}>다음 카드 →</button>
+          <button className="btn btn--ghost btn--sm" onClick={() => setSel(Math.max(0, sel - 1))} disabled={sel === 0}>← 이전 카드</button>
+          <button className="btn btn--ghost btn--sm" onClick={() => setSel(Math.min(cards.length - 1, sel + 1))} disabled={sel === cards.length - 1}>다음 카드 →</button>
         </div>
       </div>
 
       {/* inspector */}
-      <aside className="insp">
-        <div className="insp__head"><h3>{kindLabel} 카드 편집</h3><span className="badge">0{sel + 1} / 05</span></div>
+      <aside className="insp" aria-label={`${kindLabel} 카드 편집`}>
+        <div className="insp__head"><h2>{kindLabel} 카드 편집</h2><span className="badge">{String(sel + 1).padStart(2, '0')} / 05</span></div>
         <div className="insp__body">
           <div className="ig">
-            <div className="ig__t">이미지</div>
-            <div className="btnrow">
+            <div className="ig__t" id={`${titleId}-img`}>이미지</div>
+            <div className="btnrow" role="group" aria-labelledby={`${titleId}-img`}>
               <button className="minib" onClick={() => fileRef.current?.click()}>⤒ 이미지 변경</button>
-              <button className="minib" style={{ flex: 'none', width: 44 }} onClick={onResetImage}>↺</button>
+              <button className="minib" style={{ flex: 'none', width: 44 }} aria-label="이미지 제거" onClick={onResetImage}>↺</button>
             </div>
-            <input ref={fileRef} type="file" accept="image/*" hidden onChange={onUpload} />
+            <input ref={fileRef} type="file" accept="image/*" hidden onChange={onUpload} aria-label="이미지 파일 선택" />
           </div>
           <div className="ig">
-            <div className="ig__t">제목 텍스트</div>
-            <textarea className="ta" value={card.title} onChange={(e) => updateCard(sel, { title: e.target.value })} />
+            <label className="ig__t" htmlFor={titleId}>제목 텍스트</label>
+            <textarea id={titleId} className="ta" value={card.title} onChange={(e) => updateCard(sel, { title: e.target.value })} />
           </div>
           <div className="ig">
-            <div className="ig__t">글자색</div>
-            <div className="swrow">
+            <div className="ig__t" id={`${titleId}-color`}>글자색</div>
+            <div className="swrow" role="group" aria-labelledby={`${titleId}-color`}>
               {TEXT_COLORS.map((c) => (
-                <span key={c} className={`sw2 ${card.textColor === c ? 'on' : ''}`} style={{ background: c }} onClick={() => updateCard(sel, { textColor: c })} />
+                <button
+                  key={c}
+                  type="button"
+                  className={`sw2 ${card.textColor === c ? 'on' : ''}`}
+                  style={{ background: c }}
+                  aria-label={`글자색 ${COLOR_LABELS[c] || c}`}
+                  aria-pressed={card.textColor === c}
+                  onClick={() => updateCard(sel, { textColor: c })}
+                />
               ))}
             </div>
           </div>
           <div className="ig">
-            <div className="ig__t">글자 크기</div>
-            <input className="range" type="range" min={0.7} max={1.5} step={0.05} value={card.fontScale} onChange={(e) => updateCard(sel, { fontScale: Number(e.target.value) })} />
-            <div className="rlabels"><span>S</span><span>{Math.round(42 * card.fontScale)} PX</span><span>XL</span></div>
+            <label className="ig__t" htmlFor={`${titleId}-size`}>글자 크기</label>
+            <input
+              id={`${titleId}-size`}
+              className="range"
+              type="range"
+              min={0.7}
+              max={1.5}
+              step={0.05}
+              value={card.fontScale}
+              aria-valuetext={`${sizePx} 픽셀`}
+              onChange={(e) => updateCard(sel, { fontScale: Number(e.target.value) })}
+            />
+            <div className="rlabels" aria-hidden="true"><span>S</span><span>{sizePx} PX</span><span>XL</span></div>
           </div>
           <div className="ig">
-            <div className="ig__t">위치 · 정렬</div>
-            <div className="align">
+            <div className="ig__t" id={`${titleId}-align`}>위치 · 정렬</div>
+            <div className="align" role="group" aria-labelledby={`${titleId}-align`}>
               {Array.from({ length: 9 }).map((_, i) => (
-                <button key={i} className={alignIndex(card.align) === i ? 'on' : ''} onClick={() => updateCard(sel, { align: String(i) })}><span className="d" /></button>
+                <button key={i} type="button" className={alignIndex(card.align) === i ? 'on' : ''} aria-label={ALIGN_LABELS[i]} aria-pressed={alignIndex(card.align) === i} onClick={() => updateCard(sel, { align: String(i) })}><span className="d" aria-hidden="true" /></button>
               ))}
             </div>
           </div>

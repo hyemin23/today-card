@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import './a11y.css';
 
 export const metadata: Metadata = {
   title: 'INK. — AI 카드뉴스 스튜디오',

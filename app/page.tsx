@@ -10,8 +10,10 @@ const CATS = ['정치', '경제', '사회', '문화', 'IT·과학', '스포츠',
 export default function LandingPage() {
   return (
     <>
+      <a href="#main" className="skip-link">본문으로 건너뛰기</a>
       <Nav />
 
+      <main id="main" tabIndex={-1}>
       {/* HERO */}
       <section className="hero">
         <div className="wrap">
@@ -75,7 +77,7 @@ export default function LandingPage() {
         </div>
 
         {/* category marquee */}
-        <div className="cats">
+        <div className="cats" aria-hidden="true">
           <div className="cats__track">
             {[...CATS, ...CATS].map((c, i) => (
               <span key={i}>{c}</span>
@@ -129,17 +131,17 @@ export default function LandingPage() {
         <div className="wrap">
           <div className="trio reveal" data-stagger>
             <div className="trio__c">
-              <div className="ic">✦</div>
+              <div className="ic" aria-hidden="true">✦</div>
               <h4>매거진처럼, 일관되게</h4>
               <p>한 번 정해둔 로고·색·톤이 모든 카드에 자동 적용돼요. 매번 디자인을 다시 잡을 필요가 없어요.</p>
             </div>
             <div className="trio__c">
-              <div className="ic">◷</div>
+              <div className="ic" aria-hidden="true">◷</div>
               <h4>10초면 초안 완성</h4>
               <p>기사를 고르는 순간 AI가 5컷 구성을 잡아줘요. 당신은 다듬기만 하면 됩니다.</p>
             </div>
             <div className="trio__c">
-              <div className="ic">⤓</div>
+              <div className="ic" aria-hidden="true">⤓</div>
               <h4>올릴 준비까지 끝</h4>
               <p>고해상 PNG와 캡션·해시태그를 한 번에. 복사해서 그대로 인스타그램에 올리세요.</p>
             </div>
@@ -189,6 +191,7 @@ export default function LandingPage() {
         </div>
       </section>
 
+      </main>
       <Footer />
       <LandingFx />
     </>

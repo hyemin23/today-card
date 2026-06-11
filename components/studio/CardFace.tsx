@@ -53,7 +53,7 @@ export default function CardFace({ card, magazine, ctx, hint = true }: { card: C
         {ctx !== 'thumb' && (
           <div style={{ ...mono, width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: ctx === 'slide' ? 9 : 11, letterSpacing: '.12em', textTransform: 'uppercase', opacity: 0.7 }}>
             {card.kind === 'cover' && (
-              <><span style={{ border: `1px solid ${dark ? 'rgba(255,255,255,.4)' : 'rgba(17,17,16,.3)'}`, borderRadius: 100, padding: '4px 10px' }}>{card.category || magazine.name}</span><span>{num}</span></>
+              <>{card.category ? <span style={{ border: `1px solid ${dark ? 'rgba(255,255,255,.4)' : 'rgba(17,17,16,.3)'}`, borderRadius: 100, padding: '4px 10px' }}>{card.category}</span> : <span />}<span>{num}</span></>
             )}
             {card.kind === 'body' && <><span>본문</span><span>{num}</span></>}
             {card.kind === 'cta' && <><span>{num}</span><span>CTA</span></>}
@@ -70,13 +70,16 @@ export default function CardFace({ card, magazine, ctx, hint = true }: { card: C
               <div style={{ fontSize: ctx === 'canvas' ? 15 : 11, lineHeight: 1.55, opacity: 0.78, whiteSpace: 'pre-line' }}>{card.body}</div>
             </>
           )}
-          {ctx !== 'thumb' && card.kind === 'cta' && (
-            <>
-              <div style={{ height: 1, background: 'currentColor', opacity: 0.18, margin: `${ctx === 'canvas' ? 16 : 10}px 0` }} />
-              <div style={{ fontSize: ctx === 'canvas' ? 13 : 10, opacity: 0.7, lineHeight: 1.6 }}>{(card.hashtags || magazine.hashtags).join(' ')}</div>
-              <div style={{ ...mono, fontSize: ctx === 'canvas' ? 11 : 9, opacity: 0.55, marginTop: 8 }}>{magazine.handle} ↗</div>
-            </>
-          )}
+          {ctx !== 'thumb' && card.kind === 'cta' && (() => {
+            const tags = (card.hashtags || []).filter(Boolean);
+            return (
+              <>
+                <div style={{ height: 1, background: 'currentColor', opacity: 0.18, margin: `${ctx === 'canvas' ? 16 : 10}px 0` }} />
+                {tags.length > 0 && <div style={{ fontSize: ctx === 'canvas' ? 13 : 10, opacity: 0.7, lineHeight: 1.6 }}>{tags.join(' ')}</div>}
+                {magazine.handle && <div style={{ ...mono, fontSize: ctx === 'canvas' ? 11 : 9, opacity: 0.55, marginTop: 8 }}>{magazine.handle} ↗</div>}
+              </>
+            );
+          })()}
         </div>
       </div>
     </div>

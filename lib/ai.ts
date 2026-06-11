@@ -89,12 +89,16 @@ function normalize(parsed: any, article: Article): GenerateResult {
     cards[0] = { ...cards[0], kind: 'cover' };
     cards[4] = { ...cards[4], kind: 'cta' };
   }
+  const hashtags = Array.isArray(parsed?.hashtags) && parsed.hashtags.length
+    ? parsed.hashtags.map(String)
+    : ['#카드뉴스', '#오늘의이슈'];
+  // seed the CTA card's own hashtags so they're shown + editable per-card
+  const cta = cards.find((c) => c.kind === 'cta');
+  if (cta && (!cta.hashtags || !cta.hashtags.length)) cta.hashtags = hashtags.slice(0, 4);
   return {
     cards,
     caption: typeof parsed?.caption === 'string' && parsed.caption ? parsed.caption : article.summary,
-    hashtags: Array.isArray(parsed?.hashtags) && parsed.hashtags.length
-      ? parsed.hashtags.map(String)
-      : ['#카드뉴스', '#오늘의이슈'],
+    hashtags,
   };
 }
 

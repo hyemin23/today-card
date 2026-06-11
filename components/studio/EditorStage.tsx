@@ -144,9 +144,27 @@ export default function EditorStage({
             <input ref={fileRef} type="file" accept="image/*" hidden onChange={onUpload} aria-label="이미지 파일 선택" />
           </div>
           <div className="ig">
-            <label className="ig__t" htmlFor={titleId}>제목 텍스트</label>
-            <textarea id={titleId} className="ta" value={card.title} onChange={(e) => updateCard(sel, { title: e.target.value })} />
+            <label className="ig__t" htmlFor={titleId}>{card.kind === 'cover' ? '표지 헤드라인' : card.kind === 'cta' ? 'CTA 문구' : '소제목'} <span style={{ color: 'var(--ink-3)', fontWeight: 400 }}>· 비우면 삭제</span></label>
+            <textarea id={titleId} className="ta" value={card.title} onChange={(e) => updateCard(sel, { title: e.target.value })} placeholder="비우면 카드에서 사라져요" />
           </div>
+          {card.kind === 'body' && (
+            <div className="ig">
+              <label className="ig__t" htmlFor={`${titleId}-body`}>본문 텍스트 <span style={{ color: 'var(--ink-3)', fontWeight: 400 }}>· 비우면 삭제</span></label>
+              <textarea id={`${titleId}-body`} className="ta" style={{ minHeight: 100 }} value={card.body || ''} onChange={(e) => updateCard(sel, { body: e.target.value })} placeholder="비우면 카드에서 사라져요" />
+            </div>
+          )}
+          {card.kind === 'cover' && (
+            <div className="ig">
+              <label className="ig__t" htmlFor={`${titleId}-cat`}>카테고리 라벨 <span style={{ color: 'var(--ink-3)', fontWeight: 400 }}>· 비우면 삭제</span></label>
+              <input id={`${titleId}-cat`} className="input" value={card.category || ''} onChange={(e) => updateCard(sel, { category: e.target.value })} placeholder="예: 경제 (비우면 숨김)" />
+            </div>
+          )}
+          {card.kind === 'cta' && (
+            <div className="ig">
+              <label className="ig__t" htmlFor={`${titleId}-tags`}>해시태그 <span style={{ color: 'var(--ink-3)', fontWeight: 400 }}>· 비우면 삭제</span></label>
+              <textarea id={`${titleId}-tags`} className="ta" value={(card.hashtags || []).join(' ')} onChange={(e) => updateCard(sel, { hashtags: e.target.value.split(' ') })} placeholder="#태그1 #태그2 (비우면 숨김)" />
+            </div>
+          )}
           <div className="ig">
             <div className="ig__t" id={`${titleId}-color`}>글자색</div>
             <div className="swrow" role="group" aria-labelledby={`${titleId}-color`}>

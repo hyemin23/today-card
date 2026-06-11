@@ -41,7 +41,7 @@ export default function StudioClient() {
   const [caption, setCaption] = useState('');
   const [hashtags, setHashtags] = useState<string[]>([]);
   const [source, setSource] = useState('뉴스');
-  const [adminKey, setAdminKey] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const wrapRef = useRef<HTMLDivElement>(null);
   const genTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -88,22 +88,14 @@ export default function StudioClient() {
 
   useEffect(() => () => { if (genTimeout.current) clearTimeout(genTimeout.current); }, []);
 
-  // admin mode: enter once via /studio?admin=KEY (persisted), then the editor
-  // shows the AI image button. Real access is still verified server-side.
+  // admin mode is carried by the httpOnly session cookie (set at /admin login).
+  // Ask the server whether this browser is logged in to decide on showing the
+  // AI image button; the API re-verifies the cookie on every call regardless.
   useEffect(() => {
-    try {
-      const fromUrl = new URLSearchParams(window.location.search).get('admin');
-      if (fromUrl) {
-        localStorage.setItem('ink_admin', fromUrl);
-        // strip the secret from the URL so it doesn't linger in history / shared links
-        const url = new URL(window.location.href);
-        url.searchParams.delete('admin');
-        window.history.replaceState({}, '', url.pathname + url.search + url.hash);
-      }
-      setAdminKey(localStorage.getItem('ink_admin'));
-    } catch {
-      /* localStorage unavailable */
-    }
+    fetch('/api/admin/status')
+      .then((r) => r.json())
+      .then((d) => setIsAdmin(!!d.admin))
+      .catch(() => {});
   }, []);
 
   function setStage(n: number) {
@@ -185,7 +177,7 @@ export default function StudioClient() {
         </section>
         <section className={`stage-pane ${stage === 2 ? 'is-active' : ''}`} tabIndex={-1} aria-label="2단계: 편집" aria-hidden={stage !== 2}>
           {cards.length > 0 && (
-            <EditorStage cards={cards} sel={sel} setSel={setSel} updateCard={updateCard} magazine={magazine} onGo={setStage} adminKey={adminKey} />
+            <EditorStage cards={cards} sel={sel} setSel={setSel} updateCard={updateCard} magazine={magazine} onGo={setStage} isAdmin={isAdmin} />
           )}
         </section>
         <section className={`stage-pane ${stage === 3 ? 'is-active' : ''}`} tabIndex={-1} aria-label="3단계: 내보내기" aria-hidden={stage !== 3}>

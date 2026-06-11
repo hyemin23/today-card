@@ -1,20 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateCardImage } from '@/lib/image';
+import { verifySession, ADMIN_COOKIE } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
-// POST /api/image  { title, category }   header: x-admin-key
-// Admin-only: AI cover-image generation is gated server-side so regular users
-// (and anyone hitting the endpoint directly) can never trigger paid usage.
+// POST /api/image  { title, category }
+// Admin-only: gated by the httpOnly admin session cookie (set at /admin login)
+// so regular users — and anyone hitting the endpoint directly — can never
+// trigger paid usage.
 export async function POST(req: NextRequest) {
-  const adminKey = process.env.ADMIN_KEY;
-  if (!adminKey) {
-    return NextResponse.json({ error: '이미지 생성이 비활성화되어 있어요(관리자 키 미설정).' }, { status: 503 });
+  if (!process.env.ADMIN_KEY) {
+    return NextResponse.json({ error: '이미지 생성이 비활성화되어 있어요(관리자 미설정).' }, { status: 503 });
   }
-  const provided = req.headers.get('x-admin-key') || '';
-  if (provided !== adminKey) {
-    return NextResponse.json({ error: '관리자만 이미지를 생성할 수 있어요.' }, { status: 403 });
+  if (!verifySession(req.cookies.get(ADMIN_COOKIE)?.value)) {
+    return NextResponse.json({ error: '관리자만 이미지를 생성할 수 있어요. /admin에서 로그인하세요.' }, { status: 403 });
   }
 
   let body: { title?: string; category?: string };

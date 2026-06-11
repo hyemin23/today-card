@@ -25,7 +25,7 @@ export default function EditorStage({
   updateCard,
   magazine,
   onGo,
-  adminKey,
+  isAdmin,
 }: {
   cards: Card[];
   sel: number;
@@ -33,7 +33,7 @@ export default function EditorStage({
   updateCard: (idx: number, patch: Partial<Card>) => void;
   magazine: Magazine;
   onGo: (n: number) => void;
-  adminKey?: string | null;
+  isAdmin?: boolean;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const titleId = useId();
@@ -59,14 +59,14 @@ export default function EditorStage({
     releaseImage(card.imageUrl);
     updateCard(sel, { imageUrl: null });
   }
-  // admin only — server re-verifies the key before any (paid) generation
+  // admin only — server re-verifies the session cookie before any (paid) generation
   async function genImage() {
-    if (!adminKey || imgBusy) return;
+    if (!isAdmin || imgBusy) return;
     setImgBusy(true);
     try {
       const res = await fetch('/api/image', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title: card.title, category: card.category || '뉴스' }),
       });
       const data = await res.json();
@@ -129,7 +129,7 @@ export default function EditorStage({
               <button className="minib" onClick={() => fileRef.current?.click()}>⤒ 이미지 변경</button>
               <button className="minib" style={{ flex: 'none', width: 44 }} aria-label="이미지 제거" onClick={onResetImage}>↺</button>
             </div>
-            {adminKey && (
+            {isAdmin && (
               <button
                 className="minib"
                 style={{ width: '100%', marginTop: 8 }}

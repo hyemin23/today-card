@@ -205,6 +205,25 @@ export default function EditorStage({
             </div>
           </div>
           <div className="ig">
+            <div className="ig__t">표시 요소</div>
+            <div className="tog">
+              <span className="tog__lb">페이지 번호 ({String(sel + 1).padStart(2, '0')}/05)</span>
+              <button type="button" role="switch" aria-checked={!card.hideNum} aria-label="페이지 번호 표시" className="switch" onClick={() => updateCard(sel, { hideNum: !card.hideNum })} />
+            </div>
+            {(card.kind === 'body' || card.kind === 'cta') && (
+              <div className="tog">
+                <span className="tog__lb">구분 라벨 ({card.kind === 'cta' ? 'CTA' : '본문'})</span>
+                <button type="button" role="switch" aria-checked={!card.hideLabel} aria-label="구분 라벨 표시" className="switch" onClick={() => updateCard(sel, { hideLabel: !card.hideLabel })} />
+              </div>
+            )}
+            {card.kind === 'cta' && (
+              <div className="tog">
+                <span className="tog__lb">핸들 {magazine.handle ? `(${magazine.handle})` : ''}</span>
+                <button type="button" role="switch" aria-checked={!card.hideHandle} aria-label="인스타 핸들 표시" className="switch" onClick={() => updateCard(sel, { hideHandle: !card.hideHandle })} />
+              </div>
+            )}
+          </div>
+          <div className="ig">
             <div className="ig__t">AI 다시 쓰기</div>
             <button className="btn btn--ghost btn--sm" style={{ width: '100%' }}>↻ 이 카드 문구 다시 생성</button>
           </div>

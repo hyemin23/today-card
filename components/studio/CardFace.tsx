@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { Card, Magazine } from '@/types/db';
 
 type Ctx = 'canvas' | 'slide' | 'thumb';
@@ -50,15 +51,21 @@ export default function CardFace({ card, magazine, ctx, hint = true }: { card: C
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top,rgba(17,17,16,.82),rgba(17,17,16,.2) 48%,rgba(17,17,16,.55))' }} />
       )}
       <div style={{ position: 'absolute', inset: 0, padding: pad, display: 'flex', flexDirection: 'column' }}>
-        {ctx !== 'thumb' && (
-          <div style={{ ...mono, width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: ctx === 'slide' ? 9 : 11, letterSpacing: '.12em', textTransform: 'uppercase', opacity: 0.7 }}>
-            {card.kind === 'cover' && (
-              <>{card.category ? <span style={{ border: `1px solid ${dark ? 'rgba(255,255,255,.4)' : 'rgba(17,17,16,.3)'}`, borderRadius: 100, padding: '4px 10px' }}>{card.category}</span> : <span />}<span>{num}</span></>
-            )}
-            {card.kind === 'body' && <><span>본문</span><span>{num}</span></>}
-            {card.kind === 'cta' && <><span>{num}</span><span>CTA</span></>}
-          </div>
-        )}
+        {ctx !== 'thumb' && (() => {
+          const numEl = card.hideNum ? null : <span>{num}</span>;
+          const pill = card.category ? <span style={{ border: `1px solid ${dark ? 'rgba(255,255,255,.4)' : 'rgba(17,17,16,.3)'}`, borderRadius: 100, padding: '4px 10px' }}>{card.category}</span> : null;
+          const label = card.hideLabel ? null : <span>{card.kind === 'cta' ? 'CTA' : '본문'}</span>;
+          let left: ReactNode = null, right: ReactNode = null;
+          if (card.kind === 'cover') { left = pill; right = numEl; }
+          else if (card.kind === 'body') { left = label; right = numEl; }
+          else { left = numEl; right = label; }
+          if (!left && !right) return null;
+          return (
+            <div style={{ ...mono, width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: ctx === 'slide' ? 9 : 11, letterSpacing: '.12em', textTransform: 'uppercase', opacity: 0.7 }}>
+              {left || <span />}{right || <span />}
+            </div>
+          );
+        })()}
 
         <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', justifyContent: align.v, textAlign: align.t }}>
           <div style={{ fontFamily: 'var(--serif)', fontWeight: 800, letterSpacing: '-.035em', lineHeight: 1.08, fontSize: titleSize, whiteSpace: 'pre-line', marginTop: align.v === 'flex-start' ? (ctx === 'thumb' ? 14 : 16) : 0 }}>
@@ -76,7 +83,7 @@ export default function CardFace({ card, magazine, ctx, hint = true }: { card: C
               <>
                 <div style={{ height: 1, background: 'currentColor', opacity: 0.18, margin: `${ctx === 'canvas' ? 16 : 10}px 0` }} />
                 {tags.length > 0 && <div style={{ fontSize: ctx === 'canvas' ? 13 : 10, opacity: 0.7, lineHeight: 1.6 }}>{tags.join(' ')}</div>}
-                {magazine.handle && <div style={{ ...mono, fontSize: ctx === 'canvas' ? 11 : 9, opacity: 0.55, marginTop: 8 }}>{magazine.handle} ↗</div>}
+                {magazine.handle && !card.hideHandle && <div style={{ ...mono, fontSize: ctx === 'canvas' ? 11 : 9, opacity: 0.55, marginTop: 8 }}>{magazine.handle} ↗</div>}
               </>
             );
           })()}

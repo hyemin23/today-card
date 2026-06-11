@@ -39,6 +39,10 @@ export interface Card {
   /** article context shown on the cover (category pill, source line) */
   category?: string;
   source?: string;
+  /** per-card visibility toggles for template chrome (default shown) */
+  hideNum?: boolean;
+  hideLabel?: boolean;
+  hideHandle?: boolean;
 }
 
 export interface GenerateResult {

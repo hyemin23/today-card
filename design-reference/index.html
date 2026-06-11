@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5">
+<title>INK. — AI 카드뉴스 스튜디오</title>
+<link rel="stylesheet" href="assets/styles.css">
+<script>document.documentElement.className += ' js';</script>
+<style>
+/* ---------- Landing-specific ---------- */
+.hero { padding: 76px 0 40px; position: relative; }
+.hero__grid {
+  display: grid; grid-template-columns: 1.05fr .95fr; gap: 56px; align-items: center;
+}
+.hero__eyebrow { display: flex; align-items: center; gap: 12px; margin-bottom: 26px; }
+.hero__eyebrow .ln { height: 1px; width: 44px; background: var(--ink); }
+.hero h1 {
+  font-family: var(--serif); font-weight: 800; letter-spacing: -.045em;
+  font-size: clamp(38px, 5.2vw, 64px); line-height: 1.0; color: var(--ink);
+}
+.hero h1 .line { display: block; overflow: hidden; }
+.hero h1 .thin { color: var(--ink-3); font-weight: 300; }
+.hero__sub { margin: 22px 0 26px; max-width: 460px; }
+
+/* topic input — primary action in hero */
+.topicbox { max-width: 480px; }
+.topicfield {
+  display:flex; align-items:center; gap:10px; background:var(--paper);
+  border:1.5px solid var(--ink); border-radius:100px; padding:6px 6px 6px 20px;
+  box-shadow: 0 14px 34px -22px rgba(17,17,16,.5);
+  transition: box-shadow .25s var(--ease), transform .25s var(--ease);
+}
+.topicfield:focus-within { box-shadow: 0 18px 42px -20px rgba(17,17,16,.55); transform: translateY(-1px); }
+.topicfield .mg { font-size:18px; color:var(--ink); }
+.topicfield input { flex:1; border:none; outline:none; background:none; font-size:15.5px; font-weight:500; padding:13px 0; }
+.topicfield input::placeholder { color:var(--ink-3); font-weight:400; }
+.topicfield .go { padding:13px 22px; }
+.heroTags { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:16px; }
+.heroTags .lb { font-family:var(--mono); font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-3); white-space:nowrap; }
+.htag { font-size:13px; color:var(--ink-2); border:1px solid var(--line-2); border-radius:100px; padding:7px 14px; cursor:pointer; white-space:nowrap; transition: all .18s var(--ease); }
+.htag:hover { border-color:var(--ink); color:var(--ink); transform: translateY(-2px); }
+.htag::before { content:"# "; color:var(--ink-3); }
+.hero__note { font-family: var(--mono); font-size: 11px; color: var(--ink-3); letter-spacing: .04em; margin-top: 22px; display:flex; align-items:center; gap:8px;}
+.hero__note .d { width:5px;height:5px;border-radius:50%;background:var(--ink);}
+
+/* card fan — 3D */
+.fan { position: relative; height: 480px; transform-style: preserve-3d; transition: transform .2s var(--ease); }
+.fan .cn { position: absolute; width: 232px; box-shadow: 0 30px 60px -28px rgba(17,17,16,.45); transition: transform .4s var(--ease), box-shadow .4s var(--ease); }
+.fan .c1 { left: 0;   top: 40px;  transform: rotate(-8deg) translateZ(-40px); z-index: 1; }
+.fan .c2 { left: 27%; top: 0;     transform: rotate(-1deg) translateZ(60px);  z-index: 3; }
+.fan .c3 { left: 52%; top: 56px;  transform: rotate(7deg)  translateZ(10px);  z-index: 2; }
+.fan__badge {
+  position: absolute; right: 0; bottom: 4px; z-index: 5;
+  background: var(--ink); color: var(--paper);
+  font-family: var(--mono); font-size: 11px; letter-spacing: .08em;
+  padding: 10px 16px; border-radius: 100px; display:flex; gap:8px; align-items:center;
+  box-shadow: var(--shadow-card);
+}
+
+/* mock card internals */
+.mock { padding: 22px; display: flex; flex-direction: column; height: 100%; }
+.mock__top { display:flex; justify-content:space-between; align-items:center; }
+.mock__brand { font-family: var(--serif); font-weight:600; font-size:15px; }
+.mock__num { font-family: var(--mono); font-size:10px; letter-spacing:.1em; color: var(--ink-3); }
+.cn--ink .mock__num { color: rgba(255,255,255,.5); }
+.mock__cat { font-family: var(--mono); font-size:10px; letter-spacing:.16em; text-transform:uppercase; }
+.cn--ink .mock__cat { color: rgba(255,255,255,.6); }
+.mock__title { font-family: var(--serif); font-weight:700; letter-spacing:-.03em; line-height:1.1; margin-top:auto; font-size: 26px; }
+.mock__body { font-size: 13px; line-height:1.6; color: var(--ink-2); margin-top: 14px; }
+.cn--ink .mock__body { color: rgba(255,255,255,.78); }
+.mock__rule { height:1px; background: currentColor; opacity:.16; margin: 14px 0; }
+.mock__foot { font-family: var(--mono); font-size:10px; letter-spacing:.08em; color: var(--ink-3); }
+.cn--ink .mock__foot { color: rgba(255,255,255,.5); }
+.mock__hash { font-size:12px; color: var(--ink-3); line-height:1.7; }
+.mock__big { font-family: var(--serif); font-weight:700; letter-spacing:-.03em; font-size: 29px; line-height:1.08; }
+.mock__brand, .cn--ink .mock__brand { font-weight:800; letter-spacing:-.04em; }
+
+/* marquee categories */
+.cats { border-top:1px solid var(--line); border-bottom:1px solid var(--line); padding: 18px 0; overflow:hidden; margin-top: 30px;}
+.cats__track { display:flex; gap: 40px; white-space:nowrap; animation: slide 32s linear infinite; }
+.cats__track span { font-family: var(--serif); font-weight:700; letter-spacing:-.03em; font-size: 22px; color: var(--ink-3); display:flex; align-items:center; gap:40px; }
+.cats__track span::after { content:"✳"; font-size:12px; color: var(--line-2); }
+@keyframes slide { to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce){ .cats__track{ animation:none; } }
+
+/* section base */
+.section { padding: 96px 0; }
+.section__head { max-width: 640px; margin-bottom: 56px; }
+.section__head h2 { font-family: var(--serif); font-weight:800; font-size: clamp(30px,4vw,46px); letter-spacing:-.035em; line-height:1.05; margin-top:18px; }
+.section__head p { margin-top:18px; }
+
+/* steps */
+.steps { display:grid; grid-template-columns: repeat(12,1fr); gap: 0; border-top:1px solid var(--line); }
+.step { grid-column: span 12; display:grid; grid-template-columns: 90px 1fr; gap: 28px; padding: 34px 4px; border-bottom:1px solid var(--line); align-items:start; transition: background .25s var(--ease); }
+.step:hover { background: var(--wash); }
+.step__n { font-family: var(--serif); font-size: 50px; font-weight:800; letter-spacing:-.04em; color: var(--ink); line-height:.9; }
+.step__n small { font-family: var(--mono); font-size:11px; color: var(--ink-3); display:block; letter-spacing:.1em; margin-top:8px;}
+.step__b h3 { font-size: 20px; font-weight:600; letter-spacing:-.01em; margin-bottom:8px; }
+.step__b p { color: var(--ink-2); font-size: 15px; max-width: 620px; }
+.step__b .meta { font-family: var(--mono); font-size:11px; color: var(--ink-3); letter-spacing:.08em; margin-top:12px; }
+@media (min-width: 880px){
+  .step { grid-template-columns: 120px 1fr 280px; }
+  .step__side { font-size:13px; color: var(--ink-3); align-self:center; }
+}
+
+/* feature trio */
+.trio { display:grid; grid-template-columns: repeat(3,1fr); gap: 1px; background: var(--line); border:1px solid var(--line); }
+.trio__c { background: var(--paper); padding: 36px 30px; transition: background .3s var(--ease), transform .3s var(--ease); }
+.trio__c:hover { background: var(--wash); }
+.trio__c .ic { width:46px; height:46px; border:1px solid var(--ink); border-radius:50%; display:flex; align-items:center; justify-content:center; margin-bottom:22px; font-size:18px; transition: transform .4s var(--ease); }
+.trio__c:hover .ic { transform: rotate(360deg) scale(1.06); }
+.trio__c h4 { font-size:17px; font-weight:700; letter-spacing:-.02em; margin-bottom:10px; }
+.trio__c p { font-size:14px; color: var(--ink-2); }
+
+/* notes / rules */
+.notes { background: var(--ink); color: var(--paper); }
+.notes .section__head h2 { color: var(--paper); }
+.notes .section__head p { color: rgba(255,255,255,.7); }
+.notes__grid { display:grid; grid-template-columns: 1.1fr 1fr; gap: 60px; }
+.rules { display:grid; gap: 2px; }
+.rule-row { display:grid; grid-template-columns: 30px 1fr; gap:16px; padding: 16px 0; border-bottom:1px solid rgba(255,255,255,.12); }
+.rule-row .ri { font-family: var(--mono); font-size:12px; color: rgba(255,255,255,.5); }
+.rule-row p { font-size:14px; color: rgba(255,255,255,.82); line-height:1.6; }
+.rule-row b { color: var(--paper); font-weight:600; }
+.notes__aside { font-size:14px; }
+.notes__aside .box { border:1px solid rgba(255,255,255,.18); padding: 26px; border-radius: var(--radius); }
+.notes__aside .box h4 { font-family: var(--serif); font-weight:800; letter-spacing:-.03em; font-size:22px; margin-bottom:14px; }
+.notes__aside .box p { color: rgba(255,255,255,.7); margin-bottom:12px; }
+
+/* CTA band */
+.cta { padding: 110px 0; text-align:center; }
+.cta h2 { font-family: var(--serif); font-weight:800; font-size: clamp(34px,5.5vw,64px); letter-spacing:-.045em; line-height:1.02; }
+.cta p { margin: 24px auto 36px; max-width: 460px; }
+
+@media (max-width: 920px){
+  .hero__grid { grid-template-columns: 1fr; gap: 30px; }
+  .fan { height: 380px; margin-top: 10px; }
+  .fan .cn { width: 210px; }
+  .notes__grid { grid-template-columns: 1fr; gap: 36px; }
+  .trio { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ===== NAV ===== -->
+<header class="nav">
+  <div class="nav__inner">
+    <a class="brand" href="index.html">INK<span class="dot">.</span><small>Card News Studio</small></a>
+    <nav class="nav__links">
+      <a class="nav__link is-active" href="index.html">홈</a>
+      <a class="nav__link" href="studio.html">스튜디오</a>
+      <a class="nav__link" href="#how">이용 방법</a>
+    </nav>
+    <div class="nav__right">
+      <button class="lang">EN</button>
+      <a class="btn btn--dark btn--sm" href="studio.html">시작하기</a>
+      <button class="nav__toggle btn btn--ghost btn--sm" aria-label="menu">☰</button>
+    </div>
+  </div>
+</header>
+
+<!-- ===== HERO ===== -->
+<section class="hero">
+  <div class="wrap">
+    <div class="hero__grid">
+      <div class="hero__copy">
+        <div class="hero__eyebrow reveal"><span class="ln"></span><span class="kicker">AI Card-news Studio · 모든 장르</span></div>
+        <h1>
+          <span class="line"><span class="lift">주제만 입력하면,</span></span>
+          <span class="line"><span class="lift"><span class="mark">카드뉴스</span>가 완성돼요</span></span>
+        </h1>
+        <p class="hero__sub lead reveal">원하는 <b>주제를 입력</b>하거나 <b>태그를 선택</b>하면 관련 뉴스를 모아와요. 마음에 드는 기사를 고르면 AI가 5컷 카드뉴스를 뚝딱 만들어 드립니다.</p>
+
+        <!-- PRIMARY ACTION: topic input -->
+        <form class="topicbox reveal" action="studio.html" method="get" onsubmit="sessionStorage.setItem('ink_topic', this.q.value); return true;">
+          <div class="topicfield">
+            <span class="mg">⌕</span>
+            <input name="q" type="text" placeholder="어떤 주제로 만들까요? 예: 기준금리, K-팝, 서울 전시" autocomplete="off">
+            <button class="btn btn--dark go" type="submit">뉴스 모으기 <span class="ar">→</span></button>
+          </div>
+        </form>
+        <div class="heroTags reveal">
+          <span class="lb">인기 주제</span>
+          <a class="htag" href="studio.html">전기차</a>
+          <a class="htag" href="studio.html">생성형AI</a>
+          <a class="htag" href="studio.html">월드컵</a>
+          <a class="htag" href="studio.html">제철음식</a>
+          <a class="htag" href="studio.html">주말나들이</a>
+        </div>
+        <div class="hero__note reveal"><span class="d"></span> 원활한 편집을 위해 PC(웹) 환경을 권장해요</div>
+      </div>
+
+      <!-- card fan (3D) -->
+      <div class="fan scene" id="fan" aria-hidden="true">
+        <!-- body card -->
+        <div class="cn c1">
+          <div class="mock">
+            <div class="mock__top"><span class="mock__cat">Culture</span><span class="mock__num">03 / 05</span></div>
+            <div class="mock__title" style="font-size:21px; margin-top:18px;">조용한 도시가<br>다시 붐비기<br>시작했다</div>
+            <div class="mock__rule"></div>
+            <p class="mock__body">늘어난 야간 보행 인구가 도심 상권의 회복을 이끌고 있다는 분석이다.</p>
+            <div style="margin-top:auto" class="mock__foot">출처 · 일간경제</div>
+          </div>
+        </div>
+        <!-- cover card (ink) -->
+        <div class="cn cn--ink c2">
+          <div class="mock">
+            <div class="mock__top"><span class="mock__brand">INK.</span><span class="mock__num">01 / 05</span></div>
+            <div class="mock__title" style="margin-top:auto;">올해 가장<br>주목받은<br><span class="mark">한 장면</span></div>
+            <div class="mock__foot" style="margin-top:16px;">COVER · 2026</div>
+          </div>
+        </div>
+        <!-- cta card -->
+        <div class="cn c3">
+          <div class="mock">
+            <div class="mock__top"><span class="mock__cat">More</span><span class="mock__num">05 / 05</span></div>
+            <div class="mock__big" style="margin-top:auto;">팔로우하고<br>더 보기</div>
+            <div class="mock__rule"></div>
+            <p class="mock__hash">#카드뉴스 #오늘의이슈<br>#INK매거진</p>
+            <div class="mock__top" style="margin-top:14px;"><span class="mock__brand" style="font-size:13px;">@ink.daily</span><span class="mock__num">↗</span></div>
+          </div>
+        </div>
+        <div class="fan__badge"><span>✦</span> 약 10–15초 자동 생성</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- category marquee -->
+  <div class="cats">
+    <div class="cats__track">
+      <span>정치<span></span></span><span>경제</span><span>사회</span><span>문화</span><span>IT·과학</span><span>스포츠</span><span>연예</span><span>패션</span><span>뷰티</span><span>여행</span><span>푸드</span><span>라이프</span>
+      <span>정치<span></span></span><span>경제</span><span>사회</span><span>문화</span><span>IT·과학</span><span>스포츠</span><span>연예</span><span>패션</span><span>뷰티</span><span>여행</span><span>푸드</span><span>라이프</span>
+    </div>
+  </div>
+</section>
+
+<!-- ===== HOW IT WORKS ===== -->
+<section class="section" id="how">
+  <div class="wrap">
+    <div class="section__head reveal">
+      <span class="kicker">How it works</span>
+      <h2>세 단계, 한 화면에서<br>끝나는 카드뉴스</h2>
+      <p class="lead">페이지 이동 없이 한 작업공간에서 — 고르고, 다듬고, 내려받아요.</p>
+    </div>
+
+    <div class="steps">
+      <div class="step reveal">
+        <div class="step__n">01<small>TOPIC</small></div>
+        <div class="step__b">
+          <h3>주제·태그로 뉴스 모으기</h3>
+          <p>원하는 주제를 입력하거나 추천 태그를 누르면 관련 뉴스를 실시간으로 모아와요. 마음에 드는 기사를 누르면 AI가 한국어 카드뉴스 5컷을 자동 생성합니다. 약 10–15초면 초안 완성.</p>
+          <div class="meta">→ 주제 입력 · 태그 선택 · 크롤링 · AI 생성</div>
+        </div>
+        <div class="step__side">제목·요약문만 사용해 깔끔하게.</div>
+      </div>
+      <div class="step reveal">
+        <div class="step__n">02<small>EDIT</small></div>
+        <div class="step__b">
+          <h3>사진 넣고 다듬기</h3>
+          <p>5컷을 한 화면에서 넘기며 편집해요. ‘이미지 변경’으로 사진을 올리고 제목·글자색·크기·위치를 자유롭게. 매거진 설정은 옆 패널에서 바로 열려요.</p>
+          <div class="meta">→ 인라인 편집 · 매거진 설정 패널</div>
+        </div>
+        <div class="step__side">저작권 보호를 위해 기사 사진은 자동으로 넣지 않아요.</div>
+      </div>
+      <div class="step reveal">
+        <div class="step__n">03<small>SHIP</small></div>
+        <div class="step__b">
+          <h3>피드로 내보내기</h3>
+          <p>인스타그램 캐러셀로 어떻게 보일지 미리 확인하고, 카드를 한 장씩 또는 전체 ZIP으로 받아요. 캡션·해시태그도 ‘전체 복사’로 그대로 올리면 끝.</p>
+          <div class="meta">→ 캐러셀 미리보기 · PNG · ZIP · 캡션 복사</div>
+        </div>
+        <div class="step__side">1080 × 1080 — 인스타 정사각 규격.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== FEATURE TRIO ===== -->
+<section class="section" style="padding-top:0;">
+  <div class="wrap">
+    <div class="trio reveal" data-stagger>
+      <div class="trio__c">
+        <div class="ic">✦</div>
+        <h4>매거진처럼, 일관되게</h4>
+        <p>한 번 정해둔 로고·색·톤이 모든 카드에 자동 적용돼요. 매번 디자인을 다시 잡을 필요가 없어요.</p>
+      </div>
+      <div class="trio__c">
+        <div class="ic">◷</div>
+        <h4>10초면 초안 완성</h4>
+        <p>기사를 고르는 순간 AI가 5컷 구성을 잡아줘요. 당신은 다듬기만 하면 됩니다.</p>
+      </div>
+      <div class="trio__c">
+        <div class="ic">⤓</div>
+        <h4>올릴 준비까지 끝</h4>
+        <p>고해상 PNG와 캡션·해시태그를 한 번에. 복사해서 그대로 인스타그램에 올리세요.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== NOTES / RULES ===== -->
+<section class="section notes">
+  <div class="wrap">
+    <div class="notes__grid">
+      <div>
+        <div class="section__head" style="margin-bottom:34px;">
+          <span class="kicker" style="color:rgba(255,255,255,.5)">Good to know</span>
+          <h2>알아두면 좋아요</h2>
+        </div>
+        <div class="rules" data-stagger>
+          <div class="rule-row"><span class="ri">01</span><p>카드 내용은 <b>검색으로 제공되는 기사 제목·요약문</b>만으로 만들어요. 기사 전문을 따로 가져오지 않습니다.</p></div>
+          <div class="rule-row"><span class="ri">02</span><p>매거진은 <b>내 브라우저에만 저장</b>돼요. 다른 사람에겐 보이지 않아요.</p></div>
+          <div class="rule-row"><span class="ri">03</span><p>기사 출처(언론사)는 <b>캡션에 자동으로 표시</b>됩니다.</p></div>
+          <div class="rule-row"><span class="ri">04</span><p><b>저작권 보호를 위해 기사 사진은 자동으로 넣지 않아요.</b> 사진은 직접 올려주세요.</p></div>
+        </div>
+      </div>
+      <aside class="notes__aside">
+        <div class="box">
+          <h4>이용 규칙</h4>
+          <p>· 1인당 하루 10회까지 생성할 수 있어요.</p>
+          <p>· 생성한 카드는 개인 체험·비상업 용도로 사용해 주세요.</p>
+          <p>· 직접 올린 이미지·기사 내용의 저작권은 원 저작권자에게 있어요.</p>
+          <p style="margin-bottom:0; color:rgba(255,255,255,.5); font-family:var(--mono); font-size:11px; letter-spacing:.05em; margin-top:18px;">※ 본 서비스는 비상업 체험용입니다.</p>
+        </div>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- ===== CTA ===== -->
+<section class="cta">
+  <div class="wrap">
+    <span class="kicker reveal">Start now</span>
+    <h2 class="reveal" style="margin-top:18px;">나만의 매거진,<br><em>지금</em> 시작해보세요</h2>
+    <p class="lead reveal">기사를 고르면 AI가 카드뉴스 5컷을 뚝딱. 이름·로고·색 입혀 완성하세요.</p>
+    <div class="reveal" style="display:flex; gap:14px; justify-content:center; flex-wrap:wrap;">
+      <a class="btn btn--dark btn--lg" href="studio.html">지금 만들기 <span class="ar">→</span></a>
+      <a class="btn btn--ghost btn--lg" href="studio.html">스튜디오 열기</a>
+    </div>
+  </div>
+</section>
+
+<!-- ===== FOOTER ===== -->
+<footer class="footer">
+  <div class="wrap">
+    <div class="footer__grid">
+      <div class="footer__brand">
+        <div class="brand">INK<span class="dot">.</span></div>
+        <p>모든 장르의 뉴스를 카드뉴스로. AI가 초안을 짜고, 당신이 매거진을 완성합니다.</p>
+      </div>
+      <div class="footer__cols">
+        <div class="footer__col">
+          <h5>Make</h5>
+          <a href="studio.html">주제·태그 크롤링</a>
+          <a href="studio.html">카드 편집</a>
+          <a href="studio.html">내보내기</a>
+          <a href="studio.html">매거진 설정</a>
+        </div>
+        <div class="footer__col">
+          <h5>About</h5>
+          <a href="#how">이용 방법</a>
+          <a href="#">이용 규칙</a>
+          <a href="#">자주 묻는 질문</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <span class="mono">© 2026 INK. STUDIO</span>
+      <span class="mono">MADE FOR CREATORS — KR / EN</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // ---- Reveal: observer + fail-safe fallbacks (content never stays hidden) ----
+  const items = [...document.querySelectorAll('.reveal, [data-stagger]')];
+  const show = el => el.classList.add('in');
+  try {
+    const io = new IntersectionObserver((es,obs)=>{
+      es.forEach(e=>{ if(e.isIntersecting){ show(e.target); obs.unobserve(e.target);} });
+    }, {threshold:.06, rootMargin:'0px 0px -4% 0px'});
+    items.forEach(el=>io.observe(el));
+  } catch(e){ items.forEach(show); }
+  const sweep = ()=> items.forEach(el=>{ const r=el.getBoundingClientRect(); if(r.top < innerHeight*0.98) show(el); });
+  requestAnimationFrame(sweep);
+  addEventListener('scroll', sweep, {passive:true});
+  setTimeout(()=> items.forEach(show), 1500); // hard safety net
+
+  // headline line-lift
+  [...document.querySelectorAll('.hero h1 .lift')].forEach((el,i)=> setTimeout(()=> el.classList.add('in'), 150 + i*130));
+
+  // 3D mouse parallax on the hero card fan
+  const fan = document.getElementById('fan');
+  const hero = document.querySelector('.hero');
+  if (fan && hero && matchMedia('(hover:hover)').matches && matchMedia('(prefers-reduced-motion: no-preference)').matches){
+    let raf;
+    hero.addEventListener('mousemove', (e)=>{
+      const r = hero.getBoundingClientRect();
+      const px = (e.clientX - r.left) / r.width - .5;
+      const py = (e.clientY - r.top) / r.height - .5;
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(()=>{ fan.style.transform = `rotateY(${px*14}deg) rotateX(${-py*12}deg)`; });
+    });
+    hero.addEventListener('mouseleave', ()=>{ fan.style.transform = 'rotateY(0) rotateX(0)'; });
+  }
+
+  // mobile menu (static toggle)
+  const tg = document.querySelector('.nav__toggle');
+  if (tg) tg.addEventListener('click', ()=> alert('메뉴 — 홈 / 매거진 설정 / 카드뉴스 생성'));
+</script>
+</body>
+</html>

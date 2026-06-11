@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5">
+<title>스튜디오 — INK.</title>
+<link rel="stylesheet" href="assets/styles.css">
+<link rel="stylesheet" href="assets/studio.css">
+<script>document.documentElement.className += ' js';</script>
+</head>
+<body>
+
+<div class="studio">
+  <!-- ===== TOP BAR ===== -->
+  <header class="topbar">
+    <div class="topbar__brand">
+      <a class="home" href="index.html" title="홈으로">←</a>
+      INK<span style="color:var(--ink)">.</span>
+    </div>
+    <div class="topbar__sep"></div>
+
+    <nav class="stepper" id="stepper">
+      <button class="stepc is-on" data-go="1"><span class="si">1</span><span class="lbl">주제</span></button>
+      <span class="arr">→</span>
+      <button class="stepc" data-go="2" aria-disabled="true"><span class="si">2</span><span class="lbl">편집</span></button>
+      <span class="arr">→</span>
+      <button class="stepc" data-go="3" aria-disabled="true"><span class="si">3</span><span class="lbl">내보내기</span></button>
+    </nav>
+
+    <div class="topbar__right">
+      <button class="magsel" id="openDrawer">
+        <span class="sw" id="magSw"></span>
+        <span class="nm" id="magName">INK Daily</span>
+        <span class="ca">▾</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ===== STAGES ===== -->
+  <div class="stagewrap">
+
+    <!-- STAGE 1 · TOPIC -->
+    <section class="stage-pane is-active" id="pane1">
+      <div class="topic">
+        <div class="topic__head">
+          <span class="kicker">Step 1 · Topic</span>
+          <h1>어떤 주제로 만들까요?</h1>
+          <p>주제를 입력하거나 태그를 골라 ‘뉴스 크롤링’을 누르면 관련 기사를 모아와요.</p>
+        </div>
+
+        <div class="composer">
+          <form class="topicfield" onsubmit="return startCrawl(event)">
+            <span class="mg">⌕</span>
+            <input id="topicInput" type="text" autocomplete="off" placeholder="주제를 직접 입력 — 예: 기준금리, K-팝 컴백, 서울 전시">
+            <button class="btn btn--dark" type="submit" style="padding:13px 22px;">뉴스 크롤링 <span class="ar">→</span></button>
+          </form>
+          <div class="seltags" id="selTags" aria-label="선택한 태그"></div>
+          <div class="picker">
+            <div class="picker__row">
+              <div class="picker__lb">카테고리 — 분야 좁히기</div>
+              <div class="tagcloud">
+                <span class="ptag">정치</span><span class="ptag">경제</span><span class="ptag">사회</span><span class="ptag">문화</span>
+                <span class="ptag">IT·과학</span><span class="ptag">스포츠</span><span class="ptag">연예</span><span class="ptag">패션</span>
+                <span class="ptag">뷰티</span><span class="ptag">여행</span><span class="ptag">푸드</span><span class="ptag">라이프</span>
+              </div>
+            </div>
+            <div class="picker__row">
+              <div class="picker__lb">추천 태그 — 눌러서 추가</div>
+              <div class="tagcloud">
+                <span class="ptag kw">기준금리</span><span class="ptag kw">전기차</span><span class="ptag kw">서울전시</span>
+                <span class="ptag kw">월드컵</span><span class="ptag kw">생성형AI</span><span class="ptag kw">제철음식</span>
+                <span class="ptag kw">주말나들이</span><span class="ptag kw">K-팝</span><span class="ptag kw">물가</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- crawl -->
+        <div class="crawl" id="crawl">
+          <div class="crawl__head"><span class="spin"></span> <span id="crawlMsg">관련 기사를 모으는 중…</span></div>
+          <div class="crawl__bar"><i id="crawlBar"></i></div>
+          <div class="crawl__srcs" id="crawlSrcs">
+            <span class="crawl__src">네이버뉴스</span><span class="crawl__src">일간경제</span><span class="crawl__src">테크리포트</span>
+            <span class="crawl__src">컬처위클리</span><span class="crawl__src">도시신문</span><span class="crawl__src">스포츠데일리</span><span class="crawl__src">위켄드</span>
+          </div>
+          <div class="crawl__count" id="crawlCount">수집된 기사 0건</div>
+        </div>
+
+        <!-- results -->
+        <div class="results hidden" id="results">
+          <div class="resbar">
+            <h2>모아온 기사 <b>24</b>건 · <span id="resScope" style="color:var(--ink-3)">전체</span></h2>
+            <div class="sort"><span class="on">최신순</span><span>관련도순</span></div>
+          </div>
+          <div class="arts">
+            <div class="art" data-pick="조용하던 도심, 다시 붐비기 시작했다|사회|도시신문">
+              <div class="art__top"><span class="art__cat">사회</span><span class="art__date">2026.06.04</span></div>
+              <h3 class="art__title">조용하던 도심, 다시 붐비기 시작했다</h3>
+              <p class="art__sum">늘어난 야간 보행 인구가 도심 상권의 회복을 이끌고 있다는 분석이 나온다. 골목 상권에도 온기가 돌고 있다.</p>
+              <div class="art__foot"><span class="art__src">출처 · <b>도시신문</b></span><span class="art__make">이 기사로 만들기 →</span></div>
+            </div>
+            <div class="art" data-pick="기준금리 동결… 하반기 인하 가능성 열어둬|경제|일간경제">
+              <div class="art__top"><span class="art__cat">경제</span><span class="art__date">2026.06.04</span></div>
+              <h3 class="art__title">기준금리 동결… “하반기 인하 가능성 열어둬”</h3>
+              <p class="art__sum">한국은행이 기준금리를 현 수준에서 동결했다. 물가 둔화 흐름과 경기 회복세를 함께 고려한 결정이라는 분석이 나온다.</p>
+              <div class="art__foot"><span class="art__src">출처 · <b>일간경제</b></span><span class="art__make">이 기사로 만들기 →</span></div>
+            </div>
+            <div class="art" data-pick="생성형 AI, 이제 말보다 일을 한다|IT·과학|테크리포트">
+              <div class="art__top"><span class="art__cat">IT·과학</span><span class="art__date">2026.06.04</span></div>
+              <h3 class="art__title">생성형 AI, 이제 ‘말’보다 ‘일’을 한다</h3>
+              <p class="art__sum">단순 대화를 넘어 실제 업무를 대신 처리하는 에이전트형 AI가 빠르게 확산되고 있다. 기업들의 도입 경쟁도 치열해지는 모습이다.</p>
+              <div class="art__foot"><span class="art__src">출처 · <b>테크리포트</b></span><span class="art__make">이 기사로 만들기 →</span></div>
+            </div>
+            <div class="art" data-pick="미술관 밤 개장, 도심의 새로운 산책이 되다|문화|컬처위클리">
+              <div class="art__top"><span class="art__cat">문화</span><span class="art__date">2026.06.03</span></div>
+              <h3 class="art__title">미술관 밤 개장, 도심의 새로운 산책이 되다</h3>
+              <p class="art__sum">야간 개장을 도입한 미술관에 발길이 이어지고 있다. 늦은 저녁 전시를 즐기는 ‘문화 산책’이 흐름으로 자리잡는 분위기다.</p>
+              <div class="art__foot"><span class="art__src">출처 · <b>컬처위클리</b></span><span class="art__make">이 기사로 만들기 →</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- STAGE 2 · EDITOR -->
+    <section class="stage-pane" id="pane2">
+      <div class="editor">
+        <aside class="rail">
+          <div class="rail__lb">5컷 · 카드</div>
+          <div class="thumbs" id="thumbs">
+            <div class="thumb dark is-on"><span class="tnum">01 표지</span><div class="tt" id="th0">조용하던 도심, 다시 붐비기 시작했다</div></div>
+            <div class="thumb"><span class="tnum">02 본문</span><div class="tt" style="color:var(--ink)">늘어난 야간 보행 인구</div></div>
+            <div class="thumb"><span class="tnum">03 본문</span><div class="tt" style="color:var(--ink)">골목 상권에 도는 온기</div></div>
+            <div class="thumb"><span class="tnum">04 본문</span><div class="tt" style="color:var(--ink)">전문가가 보는 회복세</div></div>
+            <div class="thumb dark"><span class="tnum">05 CTA</span><div class="tt">팔로우하고 더 보기</div></div>
+          </div>
+          <div class="rail__add">＋ 카드 추가</div>
+        </aside>
+
+        <div class="stage">
+          <div class="stage__bar">
+            <div class="aiflag"><span class="dot"></span> AI가 5컷을 생성했어요 · 자유롭게 다듬어보세요</div>
+            <div class="zoom"><button>−</button><span>72%</span><button>+</button></div>
+          </div>
+          <div class="canvas">
+            <div class="imgslot">
+              <div class="ph">
+                <div class="ic">⤒</div>
+                <p>이미지를 올려주세요</p>
+                <span>저작권 보호를 위해 기사 사진은 자동으로 넣지 않아요</span>
+              </div>
+            </div>
+            <div class="grad"></div>
+            <div class="layer">
+              <div class="c-top"><span class="c-cat" id="cvCat">사회</span><span>01 / 05</span></div>
+              <div class="c-title" id="cvTitle">조용하던 도심,<br>다시 붐비기<br>시작했다</div>
+              <div class="c-src" id="cvSrc">출처 · 도시신문 · @ink.daily</div>
+            </div>
+          </div>
+          <div class="stage__nav">
+            <button class="btn btn--ghost btn--sm">← 이전 카드</button>
+            <button class="btn btn--ghost btn--sm">다음 카드 →</button>
+          </div>
+        </div>
+
+        <aside class="insp">
+          <div class="insp__head"><h3>표지 카드 편집</h3><span class="badge">01 / 05</span></div>
+          <div class="insp__body">
+            <div class="ig"><div class="ig__t">이미지</div><div class="btnrow"><button class="minib">⤒ 이미지 변경</button><button class="minib" style="flex:none; width:44px;">↺</button></div></div>
+            <div class="ig"><div class="ig__t">제목 텍스트</div><textarea class="ta">조용하던 도심, 다시 붐비기 시작했다</textarea></div>
+            <div class="ig"><div class="ig__t">글자색</div><div class="swrow"><span class="sw2 on" style="background:#fff"></span><span class="sw2" style="background:#111110"></span><span class="sw2" style="background:#e7d9b8"></span><span class="sw2" style="background:#b8c6e7"></span></div></div>
+            <div class="ig"><div class="ig__t">글자 크기</div><input class="range" type="range" min="0" max="100" value="62"><div class="rlabels"><span>S</span><span>42 PX</span><span>XL</span></div></div>
+            <div class="ig"><div class="ig__t">위치 · 정렬</div><div class="align"><button><span class="d"></span></button><button><span class="d"></span></button><button><span class="d"></span></button><button><span class="d"></span></button><button><span class="d"></span></button><button><span class="d"></span></button><button class="on"><span class="d"></span></button><button><span class="d"></span></button><button><span class="d"></span></button></div></div>
+            <div class="ig"><div class="ig__t">AI 다시 쓰기</div><button class="btn btn--ghost btn--sm" style="width:100%">↻ 이 카드 문구 다시 생성</button></div>
+          </div>
+          <div class="insp__foot">
+            <button class="btn btn--ghost btn--sm" style="flex:1" data-go="1">← 주제</button>
+            <button class="btn btn--dark btn--sm" style="flex:2" data-go="3">완성 · 내보내기 →</button>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- STAGE 3 · EXPORT -->
+    <section class="stage-pane" id="pane3">
+      <div class="export">
+        <div class="export__l">
+          <span class="done"><span class="o">✓</span> Ready to post</span>
+          <h2>피드에 올릴 준비가 됐어요</h2>
+          <p>인스타그램 캐러셀로 어떻게 보일지 미리 확인하고, 카드와 캡션을 받아 그대로 올리세요.</p>
+
+          <!-- instagram carousel preview -->
+          <div class="phone">
+            <div class="phone__bar"><span class="av"></span><span class="h">ink.daily</span><span class="more">⋯</span></div>
+            <div class="carousel" id="carousel">
+              <div class="carousel__track" id="track">
+                <div class="cslide" data-k="cover"></div>
+                <div class="cslide" data-k="body" data-t="늘어난 야간 보행 인구"></div>
+                <div class="cslide" data-k="body" data-t="골목 상권에 도는 온기"></div>
+                <div class="cslide" data-k="body" data-t="전문가가 보는 회복세"></div>
+                <div class="cslide" data-k="cta"></div>
+              </div>
+              <span class="carousel__count" id="csCount">1/5</span>
+              <button class="carousel__nav prev" onclick="slide(-1)">‹</button>
+              <button class="carousel__nav next" onclick="slide(1)">›</button>
+            </div>
+            <div class="dots" id="dots"></div>
+            <div class="phone__cap"><b>ink.daily</b> 조용하던 도심이 다시 붐비기 시작했습니다 …</div>
+          </div>
+        </div>
+
+        <div class="export__r">
+          <div class="zip">
+            <h3>전체 한 번에 받기</h3>
+            <p>5장의 카드를 ZIP 한 파일로 내려받아요.</p>
+            <button class="btn btn--lg">⤓ 전체 ZIP 다운로드</button>
+            <div class="meta"><span>INK-DAILY-0604.ZIP</span><span>5 PNG · 2.4MB</span></div>
+          </div>
+          <div class="panel">
+            <div class="panel__h"><h3>카드 개별 받기</h3><span class="tag">1080 × 1080</span></div>
+            <div class="panel__b">
+              <div class="dlrow">
+                <button class="minib">01 ⤓</button><button class="minib">02 ⤓</button><button class="minib">03 ⤓</button><button class="minib">04 ⤓</button><button class="minib">05 ⤓</button>
+              </div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel__h"><h3>캡션 · 해시태그</h3><button class="copy" id="copyCap">⧉ 전체 복사</button></div>
+            <div class="panel__b">
+              <p class="cap">조용하던 도심이 다시 붐비기 시작했습니다. 늘어난 야간 보행 인구가 도심 상권 회복을 이끌고 있다는 분석이 나옵니다. 오늘의 한 장면, INK.에서 정리했어요. ✦</p>
+              <div class="hashbox"><b>#카드뉴스</b> <b>#오늘의이슈</b> <b>#INK매거진</b> <b>#뉴스요약</b> #도심 #상권회복 #사회뉴스</div>
+              <p class="src-note">출처 · 도시신문 — 기사 제목·요약문을 바탕으로 제작. 사진은 직접 업로드한 이미지입니다.</p>
+            </div>
+          </div>
+          <div class="dlrow">
+            <button class="btn btn--ghost btn--sm" style="flex:1" data-go="2">← 편집으로</button>
+            <button class="btn btn--ghost btn--sm" style="flex:1" data-go="1">새 카드뉴스</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div><!-- /stagewrap -->
+</div>
+
+<!-- ===== GENERATING OVERLAY ===== -->
+<div class="genover" id="genover">
+  <div class="gcard"></div>
+  <h3>AI가 카드뉴스를 만들고 있어요</h3>
+  <p id="genMsg">5컷 구성을 짜는 중…</p>
+</div>
+
+<!-- ===== MAGAZINE DRAWER ===== -->
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" aria-label="매거진 설정">
+  <div class="drawer__head">
+    <h2>매거진 설정</h2>
+    <button class="x" id="closeDrawer">✕</button>
+  </div>
+  <div class="drawer__body">
+    <section class="fset">
+      <div class="fset__t"><span class="idx">01</span><h3>매거진 선택</h3></div>
+      <div class="mags">
+        <label class="mag-card is-active"><input type="radio" name="mag" hidden checked data-name="INK Daily" data-color="#111110"><span class="sw" style="background:#111110"></span><span class="nm">INK Daily</span></label>
+        <label class="mag-card"><input type="radio" name="mag" hidden data-name="소소한 기록" data-color="#f6f4ef"><span class="sw" style="background:#f6f4ef"></span><span class="nm">소소한 기록</span></label>
+        <label class="mag-card"><input type="radio" name="mag" hidden data-name="초록잡지" data-color="#1a2b22"><span class="sw" style="background:#1a2b22"></span><span class="nm">초록잡지</span></label>
+        <button type="button" class="mag-card add">＋ 추가</button>
+      </div>
+    </section>
+    <section class="fset">
+      <div class="fset__t"><span class="idx">02</span><h3>이름 · 로고</h3></div>
+      <div class="field"><label>매거진 이름</label><input class="input" type="text" value="INK Daily"></div>
+      <div class="row2">
+        <div class="field"><label>로고 텍스트</label><input class="input" type="text" value="INK."></div>
+        <div class="field"><label>인스타 핸들</label><input class="input" type="text" value="@ink.daily"></div>
+      </div>
+      <div class="field"><label>마지막 카드 로고 이미지</label><div class="uploader"><div class="ic">⤒</div><p>로고 업로드</p><span>PNG · 투명 배경 권장</span></div></div>
+    </section>
+    <section class="fset">
+      <div class="fset__t"><span class="idx">03</span><h3>멘트 · 해시태그</h3></div>
+      <div class="field"><label>마지막 카드 헤드라인</label><input class="input" type="text" value="팔로우하고 더 보기"></div>
+      <div class="field"><label>카피</label><textarea class="textarea">매일 한 편, 가볍게 읽는 오늘의 뉴스. 저장하고 친구에게 공유해요.</textarea></div>
+      <div class="field"><label>기본 해시태그</label>
+        <div class="taglist"><div class="t">#카드뉴스 <span>✕</span></div><div class="t">#오늘의이슈 <span>✕</span></div><div class="t">#INK매거진 <span>✕</span></div></div>
+        <input class="input" type="text" placeholder="태그 입력 후 Enter">
+      </div>
+    </section>
+    <section class="fset">
+      <div class="fset__t"><span class="idx">04</span><h3>색</h3></div>
+      <div class="field"><label>배경색</label><div class="swatches"><span class="swatch dark is-on" style="background:#111110"></span><span class="swatch light" style="background:#fff"></span><span class="swatch light" style="background:#f6f4ef"></span><span class="swatch dark" style="background:#1a2b22"></span><span class="swatch dark" style="background:#2a2438"></span></div></div>
+      <div class="field"><label>포인트색</label><div class="swatches"><span class="swatch light is-on" style="background:#fff"></span><span class="swatch dark" style="background:#111110"></span><span class="swatch dark" style="background:#9a8456"></span><span class="swatch dark" style="background:#7c8f6b"></span></div></div>
+    </section>
+  </div>
+  <div class="drawer__foot">
+    <button class="btn btn--dark" id="saveMag">저장</button>
+    <span class="note">브라우저에만 보관됨</span>
+  </div>
+</aside>
+
+<script src="assets/studio.js"></script>
+</body>
+</html>

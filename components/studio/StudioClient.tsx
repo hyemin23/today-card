@@ -41,6 +41,7 @@ export default function StudioClient() {
   const [caption, setCaption] = useState('');
   const [hashtags, setHashtags] = useState<string[]>([]);
   const [source, setSource] = useState('뉴스');
+  const [adminKey, setAdminKey] = useState<string | null>(null);
 
   const wrapRef = useRef<HTMLDivElement>(null);
   const genTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -86,6 +87,24 @@ export default function StudioClient() {
   }, [generating]);
 
   useEffect(() => () => { if (genTimeout.current) clearTimeout(genTimeout.current); }, []);
+
+  // admin mode: enter once via /studio?admin=KEY (persisted), then the editor
+  // shows the AI image button. Real access is still verified server-side.
+  useEffect(() => {
+    try {
+      const fromUrl = new URLSearchParams(window.location.search).get('admin');
+      if (fromUrl) {
+        localStorage.setItem('ink_admin', fromUrl);
+        // strip the secret from the URL so it doesn't linger in history / shared links
+        const url = new URL(window.location.href);
+        url.searchParams.delete('admin');
+        window.history.replaceState({}, '', url.pathname + url.search + url.hash);
+      }
+      setAdminKey(localStorage.getItem('ink_admin'));
+    } catch {
+      /* localStorage unavailable */
+    }
+  }, []);
 
   function setStage(n: number) {
     if (n > maxReached) return;
@@ -166,7 +185,7 @@ export default function StudioClient() {
         </section>
         <section className={`stage-pane ${stage === 2 ? 'is-active' : ''}`} tabIndex={-1} aria-label="2단계: 편집" aria-hidden={stage !== 2}>
           {cards.length > 0 && (
-            <EditorStage cards={cards} sel={sel} setSel={setSel} updateCard={updateCard} magazine={magazine} onGo={setStage} />
+            <EditorStage cards={cards} sel={sel} setSel={setSel} updateCard={updateCard} magazine={magazine} onGo={setStage} adminKey={adminKey} />
           )}
         </section>
         <section className={`stage-pane ${stage === 3 ? 'is-active' : ''}`} tabIndex={-1} aria-label="3단계: 내보내기" aria-hidden={stage !== 3}>

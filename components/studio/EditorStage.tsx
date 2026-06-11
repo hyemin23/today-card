@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useRef } from 'react';
+import { useId, useRef, useState } from 'react';
 import type { Card, Magazine } from '@/types/db';
 import CardFace, { alignIndex } from './CardFace';
 import { TEXT_COLORS } from './data';
@@ -25,6 +25,7 @@ export default function EditorStage({
   updateCard,
   magazine,
   onGo,
+  adminKey,
 }: {
   cards: Card[];
   sel: number;
@@ -32,9 +33,11 @@ export default function EditorStage({
   updateCard: (idx: number, patch: Partial<Card>) => void;
   magazine: Magazine;
   onGo: (n: number) => void;
+  adminKey?: string | null;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const titleId = useId();
+  const [imgBusy, setImgBusy] = useState(false);
   const card = cards[sel];
   if (!card) return null;
 
@@ -55,6 +58,26 @@ export default function EditorStage({
   function onResetImage() {
     releaseImage(card.imageUrl);
     updateCard(sel, { imageUrl: null });
+  }
+  // admin only — server re-verifies the key before any (paid) generation
+  async function genImage() {
+    if (!adminKey || imgBusy) return;
+    setImgBusy(true);
+    try {
+      const res = await fetch('/api/image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
+        body: JSON.stringify({ title: card.title, category: card.category || '뉴스' }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || '생성 실패');
+      releaseImage(card.imageUrl);
+      updateCard(sel, { imageUrl: data.image });
+    } catch (e: any) {
+      alert('AI 이미지 생성 실패: ' + (e.message || ''));
+    } finally {
+      setImgBusy(false);
+    }
   }
 
   return (
@@ -106,6 +129,18 @@ export default function EditorStage({
               <button className="minib" onClick={() => fileRef.current?.click()}>⤒ 이미지 변경</button>
               <button className="minib" style={{ flex: 'none', width: 44 }} aria-label="이미지 제거" onClick={onResetImage}>↺</button>
             </div>
+            {adminKey && (
+              <button
+                className="minib"
+                style={{ width: '100%', marginTop: 8 }}
+                onClick={genImage}
+                aria-disabled={imgBusy}
+                aria-busy={imgBusy}
+                title="기사 주제 기반 흑백 에디토리얼 배경을 생성합니다 (관리자 전용)"
+              >
+                {imgBusy ? '◌ AI 이미지 생성 중…' : '✨ AI 이미지 생성 (관리자)'}
+              </button>
+            )}
             <input ref={fileRef} type="file" accept="image/*" hidden onChange={onUpload} aria-label="이미지 파일 선택" />
           </div>
           <div className="ig">

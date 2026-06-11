@@ -174,3 +174,46 @@ export async function crawlNews(query: string, category?: string): Promise<Artic
 
   return MOCK;
 }
+
+/**
+ * Fetch an article page and extract its main body text, so the card generator
+ * can summarize the *whole* article (not just the 2-sentence search snippet).
+ * Returns '' on any failure — caller falls back to the snippet.
+ * Only the text is used, and it's summarized (not republished), with the source
+ * always attributed.
+ */
+export async function fetchArticleBody(url?: string): Promise<string> {
+  if (!url || !/^https?:\/\//.test(url)) return '';
+  try {
+    const html = await fetchText(url, 7000);
+    const $ = load(html);
+    $('script, style, figcaption, .link_figure, .reporter_area').remove();
+
+    const containers = ['.article_view', '[data-cy="articleBody"]', '.news_view', '#harmonyContainer', '#articleBody', 'article'];
+    let text = '';
+    for (const sel of containers) {
+      const node = $(sel).first();
+      if (!node.length) continue;
+      const parts: string[] = [];
+      node.find('p, [dmcf-ptype="general"]').each((_, p) => {
+        const t = tidy($(p).text());
+        if (t.length > 15) parts.push(t);
+      });
+      const joined = parts.join('\n');
+      if (joined.length > text.length) text = joined;
+      if (text.length > 400) break;
+    }
+    // fallback: any reasonably long <p> on the page
+    if (text.length < 200) {
+      const parts: string[] = [];
+      $('p').each((_, p) => { const t = tidy($(p).text()); if (t.length > 25) parts.push(t); });
+      if (parts.join('\n').length > text.length) text = parts.join('\n');
+    }
+    // last resort: og:description
+    if (text.length < 80) text = tidy($('meta[property="og:description"]').attr('content') || '');
+
+    return text.slice(0, 3000);
+  } catch {
+    return '';
+  }
+}

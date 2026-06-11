@@ -1,22 +1,22 @@
 /**
- * Editorial cover-image generation via Gemini's native image model.
- * Deliberately produces an ABSTRACT, monochrome, magazine-style background —
- * never a literal depiction of the news event or real people — so it stays
- * on-brand (B&W editorial) and never fabricates a misleading "news photo".
+ * Topic-driven cover-image generation via Gemini's native image model.
+ * Produces a striking, HOOKING magazine-cover image that clearly evokes the
+ * article's subject — high-contrast black-and-white so it stays on-brand
+ * (B&W editorial) and layers cleanly under the cover card's dark gradient.
+ * Avoids text/logos and specific real identifiable individuals.
  *
- * Admin-only: callers must pass the shared admin key, verified in the route.
+ * Admin-only: gated by the admin session cookie, verified in the route.
  */
 
 const MODEL = process.env.IMAGE_MODEL || 'gemini-2.5-flash-image';
 
 function buildPrompt(title: string, category: string): string {
   return [
-    'A minimal, abstract black-and-white editorial magazine cover background.',
-    `Mood/theme inspired by this Korean news topic: "${title}" (category: ${category}).`,
-    'Monochrome, high-contrast, fine film grain, subtle geometric or textural composition.',
-    'Photographic-art / fine-art aesthetic, square composition, lots of negative space.',
-    'STRICT: no text, no letters, no words, no numbers, no logos, no watermarks,',
-    'no recognizable real people, no faces, no literal depiction of a real event.',
+    `A striking, eye-catching editorial magazine-cover image that clearly represents this Korean news topic: "${title}" (category: ${category}).`,
+    'Dramatic high-contrast BLACK AND WHITE, bold cinematic composition with a strong central subject or scene that visually evokes the topic, photojournalistic / editorial style, magazine-cover energy that immediately hooks the viewer.',
+    'The subject must clearly relate to the topic — avoid generic abstract patterns.',
+    'Leave some darker negative space toward the lower area so overlaid white headline text stays readable.',
+    'STRICT: no text, no letters, no words, no numbers, no logos, no watermarks; do not depict specific real, identifiable public figures.',
   ].join(' ');
 }
 

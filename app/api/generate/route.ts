@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateCards } from '@/lib/ai';
+import { fetchArticleBody } from '@/lib/news';
 import { getServerSupabase, getServiceSupabase } from '@/lib/supabase/server';
 import type { Article } from '@/types/db';
 
 export const dynamic = 'force-dynamic';
+export const maxDuration = 30; // article body fetch + LLM
 
 const DAILY_LIMIT = 10;
 
@@ -43,7 +45,10 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const result = await generateCards(article);
+    // pull the full article body so cards/caption summarize the whole piece,
+    // not just the 2-sentence search snippet (falls back to snippet on failure)
+    const body = await fetchArticleBody(article.sourceUrl);
+    const result = await generateCards(article, body);
     // log after success so failed generations don't burn quota
     if (owner && svc) await svc.from('generation_log').insert({ owner });
     return NextResponse.json(result);

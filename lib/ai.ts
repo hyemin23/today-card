@@ -8,7 +8,7 @@ import type { Article, Card, GenerateResult } from '@/types/db';
  * Output contract (validate with zod in production):
  *   { cards: Card[5], caption: string, hashtags: string[] }
  */
-export async function generateCards(article: Article): Promise<GenerateResult> {
+export async function generateCards(article: Article, body?: string): Promise<GenerateResult> {
   const apiKey = process.env.LLM_API_KEY;
 
   if (!apiKey) {
@@ -16,18 +16,22 @@ export async function generateCards(article: Article): Promise<GenerateResult> {
   }
 
   const system = [
-    '당신은 한국어 카드뉴스 에디터입니다.',
-    '주어진 기사 제목·요약문만으로 인스타그램 카드뉴스를 만듭니다.',
+    '당신은 한국어 시사 카드뉴스 에디터입니다. 주어진 기사를 정보성 카드뉴스로 요약합니다.',
     '반드시 cards 배열에 정확히 5개의 카드를 순서대로 담습니다:',
-    '- 1번: kind="cover" — 후킹되는 표지 헤드라인 한 줄(title). body 없음.',
-    '- 2,3,4번: kind="body" — 핵심 요지 한 문장씩. title(소제목) + body(한두 문장).',
-    '- 5번: kind="cta" — 팔로우 유도 문구(title). body 없음.',
+    '- 1번 kind="cover": 호기심을 자극하는 표지 헤드라인 한 줄(title). body는 빈 문자열.',
+    '- 2,3,4번 kind="body": 기사의 핵심을 서로 다른 3개 포인트로 나눠 요약. 각 카드는 정보성 콘텐츠여야 합니다.',
+    '   · title = 한눈에 들어오는 소제목(공백 포함 14자 이내).',
+    '   · body = 그 포인트를 설명하는 1~2문장(공백 포함 95자 이내). 본문의 구체적 사실·수치·인용을 담아 정보 가치를 높이세요.',
+    '- 5번 kind="cta": 팔로우 유도 문구(title). body는 빈 문자열.',
     'kind 값은 반드시 "cover" | "body" | "cta" 중 하나만 사용합니다.',
-    '과장·허위 금지. 제목·요약문 범위를 벗어난 사실을 추가하지 마세요.',
-    'JSON으로만 응답: {"cards":[{"kind","title","body"}], "caption":"인스타 캡션 한 문단", "hashtags":["#태그", ...]}',
+    'caption: 기사 전체를 읽기 좋게 요약한 인스타그램 캡션. 첫 문장은 전체를 압축한 요지, 이어서 핵심 포인트를 줄바꿈(\\n)으로 정리해 가독성을 높이세요. 200~400자 정도로 충분히 길어도 됩니다.',
+    'hashtags: 주제와 직접 관련된 한글 해시태그 5~8개.',
+    '규칙: 기사 본문에 근거한 사실만 사용. 과장·허위·본문 밖 사실 추가 금지. 수치·고유명사는 본문 그대로.',
+    'JSON으로만 응답: {"cards":[{"kind","title","body"}], "caption":"...", "hashtags":["#태그", ...]}',
   ].join('\n');
 
-  const user = `제목: ${article.title}\n요약: ${article.summary}\n출처: ${article.source}\n카테고리: ${article.category}`;
+  const source = (body && body.length > 120 ? body : article.summary).slice(0, 3000);
+  const user = `제목: ${article.title}\n출처: ${article.source} / 카테고리: ${article.category}\n본문:\n${source}`;
 
   // OpenAI-compatible Chat Completions. Defaults to Google Gemini's compat
   // endpoint; override LLM_BASE_URL/LLM_MODEL for any other provider.
@@ -95,16 +99,19 @@ function normalize(parsed: any, article: Article): GenerateResult {
 }
 
 function mockGenerate(article: Article): GenerateResult {
+  const sentences = article.summary.split(/(?<=[.!?다])\s+/).filter(Boolean);
+  const s0 = sentences[0] || article.summary;
+  const s1 = sentences[1] || article.summary;
   const cards: Card[] = [
     { idx: 0, kind: 'cover', title: article.title, imageUrl: null, textColor: '#ffffff', fontScale: 1, align: '6' },
-    { idx: 1, kind: 'body', title: '핵심 한 줄', body: article.summary.split('. ')[0] || article.summary, imageUrl: null, textColor: '#111110', fontScale: 1, align: '6' },
-    { idx: 2, kind: 'body', title: '무슨 일이', body: article.summary, imageUrl: null, textColor: '#111110', fontScale: 1, align: '6' },
-    { idx: 3, kind: 'body', title: '왜 중요한가', body: '전문가들은 이 흐름이 이어질 것으로 본다.', imageUrl: null, textColor: '#111110', fontScale: 1, align: '6' },
+    { idx: 1, kind: 'body', title: '무슨 일이', body: s0, imageUrl: null, textColor: '#111110', fontScale: 1, align: '6' },
+    { idx: 2, kind: 'body', title: '핵심 내용', body: s1, imageUrl: null, textColor: '#111110', fontScale: 1, align: '6' },
+    { idx: 3, kind: 'body', title: '왜 중요한가', body: '이 사안은 앞으로의 흐름에 영향을 줄 수 있어 눈여겨볼 필요가 있습니다.', imageUrl: null, textColor: '#111110', fontScale: 1, align: '6' },
     { idx: 4, kind: 'cta', title: '팔로우하고 더 보기', hashtags: ['#카드뉴스', '#오늘의이슈', '#INK매거진'], imageUrl: null, textColor: '#ffffff', fontScale: 1, align: '6' },
   ];
   return {
     cards,
-    caption: `${article.summary} 오늘의 한 장면, INK.에서 정리했어요. ✦`,
+    caption: `${s0}\n\n• ${s1}\n• 오늘의 이슈를 한눈에 정리했어요.\n\n출처 · ${article.source}`,
     hashtags: ['#카드뉴스', '#오늘의이슈', '#INK매거진', '#뉴스요약'],
   };
 }

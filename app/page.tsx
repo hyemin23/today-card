@@ -45,7 +45,8 @@ export default function LandingPage() {
             </div>
 
             {/* card fan (3D) */}
-            <div className="fan scene" id="fan" aria-hidden="true">
+            <div className="fan-stage" aria-hidden="true">
+            <div className="fan" id="fan">
               <div className="cn c1">
                 <div className="mock">
                   <div className="mock__top"><span className="mock__cat">Culture</span><span className="mock__num">03 / 05</span></div>
@@ -72,6 +73,7 @@ export default function LandingPage() {
                 </div>
               </div>
               <div className="fan__badge"><span>✦</span> 약 10–15초 자동 생성</div>
+            </div>
             </div>
           </div>
         </div>
@@ -102,7 +104,7 @@ export default function LandingPage() {
                 <p>원하는 주제를 입력하거나 추천 태그를 누르면 관련 뉴스를 실시간으로 모아와요. 마음에 드는 기사를 누르면 AI가 한국어 카드뉴스 5컷을 자동 생성합니다. 약 10–15초면 초안 완성.</p>
                 <div className="meta">→ 주제 입력 · 태그 선택 · 크롤링 · AI 생성</div>
               </div>
-              <div className="step__side">제목·요약문만 사용해 깔끔하게.</div>
+              <div className="step__side">기사를 요약해 핵심만 담아요.</div>
             </div>
             <div className="step reveal">
               <div className="step__n">02<small>EDIT</small></div>
@@ -159,7 +161,7 @@ export default function LandingPage() {
                 <h2>알아두면 좋아요</h2>
               </div>
               <div className="rules" data-stagger>
-                <div className="rule-row"><span className="ri">01</span><p>카드 내용은 <b>검색으로 제공되는 기사 제목·요약문</b>만으로 만들어요. 기사 전문을 따로 가져오지 않습니다.</p></div>
+                <div className="rule-row"><span className="ri">01</span><p>카드 내용은 <b>기사를 AI가 요약</b>해 만들어요. 원문은 <b>출처 링크</b>로 확인할 수 있어요.</p></div>
                 <div className="rule-row"><span className="ri">02</span><p>매거진은 <b>내 브라우저에만 저장</b>돼요. 다른 사람에겐 보이지 않아요.</p></div>
                 <div className="rule-row"><span className="ri">03</span><p>기사 출처(언론사)는 <b>캡션에 자동으로 표시</b>됩니다.</p></div>
                 <div className="rule-row"><span className="ri">04</span><p><b>저작권 보호를 위해 기사 사진은 자동으로 넣지 않아요.</b> 사진은 직접 올려주세요.</p></div>

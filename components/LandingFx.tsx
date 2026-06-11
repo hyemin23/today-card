@@ -63,9 +63,13 @@ export default function LandingFx() {
       });
     };
     const onLeave = () => {
-      if (fan) fan.style.transform = 'rotateY(0) rotateX(0)';
+      if (fan) {
+        fan.style.transform = 'rotateY(0) rotateX(0)';
+        fan.style.willChange = 'auto';
+      }
     };
-    if (canHover && hero) {
+    if (canHover && hero && fan) {
+      fan.style.willChange = 'transform';
       hero.addEventListener('mousemove', onMove);
       hero.addEventListener('mouseleave', onLeave);
     }
@@ -75,10 +79,12 @@ export default function LandingFx() {
       window.removeEventListener('scroll', sweep);
       clearTimeout(safety);
       liftTimers.forEach(clearTimeout);
+      cancelAnimationFrame(raf);
       if (hero) {
         hero.removeEventListener('mousemove', onMove);
         hero.removeEventListener('mouseleave', onLeave);
       }
+      if (fan) fan.style.willChange = 'auto';
     };
   }, []);
 

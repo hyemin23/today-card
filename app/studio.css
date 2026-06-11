@@ -228,7 +228,7 @@ body.studio-body { height: 100%; background: var(--wash); overflow: hidden; }
 .panel__h .copy { font-size: 11.5px; font-weight: 600; display: flex; gap: 6px; align-items: center; cursor: pointer; }
 .panel__h .copy:hover { text-decoration: underline; }
 .panel__b { padding: 16px 18px; }
-.cap { font-size: 13px; line-height: 1.65; color: var(--ink-2); }
+.cap { font-size: 13px; line-height: 1.65; color: var(--ink-2); white-space: pre-line; }
 .hashbox { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 13px; color: var(--ink-3); line-height: 1.7; }
 .hashbox b { color: var(--ink); font-weight: 500; }
 .src-note { font-family: var(--mono); font-size: 10.5px; color: var(--ink-3); margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); letter-spacing: .03em; line-height: 1.6; }

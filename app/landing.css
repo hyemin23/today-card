@@ -35,11 +35,13 @@
 .hero__note .d { width:5px;height:5px;border-radius:50%;background:var(--ink);}
 
 /* card fan — 3D */
-.fan { position: relative; height: 480px; transform-style: preserve-3d; transition: transform .2s var(--ease); }
+/* perspective lives on the parent stage so #fan's own rotateY/X tilt renders with real depth */
+.fan-stage { display: block; perspective: 1400px; perspective-origin: 50% 40%; }
+.fan { position: relative; height: 480px; transform-style: preserve-3d; transition: transform .12s linear; }
 .fan .cn { position: absolute; width: 232px; box-shadow: 0 30px 60px -28px rgba(17,17,16,.45); transition: transform .4s var(--ease), box-shadow .4s var(--ease); }
-.fan .c1 { left: 0;   top: 40px;  transform: rotate(-8deg) translateZ(-40px); z-index: 1; }
-.fan .c2 { left: 27%; top: 0;     transform: rotate(-1deg) translateZ(60px);  z-index: 3; }
-.fan .c3 { left: 52%; top: 56px;  transform: rotate(7deg)  translateZ(10px);  z-index: 2; }
+.fan .c1 { left: 0;   top: 40px;  transform: rotate(-8deg) translateZ(-40px); z-index: 1; box-shadow: 0 18px 40px -26px rgba(17,17,16,.35); }
+.fan .c2 { left: 27%; top: 0;     transform: rotate(-1deg) translateZ(60px);  z-index: 3; box-shadow: 0 40px 80px -30px rgba(17,17,16,.5); }
+.fan .c3 { left: 52%; top: 56px;  transform: rotate(7deg)  translateZ(10px);  z-index: 2; box-shadow: 0 28px 58px -28px rgba(17,17,16,.42); }
 .fan__badge {
   position: absolute; right: 0; bottom: 4px; z-index: 5;
   background: var(--ink); color: var(--paper);
@@ -125,8 +127,16 @@
 
 @media (max-width: 920px){
   .hero__grid { grid-template-columns: 1fr; gap: 30px; }
+  /* clip the decorative fan to the hero so its absolutely-positioned cards
+     can never push the page wider than the viewport (no horizontal scroll) */
+  .hero { overflow-x: clip; }
   .fan { height: 380px; margin-top: 10px; }
   .fan .cn { width: 210px; }
   .notes__grid { grid-template-columns: 1fr; gap: 36px; }
   .trio { grid-template-columns: 1fr; }
+}
+
+/* small phones (320–560px): shrink the card fan so it sits comfortably */
+@media (max-width: 560px){
+  .fan .cn { width: min(210px, 46vw); }
 }

@@ -277,13 +277,13 @@ export default function EditorStage({
             <textarea ref={titleTaRef} id={titleId} className="ta" value={card.title} onChange={(e) => updateCard(sel, { title: e.target.value })} placeholder="비우면 카드에서 사라져요" />
             <p className="emhint">드래그 후 <b>B</b>·형광펜, 직접 입력도 OK — **굵게** ==형광펜==</p>
           </div>
-          {card.kind === 'body' && (
+          {(card.kind === 'body' || card.kind === 'cta') && (
             <div className="ig">
               <div className="ig__row">
-                <label className="ig__t" htmlFor={`${titleId}-body`}>본문 텍스트 <span style={{ color: 'var(--ink-3)', fontWeight: 400 }}>· 비우면 삭제</span></label>
+                <label className="ig__t" htmlFor={`${titleId}-body`}>{card.kind === 'cta' ? '카피 문구' : '본문 텍스트'} <span style={{ color: 'var(--ink-3)', fontWeight: 400 }}>· 비우면 삭제</span></label>
                 {emphasisTools(bodyTaRef, 'body')}
               </div>
-              <textarea ref={bodyTaRef} id={`${titleId}-body`} className="ta" style={{ minHeight: 100 }} value={card.body || ''} onChange={(e) => updateCard(sel, { body: e.target.value })} placeholder="비우면 카드에서 사라져요" />
+              <textarea ref={bodyTaRef} id={`${titleId}-body`} className="ta" style={{ minHeight: card.kind === 'cta' ? 70 : 100 }} value={card.body || ''} onChange={(e) => updateCard(sel, { body: e.target.value })} placeholder={card.kind === 'cta' ? '매거진 설정의 카피가 기본값이에요' : '비우면 카드에서 사라져요'} />
             </div>
           )}
           {card.kind === 'cover' && (
@@ -312,6 +312,14 @@ export default function EditorStage({
                   onClick={() => updateCard(sel, { textColor: c })}
                 />
               ))}
+              <label className={`sw2 sw2--custom ${TEXT_COLORS.includes(card.textColor) ? '' : 'on'}`} title="원하는 색 직접 선택">
+                <input
+                  type="color"
+                  value={card.textColor}
+                  onChange={(e) => updateCard(sel, { textColor: e.target.value })}
+                  aria-label="글자색 직접 선택"
+                />
+              </label>
             </div>
           </div>
           <div className="ig">

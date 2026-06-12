@@ -137,6 +137,9 @@ export default function CardFace({ card, magazine, ctx, hint = true }: { card: C
             const tags = (card.hashtags || []).filter(Boolean);
             return (
               <>
+                {card.body && (
+                  <div style={{ fontSize: ctx === 'canvas' ? 14 : 10.5, lineHeight: 1.6, opacity: 0.8, whiteSpace: 'pre-line', marginTop: ctx === 'canvas' ? 12 : 8 }}>{em(card.body)}</div>
+                )}
                 <div style={{ height: 1, background: 'currentColor', opacity: 0.18, margin: `${ctx === 'canvas' ? 16 : 10}px 0` }} />
                 {tags.length > 0 && <div style={{ fontSize: ctx === 'canvas' ? 13 : 10, opacity: 0.7, lineHeight: 1.6 }}>{tags.join(' ')}</div>}
                 {magazine.handle && !card.hideHandle && <div style={{ ...mono, fontSize: ctx === 'canvas' ? 11 : 9, opacity: 0.55, marginTop: 8 }}>{magazine.handle} ↗</div>}

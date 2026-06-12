@@ -274,6 +274,15 @@ export default function StudioClient() {
       // the LLM writes a hook-style cover headline — keep it; the raw article
       // title is only the fallback (and stays reachable via 원래 문구 되돌리기)
       if (!built[0].title.trim()) built[0].title = article.title;
+      // the CTA card is the magazine's branded sign-off — drawer settings win
+      const cta = built.find((c) => c.kind === 'cta');
+      if (cta) {
+        if (magazine.ctaHeadline.trim()) cta.title = magazine.ctaHeadline;
+        if (magazine.ctaCopy.trim()) cta.body = magazine.ctaCopy;
+        if (magazine.hashtags.length) {
+          cta.hashtags = [...new Set([...magazine.hashtags, ...(cta.hashtags || [])])].slice(0, 5);
+        }
+      }
       setCards(built);
       setOriginalCards(built.map((c) => ({ ...c })));
       setCaption(final.caption || '');
@@ -289,6 +298,22 @@ export default function StudioClient() {
 
   function retryGenerate() {
     if (lastArticle.current) pickArticle(lastArticle.current, { force: true });
+  }
+
+  /** Drawer save — CTA text settings flow into the live CTA card, but only the
+      fields the user actually changed (hand-edited card text stays untouched). */
+  function saveMagazine(next: Magazine) {
+    setCards((cs) =>
+      cs.map((c) => {
+        if (c.kind !== 'cta') return c;
+        const patch: Partial<Card> = {};
+        if (next.ctaHeadline !== magazine.ctaHeadline) patch.title = next.ctaHeadline;
+        if (next.ctaCopy !== magazine.ctaCopy) patch.body = next.ctaCopy;
+        if (next.hashtags.join(' ') !== magazine.hashtags.join(' ')) patch.hashtags = next.hashtags;
+        return Object.keys(patch).length ? { ...c, ...patch } : c;
+      })
+    );
+    setMagazine(next);
   }
 
   return (
@@ -327,7 +352,7 @@ export default function StudioClient() {
       </div>
 
       <GenOverlay show={generating} onCancel={cancelGenerate} />
-      <MagazineDrawer open={drawerOpen} current={magazine} onClose={() => setDrawerOpen(false)} onSave={setMagazine} />
+      <MagazineDrawer open={drawerOpen} current={magazine} onClose={() => setDrawerOpen(false)} onSave={saveMagazine} />
     </div>
   );
 }

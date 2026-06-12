@@ -304,6 +304,16 @@ body.studio-body { height: 100%; background: var(--wash); overflow: hidden; }
 .swatch.is-on.dark::after { color: #fff; }
 .swatch.is-on.light::after { color: #111; }
 
+/* free color picker — rainbow swatch wrapping a native <input type=color> */
+.swatch--custom, .sw2--custom {
+  background: conic-gradient(#e66 0deg, #eda 70deg, #8c6 140deg, #6bc 210deg, #86c 280deg, #e66 360deg);
+  position: relative; overflow: hidden; cursor: pointer; display: inline-block;
+}
+.swatch--custom input, .sw2--custom input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.swatch--custom.is-on, .sw2--custom.on { box-shadow: 0 0 0 2px var(--paper), 0 0 0 4px var(--ink); }
+.swatch--custom.is-on::after { content: "✓"; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.6); }
+.swatch--custom:has(input:focus-visible), .sw2--custom:has(input:focus-visible) { outline: 2.5px solid var(--ink); outline-offset: 2px; }
+
 /* generating overlay */
 .genover { position: fixed; inset: 0; background: rgba(246,244,239,.92); backdrop-filter: blur(4px); z-index: 70; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 22px; }
 .genover.show { display: flex; animation: fadeUp .3s var(--ease); }

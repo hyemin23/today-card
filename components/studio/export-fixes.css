@@ -1,0 +1,56 @@
+/* Export-stage fixes/UX additions — imported only by ExportStage.tsx. */
+
+/* ---- visible render/download status near the buttons ---- */
+/* kept mounted (min-height) so the aria-live region announces reliably */
+.export-status {
+  min-height: 18px;
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--ink-2);
+}
+.export-status--err {
+  color: #b3261e;
+  font-weight: 600;
+}
+
+/* ---- carousel touch swipe ---- */
+/* claim horizontal pans for the swipe, let vertical page scroll through */
+.carousel__track {
+  touch-action: pan-y;
+}
+
+/* ---- share-capable devices: ZIP becomes the secondary action ---- */
+.zip .btn.zip__alt {
+  margin-top: 9px;
+  background: transparent;
+  color: var(--paper);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+}
+.zip .btn.zip__alt:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--paper);
+}
+
+/* ---- mobile-only ZIP hint ---- */
+.zip__hint {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .zip__hint {
+    display: block;
+    margin-top: 10px;
+    font-size: 11.5px;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.6);
+  }
+
+  /* 28px arrow buttons → ≥40px touch target, same visual size
+     (.carousel__nav is already position:absolute in studio.css) */
+  .carousel__nav::after {
+    content: '';
+    position: absolute;
+    inset: -7px; /* 28px + 2×7px = 42px hit area */
+  }
+}

@@ -244,6 +244,13 @@ input, textarea, select { font-family: inherit; font-size: inherit; color: inher
 }
 .cn--ink { background: var(--ink); color: var(--paper); border-color: var(--ink); }
 
+/* ---- TextRotate (21st.dev danielpetho/text-rotate, Tailwind → plain CSS) ---- */
+.trot { display: inline-flex; flex-wrap: wrap; white-space: pre-wrap; vertical-align: bottom; }
+.trot__seq { display: inline-flex; flex-wrap: wrap; }
+.trot__seq--lines { flex-direction: column; width: 100%; }
+.trot__word { display: inline-flex; }
+.trot__char { display: inline-block; }
+
 /* responsive nav collapse */
 .nav__toggle { display: none; }
 @media (max-width: 860px) {

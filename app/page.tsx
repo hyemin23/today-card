@@ -4,6 +4,7 @@ import Nav from '@/components/Nav';
 import Footer from '@/components/Footer';
 import LandingFx from '@/components/LandingFx';
 import HeroTopicForm from '@/components/HeroTopicForm';
+import { TextRotate } from '@/components/ui/TextRotate';
 
 const CATS = ['정치', '경제', '사회', '문화', 'IT·과학', '스포츠', '연예', '패션', '뷰티', '여행', '푸드', '라이프'];
 
@@ -25,7 +26,12 @@ export default function LandingPage() {
               </div>
               <h1>
                 <span className="line"><span className="lift">주제만 입력하면,</span></span>
-                <span className="line"><span className="lift"><span className="mark">카드뉴스</span>가 완성돼요</span></span>
+                <span className="line"><span className="lift"><span className="mark"><TextRotate
+                  texts={['카드뉴스', '스토리', '콘텐츠']}
+                  rotationInterval={2800}
+                  staggerDuration={0.035}
+                  splitBy="characters"
+                /></span>가 완성돼요</span></span>
               </h1>
               <p className="hero__sub lead reveal">
                 원하는 <b>주제를 입력</b>하거나 <b>태그를 선택</b>하면 관련 뉴스를 모아와요. 마음에 드는 기사를 고르면 AI가 5컷 카드뉴스를 뚝딱 만들어 드립니다.

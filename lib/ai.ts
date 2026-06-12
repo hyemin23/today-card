@@ -8,7 +8,7 @@ import type { Article, Card, GenerateResult } from '@/types/db';
  * Output contract (validate with zod in production):
  *   { cards: Card[5], caption: string, hashtags: string[] }
  */
-export async function generateCards(article: Article, body?: string): Promise<GenerateResult> {
+export async function generateCards(article: Article, body?: string, tone?: string): Promise<GenerateResult> {
   const apiKey = process.env.LLM_API_KEY;
 
   if (!apiKey) {
@@ -16,6 +16,9 @@ export async function generateCards(article: Article, body?: string): Promise<Ge
   }
 
   const system = [
+    ...(tone
+      ? [`문체 지침(벤치마킹 스타일 — 다른 규칙과 충돌하지 않는 선에서 최우선 적용): ${tone}`]
+      : []),
     '당신은 한국어 시사 카드뉴스 에디터입니다. 주어진 기사를 정보성 카드뉴스로 요약합니다.',
     '독자는 인스타그램 캐러셀을 빠르게 넘기며 강조된 부분만 읽습니다 — 강조와 후킹이 핵심입니다.',
     '반드시 cards 배열에 정확히 5개의 카드를 순서대로 담습니다:',

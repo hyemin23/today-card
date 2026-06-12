@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: '관리자만 이미지를 생성할 수 있어요. /admin에서 로그인하세요.' }, { status: 403 });
   }
 
-  let body: { title?: string; category?: string; style?: string };
+  let body: { title?: string; category?: string; style?: string; imageStyle?: string };
   try {
     body = await req.json();
   } catch {
@@ -26,9 +26,10 @@ export async function POST(req: NextRequest) {
   const title = (body.title || '').trim();
   if (!title) return NextResponse.json({ error: 'title required' }, { status: 400 });
   const style = body.style === 'trend' ? 'trend' : 'editorial';
+  const customLook = typeof body.imageStyle === 'string' ? body.imageStyle.slice(0, 600).trim() : '';
 
   try {
-    const image = await generateCardImage(title, body.category || '뉴스', style);
+    const image = await generateCardImage(title, body.category || '뉴스', style, customLook || undefined);
     return NextResponse.json({ image });
   } catch (e: any) {
     return NextResponse.json({ error: e.message || 'image generation failed' }, { status: 502 });

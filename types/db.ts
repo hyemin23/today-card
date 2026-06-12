@@ -9,6 +9,11 @@ export interface Magazine {
   logoText: string;
   logoUrl?: string | null;
   coverStyle?: CoverStyle;
+  /** benchmark style profile (계정 분석 결과) — overrides tone/image direction when set */
+  benchName?: string;
+  benchSummary?: string;
+  benchTone?: string;
+  benchImagePrompt?: string;
   handle: string;
   ctaHeadline: string;
   ctaCopy: string;

@@ -312,6 +312,20 @@ body.studio-body { height: 100%; background: var(--wash); overflow: hidden; }
 .stylecard b { font-size: 13.5px; }
 .stylecard span { font-size: 11.5px; color: var(--ink-3); line-height: 1.45; }
 
+/* benchmark account analysis */
+.bench { margin-top: 14px; border: 1px dashed var(--line-2); border-radius: var(--radius); padding: 14px; }
+.bench__t { font-size: 12.5px; font-weight: 600; color: var(--ink-2); margin-bottom: 10px; }
+.bench__row { display: flex; gap: 8px; }
+.bench__row .input { flex: 1; }
+.bench__row .btn { flex: none; }
+.bench__alt { display: block; margin-top: 8px; font-size: 12px; color: var(--ink-3); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.bench__alt:hover { color: var(--ink); }
+.bench__msg { font-size: 12px; color: #8a4b08; margin-top: 8px; }
+.bench__applied { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: var(--wash); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 12px; }
+.bench__applied b { font-size: 13px; display: block; }
+.bench__applied span { font-size: 11.5px; color: var(--ink-3); }
+.bench__applied .minib { flex: none; padding: 7px 12px; }
+
 /* free color picker — rainbow swatch wrapping a native <input type=color> */
 .swatch--custom, .sw2--custom {
   background: conic-gradient(#e66 0deg, #eda 70deg, #8c6 140deg, #6bc 210deg, #86c 280deg, #e66 360deg);

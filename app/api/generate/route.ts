@@ -11,7 +11,7 @@ const DAILY_LIMIT = 10;
 
 // POST /api/generate  body: Article
 export async function POST(req: NextRequest) {
-  let article: Article;
+  let article: Article & { styleTone?: string };
   try {
     article = await req.json();
   } catch {
@@ -20,6 +20,7 @@ export async function POST(req: NextRequest) {
   if (!article?.title) {
     return NextResponse.json({ error: 'article.title required' }, { status: 400 });
   }
+  const tone = typeof article.styleTone === 'string' ? article.styleTone.slice(0, 600) : '';
 
   // --- rate limit (only when Supabase is configured; client signs in anonymously on mount) ---
   const supa = getServerSupabase();
@@ -48,7 +49,7 @@ export async function POST(req: NextRequest) {
     // pull the full article body so cards/caption summarize the whole piece,
     // not just the 2-sentence search snippet (falls back to snippet on failure)
     const body = await fetchArticleBody(article.sourceUrl);
-    const result = await generateCards(article, body);
+    const result = await generateCards(article, body, tone);
     // log after success so failed generations don't burn quota
     if (owner && svc) await svc.from('generation_log').insert({ owner });
     return NextResponse.json(result);

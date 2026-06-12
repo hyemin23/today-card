@@ -73,6 +73,69 @@ export default function MagazineDrawer({
 
   const set = (patch: Partial<Magazine>) => setDraft((d) => ({ ...d, ...patch }));
 
+  /* ---- benchmark account analysis ---- */
+  const benchShotRef = useRef<HTMLInputElement>(null);
+  const [benchUser, setBenchUser] = useState('');
+  const [benchBusy, setBenchBusy] = useState(false);
+  const [benchMsg, setBenchMsg] = useState('');
+
+  async function runBenchAnalysis(images?: string[]) {
+    if (benchBusy) return;
+    if (!images?.length && !benchUser.trim()) {
+      setBenchMsg('계정명을 입력하거나 스크린샷을 올려주세요.');
+      return;
+    }
+    setBenchBusy(true);
+    setBenchMsg(images?.length ? '스크린샷을 분석하는 중…' : '계정 게시물을 가져와 분석하는 중…');
+    try {
+      const res = await fetch('/api/style-analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(images?.length ? { images, username: benchUser.trim() } : { username: benchUser.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setBenchMsg(data.error || '분석에 실패했어요.');
+        return;
+      }
+      const p = data.profile;
+      set({
+        coverStyle: p.layout,
+        bgColor: p.bgColor,
+        accentColor: p.accentColor,
+        benchName: p.name,
+        benchSummary: p.summary,
+        benchTone: p.tone,
+        benchImagePrompt: p.imagePrompt,
+      });
+      setBenchMsg('');
+    } catch {
+      setBenchMsg('분석 요청에 실패했어요. 잠시 후 다시 시도해주세요.');
+    } finally {
+      setBenchBusy(false);
+    }
+  }
+
+  async function onBenchShots(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files || []).slice(0, 4);
+    e.target.value = '';
+    if (!files.length) return;
+    try {
+      const images = await Promise.all(
+        files
+          .filter((f) => f.type.startsWith('image/'))
+          .map((f) => fileToDataUrl(f, { maxEdge: 900, quality: 0.8 }))
+      );
+      if (images.length) await runBenchAnalysis(images);
+    } catch {
+      setBenchMsg('스크린샷을 불러오지 못했어요. JPG/PNG로 다시 시도해주세요.');
+    }
+  }
+
+  function clearBench() {
+    set({ benchName: '', benchSummary: '', benchTone: '', benchImagePrompt: '' });
+  }
+
   const logoRef = useRef<HTMLInputElement>(null);
   const [logoBusy, setLogoBusy] = useState(false);
   async function onLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -200,6 +263,41 @@ export default function MagazineDrawer({
               </button>
             </div>
             <p className="hint">표지 레이아웃과 AI 이미지의 톤(흑백/컬러)이 함께 바뀌어요.</p>
+
+            <div className="bench">
+              <div className="bench__t">벤치마킹 계정 분석 <span className="hint" style={{ display: 'inline', marginTop: 0 }}>· 관리자 전용</span></div>
+              {draft.benchName ? (
+                <div className="bench__applied">
+                  <div>
+                    <b>{draft.benchName}</b>
+                    {draft.benchSummary && <span>{draft.benchSummary}</span>}
+                  </div>
+                  <button type="button" className="minib" onClick={clearBench}>해제</button>
+                </div>
+              ) : (
+                <>
+                  <div className="bench__row">
+                    <input
+                      className="input"
+                      placeholder="@계정명 (공개 계정)"
+                      value={benchUser}
+                      onChange={(e) => setBenchUser(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); runBenchAnalysis(); } }}
+                      aria-label="벤치마킹할 인스타그램 계정명"
+                    />
+                    <button type="button" className="btn btn--dark btn--sm" onClick={() => runBenchAnalysis()} aria-busy={benchBusy} aria-disabled={benchBusy}>
+                      {benchBusy ? '◌ 분석 중…' : '분석'}
+                    </button>
+                  </div>
+                  <button type="button" className="bench__alt" onClick={() => benchShotRef.current?.click()}>
+                    또는 게시물 스크린샷 올리기 (최대 4장)
+                  </button>
+                  <input ref={benchShotRef} type="file" accept="image/*" multiple hidden onChange={onBenchShots} aria-label="벤치마킹 스크린샷 선택" />
+                </>
+              )}
+              {benchMsg && <p className="bench__msg" role="status">{benchMsg}</p>}
+              <p className="hint">분석하면 말투·이미지 무드·색·표지 레이아웃이 그 계정 느낌으로 맞춰져요.</p>
+            </div>
           </section>
 
           <section className="fset" aria-labelledby={`${id}-s4`}>

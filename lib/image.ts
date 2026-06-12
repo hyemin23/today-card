@@ -61,11 +61,14 @@ async function imagineConcept(title: string, category: string, apiKey: string, s
   return concept.slice(0, 600);
 }
 
-function buildPrompt(title: string, category: string, style: ImageStyle, concept?: string): string {
+function buildPrompt(title: string, category: string, style: ImageStyle, concept?: string, customLook?: string): string {
   const scene = concept
     ? `Scene concept (follow it closely): ${concept}`
     : `A striking, eye-catching editorial magazine-cover image that clearly represents this Korean news topic: "${title}" (category: ${category}).`;
-  const look = style === 'trend'
+  // a benchmark-analyzed art direction beats the built-in looks
+  const look = customLook
+    ? `Render in this exact art direction (from a benchmark account analysis): ${customLook}`
+    : style === 'trend'
     // benchmark look: full-color cinematic photo with a modern muted grade and
     // soft glowing accents — the polished viral Korean tech/trend-page vibe
     ? 'Render as a polished FULL-COLOR cinematic photorealistic image, modern slightly-muted color grade, soft volumetric light; subtle glowing holographic/UI light elements are welcome when they fit the topic. The refined look of a viral Korean tech-trend Instagram page.'
@@ -82,7 +85,8 @@ function buildPrompt(title: string, category: string, style: ImageStyle, concept
 export async function generateCardImage(
   title: string,
   category: string,
-  style: ImageStyle = 'editorial'
+  style: ImageStyle = 'editorial',
+  customLook?: string
 ): Promise<string> {
   const apiKey = process.env.LLM_API_KEY;
   if (!apiKey) throw new Error('LLM_API_KEY not configured');
@@ -90,7 +94,7 @@ export async function generateCardImage(
   // concept stage is best-effort — any failure falls back to the direct prompt
   let concept: string | undefined;
   try {
-    concept = await imagineConcept(title, category, apiKey, style);
+    concept = await imagineConcept(title, category, apiKey, customLook ? 'trend' : style);
   } catch {
     concept = undefined;
   }
@@ -100,7 +104,7 @@ export async function generateCardImage(
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
     body: JSON.stringify({
-      contents: [{ parts: [{ text: buildPrompt(title, category, style, concept) }] }],
+      contents: [{ parts: [{ text: buildPrompt(title, category, style, concept, customLook) }] }],
       generationConfig: { responseModalities: ['IMAGE'] },
     }),
   });

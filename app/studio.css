@@ -68,7 +68,7 @@ body.studio-body { height: 100%; background: var(--wash); overflow: hidden; }
 .seltags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; list-style: none; }
 .seltags:empty { display: none; }
 .seltag { display: inline-flex; align-items: center; gap: 8px; background: var(--ink); color: var(--paper); border-radius: 100px; padding: 7px 9px 7px 14px; font-size: 12.5px; font-weight: 600; animation: pop .25s var(--ease); }
-.seltag button { color: rgba(255,255,255,.65); cursor: pointer; font-weight: 400; font-size: 14px; line-height: 1; padding: 2px; }
+.seltag button { color: rgba(255,255,255,.65); cursor: pointer; font-weight: 400; font-size: 14px; line-height: 1; min-width: 24px; min-height: 24px; display: inline-flex; align-items: center; justify-content: center; margin: -4px 0; }
 .seltag button:hover { color: #fff; }
 @keyframes pop { from { transform: scale(.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
@@ -137,19 +137,15 @@ body.studio-body { height: 100%; background: var(--wash); overflow: hidden; }
 .thumb.dark .tnum { color: rgba(255,255,255,.6); }
 .thumb .tt { position: absolute; inset: 0; display: flex; align-items: flex-end; padding: 8px; font-family: var(--serif); font-weight: 700; letter-spacing: -.02em; font-size: 10px; line-height: 1.15; }
 .thumb.dark .tt { color: var(--paper); }
-.rail__add { margin: 12px 16px 0; border: 1px dashed var(--line-2); border-radius: 6px; padding: 10px; font-size: 11px; color: var(--ink-3); text-align: center; cursor: pointer; }
-.rail__add:hover { border-color: var(--ink); color: var(--ink); }
-
 .stage { display: flex; flex-direction: column; align-items: center; padding: 22px; overflow: auto; }
 .stage__bar { width: 100%; max-width: 540px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
 .aiflag { display: inline-flex; align-items: center; gap: 9px; font-size: 12px; color: var(--ink-2); background: var(--paper); border: 1px solid var(--line); border-radius: 100px; padding: 7px 14px; }
 .aiflag .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--ink); animation: pulse 1.8s ease-in-out infinite; }
 @keyframes pulse { 0%,100% { opacity: .3; } 50% { opacity: 1; } }
-.zoom { display: flex; gap: 6px; align-items: center; font-family: var(--mono); font-size: 11px; color: var(--ink-3); }
-.zoom button { border: 1px solid var(--line-2); border-radius: 6px; width: 26px; height: 26px; }
-.zoom button:hover { border-color: var(--ink); }
-
 .canvas { width: 100%; max-width: 540px; aspect-ratio: 1; background: var(--ink); color: var(--paper); box-shadow: var(--shadow-card); position: relative; overflow: hidden; }
+/* invisible hit layer that makes the cover's "이미지를 올려주세요" hint clickable */
+.canvas__uploadhit { position: absolute; inset: 0; background: transparent; cursor: pointer; }
+.canvas__uploadhit:focus-visible { outline: 3px solid #fff; outline-offset: -6px; }
 .canvas .imgslot { position: absolute; inset: 0; background: repeating-linear-gradient(45deg,#1b1b1a,#1b1b1a 12px,#202020 12px,#202020 24px); display: flex; align-items: center; justify-content: center; }
 .canvas .imgslot .ph { text-align: center; color: rgba(255,255,255,.42); padding: 20px; }
 .canvas .imgslot .ph .ic { width: 46px; height: 46px; border: 1px solid rgba(255,255,255,.3); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; font-size: 18px; }
@@ -304,7 +300,25 @@ body.studio-body { height: 100%; background: var(--wash); overflow: hidden; }
 @keyframes sweep { to { transform: translateX(100%); } }
 .genover .gcard::before { content: ""; position: absolute; inset: 0; transform: translateX(-100%); }
 .genover h3 { font-family: var(--serif); font-weight: 800; letter-spacing: -.03em; font-size: 22px; }
+.genover h3:focus { outline: none; }
 .genover p { font-size: 13px; color: var(--ink-2); margin-top: -10px; }
+.genover .genover__eta { font-family: var(--mono); font-size: 11px; color: var(--ink-3); letter-spacing: .05em; margin-top: -16px; }
+
+/* notices — mock search results & AI-generation fallback */
+.mocknote, .fbnote {
+  display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;
+  background: #fdf4e3; border: 1px solid #e2c388; border-radius: 12px;
+  padding: 14px 18px; margin-bottom: 16px;
+}
+.mocknote p, .fbnote p { font-size: 13.5px; color: #6b4a12; line-height: 1.55; flex: 1 1 260px; }
+.mocknote b, .fbnote b { color: #503509; }
+.fbnote { position: sticky; top: 10px; z-index: 30; margin: 10px auto 0; max-width: 720px; width: calc(100% - 32px); box-shadow: 0 14px 30px -18px rgba(17,17,16,.35); }
+
+/* drawer logo preview */
+.logoPrev { border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; display: flex; align-items: center; gap: 14px; background: var(--wash); }
+.logoPrev img { max-height: 48px; max-width: 50%; object-fit: contain; }
+.logoPrev__btns { display: flex; gap: 8px; margin-left: auto; }
+.logoPrev__btns .minib { flex: none; padding: 8px 14px; }
 
 /* responsive */
 @media (max-width: 1080px) { .editor { grid-template-columns: 104px 1fr 290px; } }
@@ -316,25 +330,50 @@ body.studio-body { height: 100%; background: var(--wash); overflow: hidden; }
 }
 @media (max-width: 760px) {
   .arts { grid-template-columns: 1fr; }
-  body.studio-body { overflow: auto; }
+  /* keep vertical scroll but never allow the page to grow sideways
+     (overflow:auto here used to override globals' overflow-x:clip) */
+  body.studio-body { overflow-x: clip; overflow-y: auto; }
   .studio { height: auto; min-height: 100vh; }
   .stagewrap { overflow: visible; }
   .stage-pane { position: relative; }
   .stage-pane:not(.is-active) { display: none; }
 
+  /* topbar: brand + 3 steps + magazine swatch must fit a 360px phone —
+     drop the separator/arrows and collapse the magazine button to its swatch */
+  .topbar { gap: 8px; padding: 0 10px; }
+  .topbar__sep { display: none; }
+  .stepper { gap: 2px; }
+  .stepc { padding: 7px 9px; }
+  .stepper .arr { display: none; }
+  .magsel { padding: 6px; gap: 4px; }
+  .magsel .nm { display: none; }
+
+  /* iOS zooms the page when a focused input is under 16px — keep typing zoom-free */
+  .ta, .input, .textarea, .topicfield input { font-size: 16px; }
+
   /* editor stacks into natural page flow — no fixed-height inner scroll panes
-     (those caused the footer to overlap the body on mobile) */
-  .editor { grid-template-columns: 1fr; height: auto; }
-  .stage { overflow: visible; padding: 16px; }
-  .stage__bar { max-width: 100%; }
-  .canvas { max-width: 100%; }
+     (those caused the footer to overlap the body on mobile).
+     block (not grid) so the sticky preview can travel the whole editor column */
+  .editor { display: block; height: auto; }
+  /* compact card preview pinned to the top — so typing in the inspector below
+     still shows the result without scroll round-trips */
+  .stage { overflow: visible; position: sticky; top: 0; z-index: 30; background: var(--wash); padding: 10px 16px 12px; border-bottom: 1px solid var(--line); }
+  .stage__bar { display: none; }
+  .canvas { max-width: min(62vw, 240px); margin: 0 auto; }
+  .stage__nav { margin-top: 10px; justify-content: center; }
+  .stage__nav .btn { padding: 7px 13px; font-size: 12px; }
+
+  /* touch targets ≥ ~40px for the fiddly controls */
+  .sw2 { width: 38px; height: 38px; }
+  .align { width: 132px; gap: 8px; }
+  .swatch { width: 40px; height: 40px; }
+  .seltag button { min-width: 28px; min-height: 28px; }
 
   /* rail → touch-friendly horizontal card strip */
   .rail { flex-direction: row; align-items: center; gap: 10px; padding: 10px 14px; border-right: 0; border-bottom: 1px solid var(--line); overflow-x: auto; }
   .rail__lb { display: none; }
   .thumbs { flex-direction: row; gap: 10px; padding: 0; overflow: visible; flex: none; }
   .thumb { width: 76px; flex: none; }
-  .rail__add { margin: 0; flex: none; white-space: nowrap; padding: 12px 16px; }
 
   /* inspector flows naturally; action footer becomes a fixed bottom bar
      (fixed is more reliable than sticky inside the mobile scroll container) */

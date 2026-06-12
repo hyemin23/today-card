@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import type { Magazine } from '@/types/db';
 import { MAGAZINES, BG_SWATCHES, ACCENT_SWATCHES } from './data';
+import { fileToDataUrl } from './imageFile';
 
 const COLOR_NAME: Record<string, string> = {
   '#111110': '잉크 블랙',
@@ -72,6 +73,26 @@ export default function MagazineDrawer({
 
   const set = (patch: Partial<Magazine>) => setDraft((d) => ({ ...d, ...patch }));
 
+  const logoRef = useRef<HTMLInputElement>(null);
+  const [logoBusy, setLogoBusy] = useState(false);
+  async function onLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    e.target.value = '';
+    if (!f || logoBusy) return;
+    if (!f.type.startsWith('image/')) { alert('이미지 파일만 올릴 수 있어요. (PNG 권장)'); return; }
+    if (f.size > 4 * 1024 * 1024) { alert('로고가 너무 커요. 4MB 이하로 올려주세요.'); return; }
+    setLogoBusy(true);
+    try {
+      // PNG keeps the recommended transparent background intact
+      const dataUrl = await fileToDataUrl(f, { maxEdge: 360, mime: 'image/png' });
+      set({ logoUrl: dataUrl });
+    } catch {
+      alert('이 이미지를 불러오지 못했어요. PNG로 변환해 다시 올려주세요.');
+    } finally {
+      setLogoBusy(false);
+    }
+  }
+
   return (
     <>
       <div className={`scrim ${open ? 'show' : ''}`} onClick={onClose} aria-hidden="true" />
@@ -103,7 +124,6 @@ export default function MagazineDrawer({
                   <span className="nm">{m.name}</span>
                 </button>
               ))}
-              <button type="button" className="mag-card add">＋ 추가</button>
             </div>
           </section>
 
@@ -114,7 +134,26 @@ export default function MagazineDrawer({
               <div className="field"><label htmlFor={`${id}-logo`}>로고 텍스트</label><input id={`${id}-logo`} className="input" value={draft.logoText} onChange={(e) => set({ logoText: e.target.value })} /></div>
               <div className="field"><label htmlFor={`${id}-handle`}>인스타 핸들</label><input id={`${id}-handle`} className="input" value={draft.handle} onChange={(e) => set({ handle: e.target.value })} /></div>
             </div>
-            <div className="field"><span className="field-label">마지막 카드 로고 이미지</span><button type="button" className="uploader"><span className="ic" aria-hidden="true">⤒</span><span className="up-t">로고 업로드</span><span className="up-s">PNG · 투명 배경 권장</span></button></div>
+            <div className="field">
+              <span className="field-label">마지막 카드 로고 이미지</span>
+              {draft.logoUrl ? (
+                <div className="logoPrev">
+                  <img src={draft.logoUrl} alt="업로드한 로고 미리보기" />
+                  <div className="logoPrev__btns">
+                    <button type="button" className="minib" onClick={() => logoRef.current?.click()}>교체</button>
+                    <button type="button" className="minib" onClick={() => set({ logoUrl: null })}>제거</button>
+                  </div>
+                </div>
+              ) : (
+                <button type="button" className="uploader" onClick={() => logoRef.current?.click()} aria-busy={logoBusy}>
+                  <span className="ic" aria-hidden="true">⤒</span>
+                  <span className="up-t">{logoBusy ? '불러오는 중…' : '로고 업로드'}</span>
+                  <span className="up-s">PNG · 투명 배경 권장</span>
+                </button>
+              )}
+              <input ref={logoRef} type="file" accept="image/*" hidden onChange={onLogoUpload} aria-label="로고 이미지 파일 선택" />
+              <p className="hint">마지막(CTA) 카드의 헤드라인 위에 들어가요.</p>
+            </div>
           </section>
 
           <section className="fset" aria-labelledby={`${id}-s3`}>

@@ -68,6 +68,19 @@ export default function CardFace({ card, magazine, ctx, hint = true }: { card: C
         })()}
 
         <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', justifyContent: align.v, textAlign: align.t }}>
+          {ctx !== 'thumb' && card.kind === 'cta' && magazine.logoUrl && (
+            <img
+              src={magazine.logoUrl}
+              alt=""
+              style={{
+                height: ctx === 'canvas' ? 44 : 28,
+                width: 'auto',
+                objectFit: 'contain',
+                marginBottom: ctx === 'canvas' ? 14 : 8,
+                alignSelf: align.t === 'center' ? 'center' : align.t === 'right' ? 'flex-end' : 'flex-start',
+              }}
+            />
+          )}
           <div style={{ fontFamily: 'var(--serif)', fontWeight: 800, letterSpacing: '-.035em', lineHeight: 1.08, fontSize: titleSize, whiteSpace: 'pre-line', marginTop: align.v === 'flex-start' ? (ctx === 'thumb' ? 14 : 16) : 0 }}>
             {card.title}
           </div>

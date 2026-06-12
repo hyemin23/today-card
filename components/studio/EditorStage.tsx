@@ -4,6 +4,9 @@ import { useId, useRef, useState } from 'react';
 import type { Card, Magazine } from '@/types/db';
 import CardFace, { alignIndex } from './CardFace';
 import { TEXT_COLORS } from './data';
+import { fileToDataUrl } from './imageFile';
+
+const MAX_UPLOAD_MB = 12;
 
 const COLOR_LABELS: Record<string, string> = {
   '#ffffff': '흰색',
@@ -23,6 +26,8 @@ export default function EditorStage({
   sel,
   setSel,
   updateCard,
+  restoreCard,
+  hasOriginals,
   magazine,
   onGo,
   isAdmin,
@@ -31,6 +36,8 @@ export default function EditorStage({
   sel: number;
   setSel: (i: number) => void;
   updateCard: (idx: number, patch: Partial<Card>) => void;
+  restoreCard: (idx: number) => void;
+  hasOriginals?: boolean;
   magazine: Magazine;
   onGo: (n: number) => void;
   isAdmin?: boolean;
@@ -38,25 +45,38 @@ export default function EditorStage({
   const fileRef = useRef<HTMLInputElement>(null);
   const titleId = useId();
   const [imgBusy, setImgBusy] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const card = cards[sel];
   if (!card) return null;
 
   const kindLabel = kindLabelOf(card.kind);
   const sizePx = Math.round(42 * card.fontScale);
 
-  function releaseImage(url?: string | null) {
-    if (url?.startsWith('blob:')) URL.revokeObjectURL(url);
-  }
-  function onUpload(e: React.ChangeEvent<HTMLInputElement>) {
+  async function onUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
-    if (f) {
-      releaseImage(card.imageUrl);
-      updateCard(sel, { imageUrl: URL.createObjectURL(f) });
-    }
     e.target.value = '';
+    if (!f || uploading) return;
+    if (!f.type.startsWith('image/')) {
+      alert('이미지 파일만 올릴 수 있어요. (JPG · PNG 등)');
+      return;
+    }
+    if (f.size > MAX_UPLOAD_MB * 1024 * 1024) {
+      alert(`이미지가 너무 커요. ${MAX_UPLOAD_MB}MB 이하로 올려주세요.`);
+      return;
+    }
+    setUploading(true);
+    try {
+      // downscaled data: URL — survives reload (sessionStorage) and PNG export
+      const dataUrl = await fileToDataUrl(f);
+      updateCard(sel, { imageUrl: dataUrl });
+    } catch {
+      alert('이 이미지를 불러오지 못했어요. JPG나 PNG로 변환해 다시 올려주세요.');
+    } finally {
+      setUploading(false);
+    }
   }
   function onResetImage() {
-    releaseImage(card.imageUrl);
+    if (card.imageUrl && !window.confirm('이 카드의 이미지를 제거할까요?')) return;
     updateCard(sel, { imageUrl: null });
   }
   // admin only — server re-verifies the session cookie before any (paid) generation
@@ -71,7 +91,6 @@ export default function EditorStage({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || '생성 실패');
-      releaseImage(card.imageUrl);
       updateCard(sel, { imageUrl: data.image });
     } catch (e: any) {
       alert('AI 이미지 생성 실패: ' + (e.message || ''));
@@ -101,17 +120,24 @@ export default function EditorStage({
             </button>
           ))}
         </div>
-        <button type="button" className="rail__add">＋ 카드 추가</button>
       </nav>
 
       {/* canvas */}
       <div className="stage">
         <div className="stage__bar">
           <p className="aiflag"><span className="dot" aria-hidden="true" /> AI가 5컷을 생성했어요 · 자유롭게 다듬어보세요</p>
-          <div className="zoom" aria-hidden="true"><button type="button">−</button><span>72%</span><button type="button">+</button></div>
         </div>
-        <div className="canvas" role="img" aria-label={`${kindLabel} 카드 미리보기: ${card.title}`}>
+        <div className="canvas" role="group" aria-label={`${kindLabel} 카드 미리보기: ${card.title}`}>
           <CardFace card={card} magazine={magazine} ctx="canvas" />
+          {card.kind === 'cover' && !card.imageUrl && (
+            /* the visual "이미지를 올려주세요" hint lives in CardFace — this makes it actually clickable */
+            <button
+              type="button"
+              className="canvas__uploadhit"
+              aria-label="표지 이미지 올리기"
+              onClick={() => fileRef.current?.click()}
+            />
+          )}
         </div>
         <div className="stage__nav">
           <button className="btn btn--ghost btn--sm" onClick={() => setSel(Math.max(0, sel - 1))} disabled={sel === 0}>← 이전 카드</button>
@@ -126,7 +152,7 @@ export default function EditorStage({
           <div className="ig">
             <div className="ig__t" id={`${titleId}-img`}>이미지</div>
             <div className="btnrow" role="group" aria-labelledby={`${titleId}-img`}>
-              <button className="minib" onClick={() => fileRef.current?.click()}>⤒ 이미지 변경</button>
+              <button className="minib" onClick={() => fileRef.current?.click()} aria-busy={uploading} aria-disabled={uploading}>{uploading ? '◌ 불러오는 중…' : '⤒ 이미지 변경'}</button>
               <button className="minib" style={{ flex: 'none', width: 44 }} aria-label="이미지 제거" onClick={onResetImage}>↺</button>
             </div>
             {isAdmin && (
@@ -223,10 +249,19 @@ export default function EditorStage({
               </div>
             )}
           </div>
-          <div className="ig">
-            <div className="ig__t">AI 다시 쓰기</div>
-            <button className="btn btn--ghost btn--sm" style={{ width: '100%' }}>↻ 이 카드 문구 다시 생성</button>
-          </div>
+          {hasOriginals && (
+            <div className="ig">
+              <div className="ig__t">되돌리기</div>
+              <button
+                className="btn btn--ghost btn--sm"
+                style={{ width: '100%' }}
+                onClick={() => restoreCard(sel)}
+                title="이 카드의 문구를 AI가 처음 써준 내용으로 되돌립니다 (이미지·색은 유지)"
+              >
+                ↺ AI가 써준 원래 문구로 되돌리기
+              </button>
+            </div>
+          )}
         </div>
         <div className="insp__foot">
           <button className="btn btn--ghost btn--sm" style={{ flex: 1 }} onClick={() => onGo(1)}>← 주제</button>

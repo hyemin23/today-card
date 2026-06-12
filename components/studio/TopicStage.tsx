@@ -17,9 +17,11 @@ export default function TopicStage({
   const [pct, setPct] = useState(0);
   const [count, setCount] = useState(0);
   const [results, setResults] = useState<Article[] | null>(null);
+  const [isMock, setIsMock] = useState(false);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
   const reveal = useRef<ReturnType<typeof setTimeout> | null>(null);
   const resultsHeadRef = useRef<HTMLHeadingElement>(null);
+  const autoRan = useRef(false);
   const inputId = useId();
 
   useEffect(() => () => {
@@ -31,6 +33,16 @@ export default function TopicStage({
   useEffect(() => {
     if (results && resultsHeadRef.current) resultsHeadRef.current.focus();
   }, [results]);
+
+  // the landing CTA promises "뉴스 모으기" — arriving with ?q= must actually collect,
+  // not park the topic in the input and wait for a second click
+  useEffect(() => {
+    if (initialTopic && !autoRan.current) {
+      autoRan.current = true;
+      runCrawl();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const scope = tags.length ? tags.join(' · ') : topic || '전체';
   const crawlTopic = topic || tags[0] || '전체';
@@ -47,26 +59,30 @@ export default function TopicStage({
     setPct(0);
     setCount(0);
 
+    setIsMock(false);
     const q = topic || tags[0] || '';
     const cat = tags.find((t) => CATEGORIES.includes(t));
-    let fetched: Article[] | null = null;
+    let fetched: { items: Article[]; mock: boolean } | null = null;
     const qs = `q=${encodeURIComponent(q)}${cat ? `&category=${encodeURIComponent(cat)}` : ''}`;
     const fetchPromise = fetch(`/api/search?${qs}`)
       .then((r) => r.json())
-      .then((d) => (d.items as Article[]) || [])
-      .catch(() => [] as Article[])
-      .then((items) => { fetched = items; return items; });
+      .then((d) => ({ items: (d.items as Article[]) || [], mock: !!d.mock }))
+      .catch(() => ({ items: [] as Article[], mock: false }))
+      .then((res) => { fetched = res; return res; });
 
     let p = 0;
     const iv = setInterval(() => {
-      p = Math.min(100, p + Math.random() * 16 + 7);
+      // the bar is decorative pacing, not real progress — so it must never claim
+      // 100% (or a count) before the fetch actually resolves
+      p = Math.min(fetched ? 100 : 92, p + Math.random() * 16 + 7);
       setPct(p);
-      setCount(Math.round((p / 100) * (fetched ? fetched.length : 24)));
+      if (fetched) setCount(Math.round((p / 100) * fetched.items.length));
       if (p >= 100) {
         clearInterval(iv);
         timer.current = null;
-        fetchPromise.then((items) => {
+        fetchPromise.then(({ items, mock }) => {
           setCount(items.length);
+          setIsMock(mock);
           reveal.current = setTimeout(() => {
             setResults(items);
             setCrawling(false);
@@ -155,15 +171,21 @@ export default function TopicStage({
               <span key={s} className={`crawl__src ${i < hitN ? 'hit' : ''}`}>{s}</span>
             ))}
           </div>
-          <div className="crawl__count" aria-hidden="true">수집된 기사 {count}건</div>
+          {count > 0 && <div className="crawl__count" aria-hidden="true">수집된 기사 {count}건</div>}
         </div>
       )}
 
       {results && (
         <div className="results">
+          {isMock && (
+            <div className="mocknote" role="alert">
+              <p><b>지금 뉴스 수집이 원활하지 않아요.</b> 아래 목록은 화면 구성을 보여주기 위한 예시 기사예요 — 실제 뉴스가 아니니 게시용으로 쓰지 마세요.</p>
+              <button type="button" className="btn btn--ghost btn--sm" onClick={() => runCrawl()}>다시 시도</button>
+            </div>
+          )}
           <div className="resbar">
             <h2 id="results-head" ref={resultsHeadRef} tabIndex={-1}>모아온 기사 <b>{results.length}</b>건 · <span style={{ color: 'var(--ink-3)' }}>{scope}</span></h2>
-            <div className="sort" aria-hidden="true"><span className="on">최신순</span><span>관련도순</span></div>
+            <div className="sort" aria-hidden="true"><span className="on">최신순</span></div>
           </div>
           {results.length === 0 ? (
             <p style={{ padding: '28px 4px', color: 'var(--ink-2)', fontSize: 14 }}>

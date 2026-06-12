@@ -9,8 +9,8 @@ export async function GET(req: NextRequest) {
   const q = req.nextUrl.searchParams.get('q') || '';
   const category = req.nextUrl.searchParams.get('category') || undefined;
   try {
-    const items = await crawlNews(q, category);
-    return NextResponse.json({ items });
+    const { items, mock } = await crawlNews(q, category);
+    return NextResponse.json({ items, mock });
   } catch (e: any) {
     return NextResponse.json({ error: e.message || 'search failed' }, { status: 502 });
   }

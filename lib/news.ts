@@ -175,28 +175,35 @@ const MOCK: Article[] = [
   { title: '미술관 밤 개장, 도심의 새로운 산책이 되다', summary: '야간 개장을 도입한 미술관에 발길이 이어지고 있다. 늦은 저녁 전시를 즐기는 ‘문화 산책’이 흐름으로 자리잡는 분위기다.', source: '컬처위클리', category: '문화', date: '2026.06.03' },
 ];
 
+export interface CrawlResult {
+  items: Article[];
+  /** true when both live sources failed and the fictional MOCK list was returned —
+      the client must tell the user these are not real articles */
+  mock: boolean;
+}
+
 /**
  * Collect news for a topic. Tries Daum → Google News → mock, in order.
  * Always resolves (never throws) so the UI can render something.
  */
-export async function crawlNews(query: string, category?: string): Promise<Article[]> {
+export async function crawlNews(query: string, category?: string): Promise<CrawlResult> {
   const q = query.trim() || '오늘 뉴스';
 
   try {
     const daum = await crawlDaum(q, category);
-    if (daum.length) return daum;
+    if (daum.length) return { items: daum, mock: false };
   } catch {
     /* fall through */
   }
 
   try {
     const google = await crawlGoogleNews(q, category);
-    if (google.length) return google;
+    if (google.length) return { items: google, mock: false };
   } catch {
     /* fall through */
   }
 
-  return MOCK;
+  return { items: MOCK, mock: true };
 }
 
 /**

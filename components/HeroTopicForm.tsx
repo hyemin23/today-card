@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useRef, useState } from 'react';
+import { IconSearch } from '@/components/icons';
 
 export default function HeroTopicForm() {
   const router = useRouter();
@@ -24,7 +25,7 @@ export default function HeroTopicForm() {
     <form className="topicbox reveal" onSubmit={onSubmit}>
       <div className="topicfield">
         <label htmlFor="hero-topic" className="sr-only">카드뉴스로 만들 주제</label>
-        <span className="mg" aria-hidden="true">⌕</span>
+        <span className="mg" aria-hidden="true"><IconSearch /></span>
         <input
           ref={inputRef}
           id="hero-topic"

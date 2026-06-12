@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import type { Article } from '@/types/db';
 import { CATEGORIES, KEYWORDS, CRAWL_SOURCES } from './data';
+import { IconSearch } from '@/components/icons';
 
 export default function TopicStage({
   initialTopic,
@@ -106,7 +107,7 @@ export default function TopicStage({
       <div className="composer">
         <form className="topicfield" onSubmit={runCrawl}>
           <label htmlFor={inputId} className="sr-only">카드뉴스로 만들 주제</label>
-          <span className="mg" aria-hidden="true">⌕</span>
+          <span className="mg" aria-hidden="true"><IconSearch /></span>
           <input
             id={inputId}
             type="text"

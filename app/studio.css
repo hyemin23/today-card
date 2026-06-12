@@ -63,7 +63,7 @@ body.studio-body { height: 100%; background: var(--wash); overflow: hidden; }
 .composer { border: 1px solid var(--line); border-radius: 16px; background: var(--paper); padding: 26px; box-shadow: 0 1px 2px rgba(17,17,16,.03), 0 26px 54px -36px rgba(17,17,16,.28); }
 .topicfield { display: flex; align-items: center; gap: 10px; background: var(--paper); border: 1.5px solid var(--ink); border-radius: 100px; padding: 6px 6px 6px 20px; transition: box-shadow .25s var(--ease); }
 .topicfield:focus-within { box-shadow: 0 0 0 4px rgba(17,17,16,.06); }
-.topicfield .mg { font-size: 18px; }
+.topicfield .mg { display: flex; align-items: center; }
 .topicfield input { flex: 1; border: none; outline: none; background: none; font-size: 15.5px; font-weight: 500; padding: 13px 0; }
 .topicfield input::placeholder { color: var(--ink-3); font-weight: 400; }
 

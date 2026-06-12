@@ -5,6 +5,7 @@ import Footer from '@/components/Footer';
 import LandingFx from '@/components/LandingFx';
 import HeroTopicForm from '@/components/HeroTopicForm';
 import { TextRotate } from '@/components/ui/TextRotate';
+import { IconClock, IconDownload, IconLayers, IconSpark } from '@/components/icons';
 
 const CATS = ['정치', '경제', '사회', '문화', 'IT·과학', '스포츠', '연예', '패션', '뷰티', '여행', '푸드', '라이프'];
 
@@ -78,7 +79,7 @@ export default function LandingPage() {
                   <div className="mock__top" style={{ marginTop: 14 }}><span className="mock__brand" style={{ fontSize: 13 }}>@ink.daily</span><span className="mock__num">↗</span></div>
                 </div>
               </div>
-              <div className="fan__badge"><span>✦</span> 약 10–15초 자동 생성</div>
+              <div className="fan__badge"><IconSpark width={11} height={11} /> 약 10–15초 자동 생성</div>
             </div>
             </div>
           </div>
@@ -139,17 +140,17 @@ export default function LandingPage() {
         <div className="wrap">
           <div className="trio reveal" data-stagger>
             <div className="trio__c">
-              <div className="ic" aria-hidden="true">✦</div>
+              <div className="ic" aria-hidden="true"><IconLayers /></div>
               <h4>매거진처럼, 일관되게</h4>
               <p>한 번 정해둔 로고·색·톤이 모든 카드에 자동 적용돼요. 매번 디자인을 다시 잡을 필요가 없어요.</p>
             </div>
             <div className="trio__c">
-              <div className="ic" aria-hidden="true">◷</div>
+              <div className="ic" aria-hidden="true"><IconClock /></div>
               <h4>10초대 초안 완성</h4>
               <p>기사를 고르는 순간 AI가 5컷 구성을 잡아줘요. 당신은 다듬기만 하면 됩니다.</p>
             </div>
             <div className="trio__c">
-              <div className="ic" aria-hidden="true">⤓</div>
+              <div className="ic" aria-hidden="true"><IconDownload /></div>
               <h4>올릴 준비까지 끝</h4>
               <p>고해상 PNG와 캡션·해시태그를 한 번에. 복사해서 그대로 인스타그램에 올리세요.</p>
             </div>

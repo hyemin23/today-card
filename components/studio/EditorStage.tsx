@@ -4,7 +4,8 @@ import { useId, useRef, useState } from 'react';
 import type { Card, Magazine } from '@/types/db';
 import CardFace, { alignIndex } from './CardFace';
 import { TEXT_COLORS } from './data';
-import { fileToDataUrl } from './imageFile';
+import { fileToDataUrl, resizeDataUrl } from './imageFile';
+import { IconSpark } from '@/components/icons';
 
 const MAX_UPLOAD_MB = 12;
 
@@ -45,6 +46,8 @@ export default function EditorStage({
   const fileRef = useRef<HTMLInputElement>(null);
   const titleId = useId();
   const [imgBusy, setImgBusy] = useState(false);
+  const [batchBusy, setBatchBusy] = useState(false);
+  const [batchMsg, setBatchMsg] = useState('');
   const [uploading, setUploading] = useState(false);
   const card = cards[sel];
   if (!card) return null;
@@ -80,23 +83,63 @@ export default function EditorStage({
     updateCard(sel, { imageUrl: null });
   }
   // admin only — server re-verifies the session cookie before any (paid) generation
+  async function requestImage(c: Card): Promise<string> {
+    // body cards carry the substance in `body` — fold it into the prompt so the
+    // image reflects the card's actual content, not just a generic heading
+    const promptTitle = c.body ? `${c.title} — ${c.body.slice(0, 90)}` : c.title;
+    const res = await fetch('/api/image', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: promptTitle, category: c.category || '뉴스' }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || '생성 실패');
+    // squeeze the megabyte PNG base64 down before it hits state/sessionStorage
+    return resizeDataUrl(data.image);
+  }
+
+  /** Image patch + readability: a white body card gains the dark scrim, so flip its default ink text to white. */
+  function imagePatch(c: Card, imageUrl: string): Partial<Card> {
+    return c.kind === 'body' && c.textColor === '#111110'
+      ? { imageUrl, textColor: '#ffffff' }
+      : { imageUrl };
+  }
+
   async function genImage() {
-    if (!isAdmin || imgBusy) return;
+    if (!isAdmin || imgBusy || batchBusy) return;
     setImgBusy(true);
     try {
-      const res = await fetch('/api/image', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: card.title, category: card.category || '뉴스' }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || '생성 실패');
-      updateCard(sel, { imageUrl: data.image });
+      updateCard(sel, imagePatch(card, await requestImage(card)));
     } catch (e: any) {
       alert('AI 이미지 생성 실패: ' + (e.message || ''));
     } finally {
       setImgBusy(false);
     }
+  }
+
+  /** Batch: fill every card that doesn't have an image yet, sequentially. */
+  async function genAllImages() {
+    if (!isAdmin || imgBusy || batchBusy) return;
+    const targets = cards.map((c, i) => ({ c, i })).filter(({ c }) => !c.imageUrl);
+    if (targets.length === 0) {
+      alert('모든 카드에 이미 이미지가 있어요. 비우고 싶은 카드에서 ↺로 제거한 뒤 다시 시도하세요.');
+      return;
+    }
+    if (!window.confirm(`이미지가 없는 카드 ${targets.length}장의 배경을 AI로 일괄 생성할까요?\n(이미지가 있는 카드는 건너뛰어요)`)) return;
+    setBatchBusy(true);
+    let failed = 0;
+    for (let k = 0; k < targets.length; k++) {
+      const { c, i } = targets[k];
+      setBatchMsg(`${k + 1}/${targets.length} 생성 중…`);
+      try {
+        updateCard(i, imagePatch(c, await requestImage(c)));
+      } catch {
+        failed++;
+      }
+    }
+    setBatchBusy(false);
+    setBatchMsg('');
+    if (failed > 0) alert(`${failed}장은 생성에 실패했어요. 해당 카드에서 개별 생성으로 다시 시도해 주세요.`);
   }
 
   return (
@@ -160,16 +203,28 @@ export default function EditorStage({
               <button className="minib" style={{ flex: 'none', width: 44 }} aria-label="이미지 제거" onClick={onResetImage}>↺</button>
             </div>
             {isAdmin && (
-              <button
-                className="minib"
-                style={{ width: '100%', marginTop: 8 }}
-                onClick={genImage}
-                aria-disabled={imgBusy}
-                aria-busy={imgBusy}
-                title="기사 주제 기반 흑백 에디토리얼 배경을 생성합니다 (관리자 전용)"
-              >
-                {imgBusy ? '◌ AI 이미지 생성 중…' : '✨ AI 이미지 생성 (관리자)'}
-              </button>
+              <>
+                <button
+                  className="minib"
+                  style={{ width: '100%', marginTop: 8 }}
+                  onClick={genImage}
+                  aria-disabled={imgBusy || batchBusy}
+                  aria-busy={imgBusy}
+                  title="이 카드의 주제 기반 흑백 에디토리얼 배경을 생성합니다 (관리자 전용)"
+                >
+                  {imgBusy ? '◌ AI 이미지 생성 중…' : <><IconSpark width={13} height={13} /> 이 카드 AI 이미지</>}
+                </button>
+                <button
+                  className="minib"
+                  style={{ width: '100%', marginTop: 8 }}
+                  onClick={genAllImages}
+                  aria-disabled={imgBusy || batchBusy}
+                  aria-busy={batchBusy}
+                  title="이미지가 없는 카드 전체의 배경을 순서대로 생성합니다 (관리자 전용)"
+                >
+                  {batchBusy ? `◌ ${batchMsg}` : <><IconSpark width={13} height={13} /> 빈 카드 전체 일괄 생성</>}
+                </button>
+              </>
             )}
             <input ref={fileRef} type="file" accept="image/*" hidden onChange={onUpload} aria-label="이미지 파일 선택" />
           </div>

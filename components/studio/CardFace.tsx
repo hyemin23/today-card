@@ -47,7 +47,9 @@ export default function CardFace({ card, magazine, ctx, hint = true }: { card: C
           <div style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(45deg,#1b1b1a,#1b1b1a 12px,#202020 12px,#202020 24px)' }} />
         )
       )}
-      {dark && (
+      {(dark || card.imageUrl) && (
+        /* the scrim also covers body cards once they carry an image — without it
+           text of either color drowns in the photo */
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top,rgba(17,17,16,.82),rgba(17,17,16,.2) 48%,rgba(17,17,16,.55))' }} />
       )}
       <div style={{ position: 'absolute', inset: 0, padding: pad, display: 'flex', flexDirection: 'column' }}>

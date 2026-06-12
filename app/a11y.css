@@ -29,7 +29,7 @@ button {
 .carousel :focus-visible,
 .thumb.dark:focus-visible,
 .notes :focus-visible,
-.seltag b:focus-visible,
+.seltag button:focus-visible,
 .ptag.on:focus-visible {
   outline-color: #fff;
 }

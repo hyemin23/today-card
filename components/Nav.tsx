@@ -15,7 +15,6 @@ export default function Nav() {
           <a className="nav__link" href="#how">이용 방법</a>
         </nav>
         <div className="nav__right">
-          <button className="lang" aria-label="언어 — 영어로 전환">EN</button>
           <Link className="btn btn--dark btn--sm" href="/studio">시작하기</Link>
           <NavToggle />
         </div>

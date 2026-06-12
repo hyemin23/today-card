@@ -20,6 +20,7 @@ import {
   motion,
   MotionProps,
   Transition,
+  useReducedMotion,
 } from 'framer-motion';
 
 function cn(...classes: (string | false | undefined)[]) {
@@ -83,6 +84,13 @@ const TextRotate = forwardRef<TextRotateRef, TextRotateProps>(
     ref
   ) => {
     const [currentTextIndex, setCurrentTextIndex] = useState(0);
+
+    // prefers-reduced-motion: stop auto-rotation (first text stays static) and
+    // make any imperative index change (ref.next/jumpTo) swap instantly.
+    const prefersReducedMotion = useReducedMotion();
+    const effectiveTransition: Transition = prefersReducedMotion
+      ? { duration: 0 }
+      : transition;
 
     const splitIntoCharacters = (text: string): string[] => {
       if (typeof Intl !== 'undefined' && 'Segmenter' in Intl) {
@@ -174,17 +182,17 @@ const TextRotate = forwardRef<TextRotateRef, TextRotateProps>(
     ]);
 
     useEffect(() => {
-      if (!auto) return;
+      if (!auto || prefersReducedMotion) return;
       const intervalId = setInterval(next, rotationInterval);
       return () => clearInterval(intervalId);
-    }, [next, rotationInterval, auto]);
+    }, [next, rotationInterval, auto, prefersReducedMotion]);
 
     return (
       <motion.span
         className={cn('trot', mainClassName)}
         {...props}
         layout
-        transition={transition}
+        transition={effectiveTransition}
       >
         <span className="sr-only">{texts[currentTextIndex]}</span>
 
@@ -215,11 +223,16 @@ const TextRotate = forwardRef<TextRotateRef, TextRotateProps>(
                       exit={exit}
                       key={charIndex}
                       transition={{
-                        ...transition,
-                        delay: getStaggerDelay(
-                          previousCharsCount + charIndex,
-                          array.reduce((sum, word) => sum + word.characters.length, 0)
-                        ),
+                        ...effectiveTransition,
+                        delay: prefersReducedMotion
+                          ? 0
+                          : getStaggerDelay(
+                              previousCharsCount + charIndex,
+                              array.reduce(
+                                (sum, word) => sum + word.characters.length,
+                                0
+                              )
+                            ),
                       }}
                       className={cn('trot__char', elementLevelClassName)}
                     >

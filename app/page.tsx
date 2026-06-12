@@ -145,7 +145,7 @@ export default function LandingPage() {
             </div>
             <div className="trio__c">
               <div className="ic" aria-hidden="true">◷</div>
-              <h4>10초면 초안 완성</h4>
+              <h4>10초대 초안 완성</h4>
               <p>기사를 고르는 순간 AI가 5컷 구성을 잡아줘요. 당신은 다듬기만 하면 됩니다.</p>
             </div>
             <div className="trio__c">
@@ -158,7 +158,7 @@ export default function LandingPage() {
       </section>
 
       {/* NOTES / RULES */}
-      <section className="section notes">
+      <section className="section notes" id="rules">
         <div className="wrap">
           <div className="notes__grid">
             <div>

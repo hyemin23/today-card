@@ -10,6 +10,9 @@
   font-size: clamp(38px, 5.2vw, 64px); line-height: 1.0; color: var(--ink);
 }
 .hero h1 .line { display: block; overflow: hidden; }
+/* reserve the width of the longest rotating word ('카드뉴스', 4 chars at ~1em each
+   minus the h1's -.045em tracking) so the trailing "가 완성돼요" never shifts */
+.hero h1 .trot { min-width: 3.85em; }
 .hero h1 .thin { color: var(--ink-3); font-weight: 300; }
 .hero__sub { margin: 22px 0 26px; max-width: 460px; }
 
@@ -26,6 +29,9 @@
 .topicfield input { flex:1; border:none; outline:none; background:none; font-size:15.5px; font-weight:500; padding:13px 0; }
 .topicfield input::placeholder { color:var(--ink-3); font-weight:400; }
 .topicfield .go { padding:13px 22px; }
+/* inline hint on empty submit (aria-live) — empty <p> collapses, margin only when shown */
+.topichint { font-size:12.5px; color:var(--ink-2); padding-left:20px; margin-top:10px; }
+.topichint:empty { margin:0; }
 .heroTags { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:16px; }
 .heroTags .lb { font-family:var(--mono); font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-3); white-space:nowrap; }
 .htag { font-size:13px; color:var(--ink-2); border:1px solid var(--line-2); border-radius:100px; padding:7px 14px; cursor:pointer; white-space:nowrap; transition: all .18s var(--ease); }
@@ -139,4 +145,9 @@
 /* small phones (320–560px): shrink the card fan so it sits comfortably */
 @media (max-width: 560px){
   .fan .cn { width: min(210px, 46vw); }
+}
+
+/* iOS auto-zoom kicks in below 16px — bump the hero input on small screens */
+@media (max-width: 760px){
+  .topicfield input { font-size: 16px; }
 }

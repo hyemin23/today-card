@@ -21,15 +21,14 @@ export default function Footer() {
             </div>
             <div className="footer__col">
               <h5>About</h5>
-              <a href="#how">이용 방법</a>
-              <a href="#">이용 규칙</a>
-              <a href="#">자주 묻는 질문</a>
+              <a href="/#how">이용 방법</a>
+              <a href="/#rules">이용 규칙</a>
             </div>
           </div>
         </div>
         <div className="footer__bottom">
           <span className="mono">© 2026 INK. STUDIO</span>
-          <span className="mono">MADE FOR CREATORS — KR / EN</span>
+          <span className="mono">MADE FOR CREATORS</span>
         </div>
       </div>
     </footer>

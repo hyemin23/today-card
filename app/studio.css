@@ -304,6 +304,14 @@ body.studio-body { height: 100%; background: var(--wash); overflow: hidden; }
 .swatch.is-on.dark::after { color: #fff; }
 .swatch.is-on.light::after { color: #111; }
 
+/* cover style picker */
+.stylepick { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.stylecard { border: 1px solid var(--line-2); border-radius: var(--radius); padding: 14px; text-align: left; display: flex; flex-direction: column; gap: 5px; transition: all .18s var(--ease); }
+.stylecard:hover { border-color: var(--ink); }
+.stylecard.is-active { border-color: var(--ink); box-shadow: 0 0 0 3px rgba(17,17,16,.06); background: var(--wash); }
+.stylecard b { font-size: 13.5px; }
+.stylecard span { font-size: 11.5px; color: var(--ink-3); line-height: 1.45; }
+
 /* free color picker — rainbow swatch wrapping a native <input type=color> */
 .swatch--custom, .sw2--custom {
   background: conic-gradient(#e66 0deg, #eda 70deg, #8c6 140deg, #6bc 210deg, #86c 280deg, #e66 360deg);

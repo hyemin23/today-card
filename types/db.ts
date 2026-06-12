@@ -1,10 +1,14 @@
 export type CardKind = 'cover' | 'body' | 'cta';
 
+/** cover art direction: monochrome editorial (default) vs full-color trend visual */
+export type CoverStyle = 'editorial' | 'trend';
+
 export interface Magazine {
   id: string;
   name: string;
   logoText: string;
   logoUrl?: string | null;
+  coverStyle?: CoverStyle;
   handle: string;
   ctaHeadline: string;
   ctaCopy: string;

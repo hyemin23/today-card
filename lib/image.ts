@@ -26,8 +26,13 @@ const ART_DIRECTIONS = [
   'an extreme macro close-up of a symbolic object that reveals the story on second glance',
 ];
 
-async function imagineConcept(title: string, category: string, apiKey: string): Promise<string> {
+export type ImageStyle = 'editorial' | 'trend';
+
+async function imagineConcept(title: string, category: string, apiKey: string, style: ImageStyle): Promise<string> {
   const direction = ART_DIRECTIONS[Math.floor(Math.random() * ART_DIRECTIONS.length)];
+  const colorRule = style === 'trend'
+    ? 'must work as a polished full-color cinematic visual'
+    : 'must work in black-and-white';
   const res = await fetch(CHAT_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
@@ -42,7 +47,7 @@ async function imagineConcept(title: string, category: string, apiKey: string): 
             `Preferred device for this one: ${direction}.`,
             'The concept must be CLEARLY and SPECIFICALLY tied to the topic — a stranger should guess the subject from the image alone. Smart and playful, never silly or random.',
             'Reply with 1–2 English sentences describing only the scene to photograph/illustrate.',
-            'Constraints: no text or letters anywhere in the scene, no real identifiable public figures, must work in black-and-white.',
+            `Constraints: no text or letters anywhere in the scene, no real identifiable public figures, ${colorRule}.`,
           ].join(' '),
         },
         { role: 'user', content: `헤드라인: ${title}\n카테고리: ${category}` },
@@ -56,13 +61,18 @@ async function imagineConcept(title: string, category: string, apiKey: string): 
   return concept.slice(0, 600);
 }
 
-function buildPrompt(title: string, category: string, concept?: string): string {
+function buildPrompt(title: string, category: string, style: ImageStyle, concept?: string): string {
   const scene = concept
     ? `Scene concept (follow it closely): ${concept}`
     : `A striking, eye-catching editorial magazine-cover image that clearly represents this Korean news topic: "${title}" (category: ${category}).`;
+  const look = style === 'trend'
+    // benchmark look: full-color cinematic photo with a modern muted grade and
+    // soft glowing accents — the polished viral Korean tech/trend-page vibe
+    ? 'Render as a polished FULL-COLOR cinematic photorealistic image, modern slightly-muted color grade, soft volumetric light; subtle glowing holographic/UI light elements are welcome when they fit the topic. The refined look of a viral Korean tech-trend Instagram page.'
+    : 'Render as dramatic high-contrast BLACK AND WHITE editorial photography / photo-illustration, cinematic lighting, bold composition, magazine-cover energy that hooks instantly.';
   return [
     scene,
-    'Render as dramatic high-contrast BLACK AND WHITE editorial photography / photo-illustration, cinematic lighting, bold composition, magazine-cover energy that hooks instantly.',
+    look,
     'The image must clearly evoke the news topic — clever, not generic.',
     'Leave some darker negative space toward the lower area so overlaid white headline text stays readable.',
     'STRICT: no text, no letters, no words, no numbers, no logos, no watermarks; do not depict specific real, identifiable public figures.',
@@ -71,7 +81,8 @@ function buildPrompt(title: string, category: string, concept?: string): string 
 
 export async function generateCardImage(
   title: string,
-  category: string
+  category: string,
+  style: ImageStyle = 'editorial'
 ): Promise<string> {
   const apiKey = process.env.LLM_API_KEY;
   if (!apiKey) throw new Error('LLM_API_KEY not configured');
@@ -79,7 +90,7 @@ export async function generateCardImage(
   // concept stage is best-effort — any failure falls back to the direct prompt
   let concept: string | undefined;
   try {
-    concept = await imagineConcept(title, category, apiKey);
+    concept = await imagineConcept(title, category, apiKey, style);
   } catch {
     concept = undefined;
   }
@@ -89,7 +100,7 @@ export async function generateCardImage(
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
     body: JSON.stringify({
-      contents: [{ parts: [{ text: buildPrompt(title, category, concept) }] }],
+      contents: [{ parts: [{ text: buildPrompt(title, category, style, concept) }] }],
       generationConfig: { responseModalities: ['IMAGE'] },
     }),
   });

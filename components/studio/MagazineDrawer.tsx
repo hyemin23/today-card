@@ -177,8 +177,33 @@ export default function MagazineDrawer({
             </div>
           </section>
 
+          <section className="fset" aria-labelledby={`${id}-s5`}>
+            <div className="fset__t"><span className="idx" aria-hidden="true">04</span><h3 id={`${id}-s5`}>표지 스타일</h3></div>
+            <div className="stylepick" role="group" aria-labelledby={`${id}-s5`}>
+              <button
+                type="button"
+                className={`stylecard ${(draft.coverStyle || 'editorial') === 'editorial' ? 'is-active' : ''}`}
+                aria-pressed={(draft.coverStyle || 'editorial') === 'editorial'}
+                onClick={() => set({ coverStyle: 'editorial' })}
+              >
+                <b>잉크 에디토리얼</b>
+                <span>흑백 매거진 무드 · 차분한 신뢰감</span>
+              </button>
+              <button
+                type="button"
+                className={`stylecard ${draft.coverStyle === 'trend' ? 'is-active' : ''}`}
+                aria-pressed={draft.coverStyle === 'trend'}
+                onClick={() => set({ coverStyle: 'trend' })}
+              >
+                <b>트렌드 비주얼</b>
+                <span>풀컬러 시네마틱 · 워터마크 + 카테고리 필 표지</span>
+              </button>
+            </div>
+            <p className="hint">표지 레이아웃과 AI 이미지의 톤(흑백/컬러)이 함께 바뀌어요.</p>
+          </section>
+
           <section className="fset" aria-labelledby={`${id}-s4`}>
-            <div className="fset__t"><span className="idx" aria-hidden="true">04</span><h3 id={`${id}-s4`}>색</h3></div>
+            <div className="fset__t"><span className="idx" aria-hidden="true">05</span><h3 id={`${id}-s4`}>색</h3></div>
             <div className="field"><span className="field-label" id={`${id}-bg`}>배경색</span><div className="swatches" role="group" aria-labelledby={`${id}-bg`}>
               {BG_SWATCHES.map((c) => {
                 const light = c === '#ffffff' || c === '#f6f4ef';

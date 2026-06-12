@@ -65,6 +65,9 @@ export default function CardFace({ card, magazine, ctx, hint = true }: { card: C
   const align = ALIGN[alignIndex(card.align)];
   const num = `0${card.idx + 1} / 05`;
   const mono = { fontFamily: 'var(--mono)' } as const;
+  /* 'trend' cover layout (benchmark: full-bleed visual, letterspaced watermark
+     top-right, outlined category pill sitting right above the headline) */
+  const trendCover = ctx !== 'thumb' && card.kind === 'cover' && magazine.coverStyle === 'trend';
   // cards with the dark scrim (dark kinds or any photo) read as dark surfaces
   const surfaceLight = !dark && !card.imageUrl;
   const em = (text: string) => renderEmphasis(text, magazine.accentColor, surfaceLight);
@@ -94,7 +97,13 @@ export default function CardFace({ card, magazine, ctx, hint = true }: { card: C
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top,rgba(17,17,16,.82),rgba(17,17,16,.2) 48%,rgba(17,17,16,.55))' }} />
       )}
       <div style={{ position: 'absolute', inset: 0, padding: pad, display: 'flex', flexDirection: 'column' }}>
-        {ctx !== 'thumb' && (() => {
+        {trendCover ? (
+          /* watermark-style brand mark, page number optional */
+          <div style={{ ...mono, width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: ctx === 'slide' ? 8.5 : 11, letterSpacing: '.32em', textTransform: 'uppercase', opacity: 0.55 }}>
+            <span>{card.hideNum ? '' : num}</span>
+            <span>{magazine.logoText || magazine.name}</span>
+          </div>
+        ) : ctx !== 'thumb' && (() => {
           const numEl = card.hideNum ? null : <span>{num}</span>;
           const pill = card.category ? <span style={{ border: `1px solid ${dark ? 'rgba(255,255,255,.4)' : 'rgba(17,17,16,.3)'}`, borderRadius: 100, padding: '4px 10px' }}>{card.category}</span> : null;
           const label = card.hideLabel ? null : <span>{card.kind === 'cta' ? 'CTA' : '본문'}</span>;
@@ -111,6 +120,24 @@ export default function CardFace({ card, magazine, ctx, hint = true }: { card: C
         })()}
 
         <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', justifyContent: align.v, textAlign: align.t }}>
+          {trendCover && card.category && (
+            <span
+              style={{
+                ...mono,
+                alignSelf: align.t === 'center' ? 'center' : align.t === 'right' ? 'flex-end' : 'flex-start',
+                fontSize: ctx === 'canvas' ? 12 : 9.5,
+                letterSpacing: '.08em',
+                textTransform: 'uppercase',
+                border: '1.5px solid rgba(255,255,255,.85)',
+                background: 'rgba(17,17,16,.35)',
+                borderRadius: 100,
+                padding: ctx === 'canvas' ? '6px 14px' : '4px 11px',
+                marginBottom: ctx === 'canvas' ? 14 : 9,
+              }}
+            >
+              {card.category}
+            </span>
+          )}
           {ctx !== 'thumb' && card.kind === 'cta' && magazine.logoUrl && (
             <img
               src={magazine.logoUrl}

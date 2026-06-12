@@ -2,7 +2,7 @@
 
 import { useId, useRef, useState } from 'react';
 import type { Card, Magazine } from '@/types/db';
-import CardFace, { alignIndex } from './CardFace';
+import CardFace, { alignIndex, stripEmphasis } from './CardFace';
 import { TEXT_COLORS } from './data';
 import { fileToDataUrl, resizeDataUrl } from './imageFile';
 import { IconSpark } from '@/components/icons';
@@ -44,6 +44,8 @@ export default function EditorStage({
   isAdmin?: boolean;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
+  const titleTaRef = useRef<HTMLTextAreaElement>(null);
+  const bodyTaRef = useRef<HTMLTextAreaElement>(null);
   const titleId = useId();
   const [imgBusy, setImgBusy] = useState(false);
   const [batchBusy, setBatchBusy] = useState(false);
@@ -82,6 +84,45 @@ export default function EditorStage({
     if (card.imageUrl && !window.confirm('이 카드의 이미지를 제거할까요?')) return;
     updateCard(sel, { imageUrl: null });
   }
+
+  /** Wrap the textarea selection in an emphasis marker (** bold / == highlight). */
+  function wrapSelection(
+    ref: React.RefObject<HTMLTextAreaElement>,
+    field: 'title' | 'body',
+    marker: '**' | '=='
+  ) {
+    const ta = ref.current;
+    if (!ta) return;
+    const { selectionStart: s, selectionEnd: e, value } = ta;
+    if (s === e) {
+      ta.focus();
+      alert('강조할 부분을 드래그로 선택한 뒤 눌러주세요.');
+      return;
+    }
+    const picked = value.slice(s, e);
+    // toggle off when the selection is already wrapped
+    const wrapped = value.slice(s - 2, s) === marker && value.slice(e, e + 2) === marker;
+    const next = wrapped
+      ? value.slice(0, s - 2) + picked + value.slice(e + 2)
+      : value.slice(0, s) + marker + picked + marker + value.slice(e);
+    updateCard(sel, { [field]: next } as Partial<Card>);
+    requestAnimationFrame(() => {
+      ta.focus();
+      const from = wrapped ? s - 2 : s;
+      ta.setSelectionRange(from, from + picked.length + (wrapped ? 0 : 4));
+    });
+  }
+
+  const emphasisTools = (ref: React.RefObject<HTMLTextAreaElement>, field: 'title' | 'body') => (
+    <span className="mtools" role="group" aria-label="텍스트 강조">
+      <button type="button" className="mtool" title="선택한 텍스트 굵게 (**텍스트**)" onClick={() => wrapSelection(ref, field, '**')}>
+        <b>B</b>
+      </button>
+      <button type="button" className="mtool" title="선택한 텍스트 형광펜 (==텍스트==)" onClick={() => wrapSelection(ref, field, '==')}>
+        <i className="hl">가</i>
+      </button>
+    </span>
+  );
   // admin only — server re-verifies the session cookie before any (paid) generation
   async function requestImage(c: Card): Promise<string> {
     // body cards carry the substance in `body` — fold it into the prompt so the
@@ -154,7 +195,7 @@ export default function EditorStage({
               key={i}
               type="button"
               aria-pressed={i === sel}
-              aria-label={`${String(i + 1).padStart(2, '0')} ${kindLabelOf(c.kind)} 카드${c.title ? `: ${c.title}` : ''}`}
+              aria-label={`${String(i + 1).padStart(2, '0')} ${kindLabelOf(c.kind)} 카드${c.title ? `: ${stripEmphasis(c.title)}` : ''}`}
               className={`thumb ${c.kind !== 'body' ? 'dark' : ''} ${i === sel ? 'is-on' : ''}`}
               onClick={() => setSel(i)}
             >
@@ -170,7 +211,7 @@ export default function EditorStage({
         <div className="stage__bar">
           <p className="aiflag"><span className="dot" aria-hidden="true" /> AI가 5컷을 생성했어요 · 자유롭게 다듬어보세요</p>
         </div>
-        <div className="canvas" role="group" aria-label={`${kindLabel} 카드 미리보기: ${card.title}`}>
+        <div className="canvas" role="group" aria-label={`${kindLabel} 카드 미리보기: ${stripEmphasis(card.title)}`}>
           {/* fixed 540px layout scaled down on mobile, so the preview keeps the
               exact text-to-card proportions of the exported 1080px PNG */}
           <div className="canvas__fit">
@@ -229,13 +270,20 @@ export default function EditorStage({
             <input ref={fileRef} type="file" accept="image/*" hidden onChange={onUpload} aria-label="이미지 파일 선택" />
           </div>
           <div className="ig">
-            <label className="ig__t" htmlFor={titleId}>{card.kind === 'cover' ? '표지 헤드라인' : card.kind === 'cta' ? 'CTA 문구' : '소제목'} <span style={{ color: 'var(--ink-3)', fontWeight: 400 }}>· 비우면 삭제</span></label>
-            <textarea id={titleId} className="ta" value={card.title} onChange={(e) => updateCard(sel, { title: e.target.value })} placeholder="비우면 카드에서 사라져요" />
+            <div className="ig__row">
+              <label className="ig__t" htmlFor={titleId}>{card.kind === 'cover' ? '표지 헤드라인' : card.kind === 'cta' ? 'CTA 문구' : '소제목'} <span style={{ color: 'var(--ink-3)', fontWeight: 400 }}>· 비우면 삭제</span></label>
+              {emphasisTools(titleTaRef, 'title')}
+            </div>
+            <textarea ref={titleTaRef} id={titleId} className="ta" value={card.title} onChange={(e) => updateCard(sel, { title: e.target.value })} placeholder="비우면 카드에서 사라져요" />
+            <p className="emhint">드래그 후 <b>B</b>·형광펜, 직접 입력도 OK — **굵게** ==형광펜==</p>
           </div>
           {card.kind === 'body' && (
             <div className="ig">
-              <label className="ig__t" htmlFor={`${titleId}-body`}>본문 텍스트 <span style={{ color: 'var(--ink-3)', fontWeight: 400 }}>· 비우면 삭제</span></label>
-              <textarea id={`${titleId}-body`} className="ta" style={{ minHeight: 100 }} value={card.body || ''} onChange={(e) => updateCard(sel, { body: e.target.value })} placeholder="비우면 카드에서 사라져요" />
+              <div className="ig__row">
+                <label className="ig__t" htmlFor={`${titleId}-body`}>본문 텍스트 <span style={{ color: 'var(--ink-3)', fontWeight: 400 }}>· 비우면 삭제</span></label>
+                {emphasisTools(bodyTaRef, 'body')}
+              </div>
+              <textarea ref={bodyTaRef} id={`${titleId}-body`} className="ta" style={{ minHeight: 100 }} value={card.body || ''} onChange={(e) => updateCard(sel, { body: e.target.value })} placeholder="비우면 카드에서 사라져요" />
             </div>
           )}
           {card.kind === 'cover' && (
@@ -299,6 +347,12 @@ export default function EditorStage({
               <div className="tog">
                 <span className="tog__lb">구분 라벨 ({card.kind === 'cta' ? 'CTA' : '본문'})</span>
                 <button type="button" role="switch" aria-checked={!card.hideLabel} aria-label="구분 라벨 표시" className="switch" onClick={() => updateCard(sel, { hideLabel: !card.hideLabel })} />
+              </div>
+            )}
+            {card.kind === 'cover' && (
+              <div className="tog">
+                <span className="tog__lb">넘김 유도 문구 (밀어서 보기 →)</span>
+                <button type="button" role="switch" aria-checked={!card.hideSwipe} aria-label="넘김 유도 문구 표시" className="switch" onClick={() => updateCard(sel, { hideSwipe: !card.hideSwipe })} />
               </div>
             )}
             {card.kind === 'cta' && (

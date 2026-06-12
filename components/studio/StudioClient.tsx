@@ -271,7 +271,9 @@ export default function StudioClient() {
         category: article.category,
         source: article.source,
       }));
-      built[0].title = article.title;
+      // the LLM writes a hook-style cover headline — keep it; the raw article
+      // title is only the fallback (and stays reachable via 원래 문구 되돌리기)
+      if (!built[0].title.trim()) built[0].title = article.title;
       setCards(built);
       setOriginalCards(built.map((c) => ({ ...c })));
       setCaption(final.caption || '');

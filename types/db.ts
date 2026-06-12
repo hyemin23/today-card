@@ -43,6 +43,8 @@ export interface Card {
   hideNum?: boolean;
   hideLabel?: boolean;
   hideHandle?: boolean;
+  /** cover only: hide the "밀어서 보기 →" swipe cue */
+  hideSwipe?: boolean;
 }
 
 export interface GenerateResult {

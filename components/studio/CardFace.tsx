@@ -1,7 +1,45 @@
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import type { Card, Magazine } from '@/types/db';
 
 type Ctx = 'canvas' | 'slide' | 'thumb';
+
+/* ---------- inline emphasis: **굵게** and ==형광펜== ----------
+   Carousel readers skim — the generator (and the editor toolbar) mark the
+   key phrase per card so it pops without reading the full text. */
+
+const EMPH_RE = /(\*\*[^*\n]+?\*\*|==[^=\n]+?==)/g;
+
+/** Plain text for aria-labels / anywhere markers must not leak. */
+export function stripEmphasis(text: string): string {
+  return text.replace(/\*\*([^*\n]+?)\*\*/g, '$1').replace(/==([^=\n]+?)==/g, '$1');
+}
+
+function isLight(hex: string): boolean {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
+  if (!m) return false;
+  const n = parseInt(m[1], 16);
+  return 0.299 * ((n >> 16) & 255) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255) > 150;
+}
+
+function renderEmphasis(text: string, accent: string, surfaceLight: boolean): ReactNode {
+  if (!text || (!text.includes('**') && !text.includes('=='))) return text;
+  // the accent must contrast with the card surface; same-side accents fall back to ink/white
+  const hlBg = isLight(accent) === surfaceLight ? (surfaceLight ? '#111110' : '#ffffff') : accent;
+  const hlStyle: CSSProperties = {
+    background: hlBg,
+    color: isLight(hlBg) ? '#111110' : '#ffffff',
+    padding: '0 0.14em',
+    margin: '0 0.02em',
+    borderRadius: 3,
+    boxDecorationBreak: 'clone',
+    WebkitBoxDecorationBreak: 'clone',
+  };
+  return text.split(EMPH_RE).map((part, i) => {
+    if (/^\*\*[^*\n]+\*\*$/.test(part)) return <b key={i} style={{ fontWeight: 900 }}>{part.slice(2, -2)}</b>;
+    if (/^==[^=\n]+==$/.test(part)) return <mark key={i} style={hlStyle}>{part.slice(2, -2)}</mark>;
+    return part;
+  });
+}
 
 /** 3×3 position grid, row-major: v = vertical block placement, t = text alignment */
 const ALIGN: Record<number, { v: 'flex-start' | 'center' | 'flex-end'; t: 'left' | 'center' | 'right' }> = {
@@ -27,6 +65,9 @@ export default function CardFace({ card, magazine, ctx, hint = true }: { card: C
   const align = ALIGN[alignIndex(card.align)];
   const num = `0${card.idx + 1} / 05`;
   const mono = { fontFamily: 'var(--mono)' } as const;
+  // cards with the dark scrim (dark kinds or any photo) read as dark surfaces
+  const surfaceLight = !dark && !card.imageUrl;
+  const em = (text: string) => renderEmphasis(text, magazine.accentColor, surfaceLight);
 
   return (
     <div style={{ position: 'absolute', inset: 0, background: bg, color: fg, overflow: 'hidden' }}>
@@ -83,13 +124,13 @@ export default function CardFace({ card, magazine, ctx, hint = true }: { card: C
               }}
             />
           )}
-          <div style={{ fontFamily: 'var(--serif)', fontWeight: 800, letterSpacing: '-.035em', lineHeight: 1.08, fontSize: titleSize, whiteSpace: 'pre-line', marginTop: align.v === 'flex-start' ? (ctx === 'thumb' ? 14 : 16) : 0 }}>
-            {card.title}
+          <div style={{ fontFamily: 'var(--serif)', fontWeight: 800, letterSpacing: '-.035em', lineHeight: 1.16, fontSize: titleSize, whiteSpace: 'pre-line', marginTop: align.v === 'flex-start' ? (ctx === 'thumb' ? 14 : 16) : 0 }}>
+            {ctx === 'thumb' ? stripEmphasis(card.title) : em(card.title)}
           </div>
           {ctx !== 'thumb' && card.kind === 'body' && card.body && (
             <>
               <div style={{ height: 1, background: 'currentColor', opacity: 0.16, margin: `${ctx === 'canvas' ? 16 : 10}px 0` }} />
-              <div style={{ fontSize: ctx === 'canvas' ? 15 : 11, lineHeight: 1.55, opacity: 0.78, whiteSpace: 'pre-line' }}>{card.body}</div>
+              <div style={{ fontSize: ctx === 'canvas' ? 15 : 11, lineHeight: 1.6, opacity: 0.85, whiteSpace: 'pre-line' }}>{em(card.body)}</div>
             </>
           )}
           {ctx !== 'thumb' && card.kind === 'cta' && (() => {
@@ -103,6 +144,12 @@ export default function CardFace({ card, magazine, ctx, hint = true }: { card: C
             );
           })()}
         </div>
+        {/* swipe cue — covers that hint "more inside" get swiped more (toggleable) */}
+        {ctx !== 'thumb' && card.kind === 'cover' && !card.hideSwipe && (
+          <div style={{ ...mono, fontSize: ctx === 'canvas' ? 11 : 9, letterSpacing: '.1em', opacity: 0.75, textAlign: 'right', marginTop: ctx === 'canvas' ? 14 : 8 }}>
+            밀어서 보기 →
+          </div>
+        )}
       </div>
     </div>
   );

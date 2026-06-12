@@ -173,6 +173,15 @@ body.studio-body { height: 100%; background: var(--wash); overflow: hidden; }
 .btnrow { display: flex; gap: 8px; }
 .minib { flex: 1; border: 1px solid var(--line-2); border-radius: var(--radius); padding: 11px; font-size: 12.5px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 7px; transition: all .16s; }
 .minib:hover { border-color: var(--ink); background: var(--wash); }
+/* emphasis toolbar (bold / highlighter) above the text fields */
+.ig__row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.ig__row .ig__t { margin-bottom: 0; }
+.mtools { display: inline-flex; gap: 6px; }
+.mtool { min-width: 30px; height: 26px; padding: 0 8px; border: 1px solid var(--line-2); border-radius: 6px; font-size: 12px; display: inline-flex; align-items: center; justify-content: center; transition: all .15s var(--ease); }
+.mtool:hover { border-color: var(--ink); background: var(--wash); }
+.mtool .hl { font-style: normal; background: var(--ink); color: var(--paper); padding: 0 5px; border-radius: 2px; font-size: 11px; line-height: 1.5; }
+.emhint { font-family: var(--mono); font-size: 10px; color: var(--ink-3); letter-spacing: .02em; margin-top: 7px; }
+
 .ta { width: 100%; border: 1px solid var(--line-2); border-radius: var(--radius); padding: 11px 12px; font-size: 13px; line-height: 1.45; resize: vertical; min-height: 70px; }
 .ta:focus { outline: none; border-color: var(--ink); box-shadow: 0 0 0 3px rgba(17,17,16,.06); }
 .swrow { display: flex; gap: 9px; }

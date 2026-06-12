@@ -74,8 +74,12 @@ function normalizeDate(raw: string): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(new Date(ms)).replace(/-/g, '.');
 }
 
-async function crawlDaum(query: string, category?: string): Promise<Article[]> {
-  const url = `https://search.daum.net/search?w=news&q=${encodeURIComponent(query)}&DA=PGD`;
+/** How many Daum result pages to fetch in parallel (10 articles per page). */
+const DAUM_PAGES = 3;
+
+async function crawlDaumPage(query: string, page: number, category?: string): Promise<Article[]> {
+  // sort=recency → 최신순; p → result page (10 items each)
+  const url = `https://search.daum.net/search?w=news&q=${encodeURIComponent(query)}&DA=PGD&sort=recency&p=${page}`;
   const html = await fetchText(url, 7000);
   const $ = load(html);
   const out: Article[] = [];
@@ -111,6 +115,26 @@ async function crawlDaum(query: string, category?: string): Promise<Article[]> {
   });
 
   return out;
+}
+
+/**
+ * Fetch the first DAUM_PAGES result pages concurrently (newest first), then
+ * merge in page order and drop duplicates — the same article occasionally
+ * straddles a page boundary between requests.
+ */
+async function crawlDaum(query: string, category?: string): Promise<Article[]> {
+  const pages = await Promise.allSettled(
+    Array.from({ length: DAUM_PAGES }, (_, i) => crawlDaumPage(query, i + 1, category))
+  );
+  const seen = new Set<string>();
+  return pages
+    .flatMap((r) => (r.status === 'fulfilled' ? r.value : []))
+    .filter((a) => {
+      const key = a.sourceUrl || a.title;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
 }
 
 async function crawlGoogleNews(query: string, category?: string): Promise<Article[]> {

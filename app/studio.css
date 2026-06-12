@@ -15,7 +15,9 @@ body.studio-body { height: 100%; background: var(--wash); overflow: hidden; }
   display: flex; align-items: center; gap: 18px; padding: 0 18px; z-index: 40;
 }
 .topbar__brand { font-family: var(--serif); font-weight: 800; letter-spacing: -.05em; font-size: 20px; display: flex; align-items: center; gap: 9px; }
-.topbar__brand .home { font-size: 15px; color: var(--ink-3); }
+/* generous padding (offset by negative margin) keeps the visual size but gives
+   the back-home link a finger-sized hit area */
+.topbar__brand .home { font-size: 15px; color: var(--ink-3); padding: 12px 10px; margin: -12px -6px -12px -10px; display: inline-flex; align-items: center; }
 .topbar__brand .home:hover { color: var(--ink); }
 .topbar__sep { width: 1px; height: 24px; background: var(--line); }
 
@@ -143,6 +145,7 @@ body.studio-body { height: 100%; background: var(--wash); overflow: hidden; }
 .aiflag .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--ink); animation: pulse 1.8s ease-in-out infinite; }
 @keyframes pulse { 0%,100% { opacity: .3; } 50% { opacity: 1; } }
 .canvas { width: 100%; max-width: 540px; aspect-ratio: 1; background: var(--ink); color: var(--paper); box-shadow: var(--shadow-card); position: relative; overflow: hidden; }
+.canvas__fit { position: absolute; inset: 0; }
 /* invisible hit layer that makes the cover's "이미지를 올려주세요" hint clickable */
 .canvas__uploadhit { position: absolute; inset: 0; background: transparent; cursor: pointer; }
 .canvas__uploadhit:focus-visible { outline: 3px solid #fff; outline-offset: -6px; }
@@ -182,9 +185,9 @@ body.studio-body { height: 100%; background: var(--wash); overflow: hidden; }
 .tog { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 0; }
 .tog + .tog { border-top: 1px solid var(--line); }
 .tog__lb { font-size: 13px; color: var(--ink-2); }
-.switch { flex: none; width: 38px; height: 22px; border-radius: 100px; background: var(--line-2); position: relative; cursor: pointer; transition: background .18s var(--ease); }
+.switch { flex: none; width: 40px; height: 24px; border-radius: 100px; background: var(--line-2); position: relative; cursor: pointer; transition: background .18s var(--ease); }
 .switch[aria-checked="true"] { background: var(--ink); }
-.switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: transform .18s var(--ease); box-shadow: 0 1px 2px rgba(17,17,16,.3); }
+.switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: transform .18s var(--ease); box-shadow: 0 1px 2px rgba(17,17,16,.3); }
 .switch[aria-checked="true"]::after { transform: translateX(16px); }
 
 .align { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; width: 108px; }
@@ -230,7 +233,7 @@ body.studio-body { height: 100%; background: var(--wash); overflow: hidden; }
 .panel { border: 1px solid var(--line); border-radius: 14px; background: var(--paper); }
 .panel__h { padding: 15px 18px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; }
 .panel__h h3 { font-size: 13.5px; font-weight: 600; }
-.panel__h .copy { font-size: 11.5px; font-weight: 600; display: flex; gap: 6px; align-items: center; cursor: pointer; }
+.panel__h .copy { font-size: 11.5px; font-weight: 600; display: flex; gap: 6px; align-items: center; cursor: pointer; padding: 8px 10px; margin: -8px -10px; }
 .panel__h .copy:hover { text-decoration: underline; }
 .panel__b { padding: 16px 18px; }
 .cap { font-size: 13px; line-height: 1.65; color: var(--ink-2); white-space: pre-line; }
@@ -283,7 +286,7 @@ body.studio-body { height: 100%; background: var(--wash); overflow: hidden; }
 .uploader .up-s { display: block; font-size: 11px; color: var(--ink-3); }
 .taglist { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 9px; list-style: none; }
 .taglist .t { background: var(--wash); border: 1px solid var(--line); border-radius: 100px; padding: 6px 12px; font-size: 12px; display: flex; gap: 7px; align-items: center; }
-.taglist .t button { color: var(--ink-3); cursor: pointer; line-height: 1; }
+.taglist .t button { color: var(--ink-3); cursor: pointer; line-height: 1; min-width: 24px; min-height: 24px; display: inline-flex; align-items: center; justify-content: center; margin: -6px -6px -6px 0; }
 .taglist .t button:hover { color: var(--ink); }
 .swatches { display: flex; gap: 9px; flex-wrap: wrap; }
 .swatch { width: 34px; height: 34px; border-radius: 50%; cursor: pointer; border: 1px solid var(--line-2); position: relative; transition: transform .15s; }
@@ -335,7 +338,9 @@ body.studio-body { height: 100%; background: var(--wash); overflow: hidden; }
   body.studio-body { overflow-x: clip; overflow-y: auto; }
   .studio { height: auto; min-height: 100vh; }
   .stagewrap { overflow: visible; }
-  .stage-pane { position: relative; }
+  /* overflow must be visible too — any scrollable ancestor hijacks position:sticky,
+     which silently disabled the pinned card preview below */
+  .stage-pane { position: relative; overflow: visible; }
   .stage-pane:not(.is-active) { display: none; }
 
   /* topbar: brand + 3 steps + magazine swatch must fit a 360px phone —
@@ -359,7 +364,10 @@ body.studio-body { height: 100%; background: var(--wash); overflow: hidden; }
      still shows the result without scroll round-trips */
   .stage { overflow: visible; position: sticky; top: 0; z-index: 30; background: var(--wash); padding: 10px 16px 12px; border-bottom: 1px solid var(--line); }
   .stage__bar { display: none; }
-  .canvas { max-width: min(62vw, 240px); margin: 0 auto; }
+  /* fixed 240px (not vw) so the 540→240 scale factor stays exact — the inner
+     layout renders at the desktop 540px and shrinks, keeping export proportions */
+  .canvas { width: 240px; max-width: 240px; margin: 0 auto; }
+  .canvas__fit { inset: auto; top: 0; left: 0; width: 540px; height: 540px; transform: scale(0.44444); transform-origin: top left; }
   .stage__nav { margin-top: 10px; justify-content: center; }
   .stage__nav .btn { padding: 7px 13px; font-size: 12px; }
 

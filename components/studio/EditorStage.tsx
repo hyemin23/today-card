@@ -128,7 +128,11 @@ export default function EditorStage({
           <p className="aiflag"><span className="dot" aria-hidden="true" /> AI가 5컷을 생성했어요 · 자유롭게 다듬어보세요</p>
         </div>
         <div className="canvas" role="group" aria-label={`${kindLabel} 카드 미리보기: ${card.title}`}>
-          <CardFace card={card} magazine={magazine} ctx="canvas" />
+          {/* fixed 540px layout scaled down on mobile, so the preview keeps the
+              exact text-to-card proportions of the exported 1080px PNG */}
+          <div className="canvas__fit">
+            <CardFace card={card} magazine={magazine} ctx="canvas" />
+          </div>
           {card.kind === 'cover' && !card.imageUrl && (
             /* the visual "이미지를 올려주세요" hint lives in CardFace — this makes it actually clickable */
             <button

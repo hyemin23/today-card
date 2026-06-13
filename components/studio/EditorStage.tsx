@@ -2,8 +2,8 @@
 
 import { useId, useRef, useState } from 'react';
 import type { Card, Magazine } from '@/types/db';
-import CardFace, { alignIndex, stripEmphasis } from './CardFace';
-import { TEXT_COLORS } from './data';
+import CardFace, { alignIndex, stripEmphasis, cleanMarkers } from './CardFace';
+import { TEXT_COLORS, FONTS } from './data';
 import { fileToDataUrl, resizeDataUrl } from './imageFile';
 import { IconSpark } from '@/components/icons';
 
@@ -51,6 +51,7 @@ export default function EditorStage({
   const [batchBusy, setBatchBusy] = useState(false);
   const [batchMsg, setBatchMsg] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [emphHint, setEmphHint] = useState('');
   const card = cards[sel];
   if (!card) return null;
 
@@ -96,9 +97,12 @@ export default function EditorStage({
     const { selectionStart: s, selectionEnd: e, value } = ta;
     if (s === e) {
       ta.focus();
-      alert('강조할 부분을 드래그로 선택한 뒤 눌러주세요.');
+      // non-blocking nudge instead of a jarring alert
+      setEmphHint('강조할 글자를 드래그로 선택한 뒤 눌러주세요');
+      setTimeout(() => setEmphHint(''), 2600);
       return;
     }
+    setEmphHint('');
     const picked = value.slice(s, e);
     // toggle off when the selection is already wrapped
     const wrapped = value.slice(s - 2, s) === marker && value.slice(e, e + 2) === marker;
@@ -113,14 +117,28 @@ export default function EditorStage({
     });
   }
 
+  /** Strip every emphasis marker from the field (plain text). */
+  function clearEmphasis(field: 'title' | 'body') {
+    updateCard(sel, { [field]: stripEmphasis(String(card[field] || '')) } as Partial<Card>);
+  }
+  const hasEmphasis = (field: 'title' | 'body') => {
+    const v = String(card[field] || '');
+    return v.includes('**') || v.includes('==');
+  };
+
   const emphasisTools = (ref: React.RefObject<HTMLTextAreaElement>, field: 'title' | 'body') => (
     <span className="mtools" role="group" aria-label="텍스트 강조">
-      <button type="button" className="mtool" title="선택한 텍스트 굵게 (**텍스트**)" onClick={() => wrapSelection(ref, field, '**')}>
+      <button type="button" className="mtool" title="선택한 글자 굵게" onClick={() => wrapSelection(ref, field, '**')}>
         <b>B</b>
       </button>
-      <button type="button" className="mtool" title="선택한 텍스트 형광펜 (==텍스트==)" onClick={() => wrapSelection(ref, field, '==')}>
+      <button type="button" className="mtool" title="선택한 글자 형광펜" onClick={() => wrapSelection(ref, field, '==')}>
         <i className="hl">가</i>
       </button>
+      {hasEmphasis(field) && (
+        <button type="button" className="mtool mtool--clear" title="이 칸의 강조 모두 지우기" onClick={() => clearEmphasis(field)}>
+          강조 지우기
+        </button>
+      )}
     </span>
   );
   // admin only — server re-verifies the session cookie before any (paid) generation
@@ -274,8 +292,8 @@ export default function EditorStage({
               <label className="ig__t" htmlFor={titleId}>{card.kind === 'cover' ? '표지 헤드라인' : card.kind === 'cta' ? 'CTA 문구' : '소제목'} <span style={{ color: 'var(--ink-3)', fontWeight: 400 }}>· 비우면 삭제</span></label>
               {emphasisTools(titleTaRef, 'title')}
             </div>
-            <textarea ref={titleTaRef} id={titleId} className="ta" value={card.title} onChange={(e) => updateCard(sel, { title: e.target.value })} placeholder="비우면 카드에서 사라져요" />
-            <p className="emhint">드래그 후 <b>B</b>·형광펜, 직접 입력도 OK — **굵게** ==형광펜==</p>
+            <textarea ref={titleTaRef} id={titleId} className="ta" value={card.title} onChange={(e) => updateCard(sel, { title: e.target.value })} onBlur={() => { const c = cleanMarkers(card.title); if (c !== card.title) updateCard(sel, { title: c }); }} placeholder="비우면 카드에서 사라져요" />
+            <p className="emhint">{emphHint || <>강조할 글자를 드래그 → <b>B</b>(굵게)·형광펜 버튼. 위 미리보기에 바로 반영돼요.</>}</p>
           </div>
           {(card.kind === 'body' || card.kind === 'cta') && (
             <div className="ig">
@@ -283,7 +301,7 @@ export default function EditorStage({
                 <label className="ig__t" htmlFor={`${titleId}-body`}>{card.kind === 'cta' ? '카피 문구' : '본문 텍스트'} <span style={{ color: 'var(--ink-3)', fontWeight: 400 }}>· 비우면 삭제</span></label>
                 {emphasisTools(bodyTaRef, 'body')}
               </div>
-              <textarea ref={bodyTaRef} id={`${titleId}-body`} className="ta" style={{ minHeight: card.kind === 'cta' ? 70 : 100 }} value={card.body || ''} onChange={(e) => updateCard(sel, { body: e.target.value })} placeholder={card.kind === 'cta' ? '매거진 설정의 카피가 기본값이에요' : '비우면 카드에서 사라져요'} />
+              <textarea ref={bodyTaRef} id={`${titleId}-body`} className="ta" style={{ minHeight: card.kind === 'cta' ? 70 : 100 }} value={card.body || ''} onChange={(e) => updateCard(sel, { body: e.target.value })} onBlur={() => { const c = cleanMarkers(card.body || ''); if (c !== (card.body || '')) updateCard(sel, { body: c }); }} placeholder={card.kind === 'cta' ? '매거진 설정의 카피가 기본값이에요' : '비우면 카드에서 사라져요'} />
             </div>
           )}
           {card.kind === 'cover' && (
@@ -320,6 +338,30 @@ export default function EditorStage({
                   aria-label="글자색 직접 선택"
                 />
               </label>
+            </div>
+          </div>
+          <div className="ig">
+            <label className="ig__t" htmlFor={`${titleId}-font`}>글씨체</label>
+            <div className="fontsel">
+              <select
+                id={`${titleId}-font`}
+                className="input"
+                value={card.fontFamily || ''}
+                onChange={(e) => updateCard(sel, { fontFamily: e.target.value })}
+                style={{ fontFamily: FONTS.find((f) => f.key === (card.fontFamily || ''))?.css }}
+              >
+                {FONTS.map((f) => (
+                  <option key={f.key} value={f.key} style={{ fontFamily: f.css }}>{f.label}</option>
+                ))}
+              </select>
+              <button
+                type="button"
+                className="minib fontsel__all"
+                title="이 글씨체를 5컷 전체에 적용"
+                onClick={() => { const ff = card.fontFamily || ''; cards.forEach((_, i) => updateCard(i, { fontFamily: ff })); }}
+              >
+                전체 적용
+              </button>
             </div>
           </div>
           <div className="ig">

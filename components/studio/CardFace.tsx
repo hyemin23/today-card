@@ -1,17 +1,52 @@
 import type { CSSProperties, ReactNode } from 'react';
 import type { Card, Magazine } from '@/types/db';
+import { FONT_CSS } from './data';
 
 type Ctx = 'canvas' | 'slide' | 'thumb';
 
 /* ---------- inline emphasis: **굵게** and ==형광펜== ----------
    Carousel readers skim — the generator (and the editor toolbar) mark the
-   key phrase per card so it pops without reading the full text. */
+   key phrase per card so it pops without reading the full text.
+
+   The parser is deliberately tolerant: it matches valid **x** / ==x== pairs
+   and SCRUBS any leftover runs of 2+ marker chars from the plain text, so a
+   malformed AI output like "====황금비율==?====" can never leak literal '='
+   onto a card. */
 
 const EMPH_RE = /(\*\*[^*\n]+?\*\*|==[^=\n]+?==)/g;
 
-/** Plain text for aria-labels / anywhere markers must not leak. */
+type EmphPart = { type: 'plain' | 'bold' | 'hl'; text: string };
+
+function splitEmphasis(text: string): EmphPart[] {
+  const parts: EmphPart[] = [];
+  let last = 0;
+  let m: RegExpExecArray | null;
+  EMPH_RE.lastIndex = 0;
+  while ((m = EMPH_RE.exec(text))) {
+    if (m.index > last) parts.push({ type: 'plain', text: text.slice(last, m.index) });
+    parts.push(m[0].startsWith('**')
+      ? { type: 'bold', text: m[0].slice(2, -2) }
+      : { type: 'hl', text: m[0].slice(2, -2) });
+    last = EMPH_RE.lastIndex;
+  }
+  if (last < text.length) parts.push({ type: 'plain', text: text.slice(last) });
+  // scrub stray marker runs (2+) that aren't part of a matched pair
+  for (const p of parts) if (p.type === 'plain') p.text = p.text.replace(/={2,}/g, '').replace(/\*{2,}/g, '');
+  return parts;
+}
+
+/** Canonical clean string — used by the editor's "정리" button and AI output sanitize. */
+export function cleanMarkers(text: string): string {
+  if (!text || (!text.includes('**') && !text.includes('=='))) return text;
+  return splitEmphasis(text)
+    .map((p) => (p.type === 'bold' ? `**${p.text}**` : p.type === 'hl' ? `==${p.text}==` : p.text))
+    .join('');
+}
+
+/** Plain text for aria-labels / thumbnails — markers and strays removed. */
 export function stripEmphasis(text: string): string {
-  return text.replace(/\*\*([^*\n]+?)\*\*/g, '$1').replace(/==([^=\n]+?)==/g, '$1');
+  if (!text) return text;
+  return splitEmphasis(text).map((p) => p.text).join('');
 }
 
 function isLight(hex: string): boolean {
@@ -34,10 +69,10 @@ function renderEmphasis(text: string, accent: string, surfaceLight: boolean): Re
     boxDecorationBreak: 'clone',
     WebkitBoxDecorationBreak: 'clone',
   };
-  return text.split(EMPH_RE).map((part, i) => {
-    if (/^\*\*[^*\n]+\*\*$/.test(part)) return <b key={i} style={{ fontWeight: 900 }}>{part.slice(2, -2)}</b>;
-    if (/^==[^=\n]+==$/.test(part)) return <mark key={i} style={hlStyle}>{part.slice(2, -2)}</mark>;
-    return part;
+  return splitEmphasis(text).map((p, i) => {
+    if (p.type === 'bold') return <b key={i} style={{ fontWeight: 900 }}>{p.text}</b>;
+    if (p.type === 'hl') return <mark key={i} style={hlStyle}>{p.text}</mark>;
+    return <span key={i}>{p.text}</span>;
   });
 }
 
@@ -71,6 +106,8 @@ export default function CardFace({ card, magazine, ctx, hint = true }: { card: C
   // cards with the dark scrim (dark kinds or any photo) read as dark surfaces
   const surfaceLight = !dark && !card.imageUrl;
   const em = (text: string) => renderEmphasis(text, magazine.accentColor, surfaceLight);
+  // chosen headline font (falls back to Pretendard); handwriting needs a touch more line-height
+  const headlineFont = FONT_CSS[card.fontFamily || ''] || FONT_CSS[''];
 
   return (
     <div style={{ position: 'absolute', inset: 0, background: bg, color: fg, overflow: 'hidden' }}>
@@ -151,7 +188,7 @@ export default function CardFace({ card, magazine, ctx, hint = true }: { card: C
               }}
             />
           )}
-          <div style={{ fontFamily: 'var(--serif)', fontWeight: 800, letterSpacing: '-.035em', lineHeight: 1.16, fontSize: titleSize, whiteSpace: 'pre-line', marginTop: align.v === 'flex-start' ? (ctx === 'thumb' ? 14 : 16) : 0 }}>
+          <div style={{ fontFamily: headlineFont, fontWeight: 800, letterSpacing: '-.035em', lineHeight: 1.16, fontSize: titleSize, whiteSpace: 'pre-line', marginTop: align.v === 'flex-start' ? (ctx === 'thumb' ? 14 : 16) : 0 }}>
             {ctx === 'thumb' ? stripEmphasis(card.title) : em(card.title)}
           </div>
           {ctx !== 'thumb' && card.kind === 'body' && card.body && (

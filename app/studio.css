@@ -180,7 +180,15 @@ body.studio-body { height: 100%; background: var(--wash); overflow: hidden; }
 .mtool { min-width: 30px; height: 26px; padding: 0 8px; border: 1px solid var(--line-2); border-radius: 6px; font-size: 12px; display: inline-flex; align-items: center; justify-content: center; transition: all .15s var(--ease); }
 .mtool:hover { border-color: var(--ink); background: var(--wash); }
 .mtool .hl { font-style: normal; background: var(--ink); color: var(--paper); padding: 0 5px; border-radius: 2px; font-size: 11px; line-height: 1.5; }
-.emhint { font-family: var(--mono); font-size: 10px; color: var(--ink-3); letter-spacing: .02em; margin-top: 7px; }
+.mtool--clear { min-width: auto; padding: 0 9px; font-size: 11px; color: var(--ink-3); }
+.mtool--clear:hover { color: var(--ink); }
+.emhint { font-size: 10.5px; color: var(--ink-3); letter-spacing: .01em; margin-top: 7px; line-height: 1.5; }
+.emhint b { color: var(--ink-2); }
+
+/* font selector */
+.fontsel { display: flex; gap: 8px; }
+.fontsel select { flex: 1; appearance: none; -webkit-appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--ink-3) 50%), linear-gradient(135deg, var(--ink-3) 50%, transparent 50%); background-position: calc(100% - 16px) center, calc(100% - 11px) center; background-size: 5px 5px, 5px 5px; background-repeat: no-repeat; padding-right: 30px; cursor: pointer; }
+.fontsel__all { flex: none; padding: 8px 12px; font-size: 12px; }
 
 .ta { width: 100%; border: 1px solid var(--line-2); border-radius: var(--radius); padding: 11px 12px; font-size: 13px; line-height: 1.45; resize: vertical; min-height: 70px; }
 .ta:focus { outline: none; border-color: var(--ink); box-shadow: 0 0 0 3px rgba(17,17,16,.06); }

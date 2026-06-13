@@ -54,6 +54,8 @@ export interface Card {
   hideHandle?: boolean;
   /** cover only: hide the "밀어서 보기 →" swipe cue */
   hideSwipe?: boolean;
+  /** headline font key (see FONTS in studio/data.ts); empty = default Pretendard */
+  fontFamily?: string;
 }
 
 export interface GenerateResult {

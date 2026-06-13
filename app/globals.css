@@ -14,6 +14,14 @@
   src: url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/woff2/PretendardVariable.woff2') format('woff2-variations');
 }
 
+/* selectable card headline fonts — single-file Korean woff2 (fontsource via jsDelivr)
+   so they embed cleanly into html-to-image PNG export, one request each */
+@font-face { font-family: 'Black Han Sans'; font-weight: 400; font-display: swap; src: url('https://cdn.jsdelivr.net/fontsource/fonts/black-han-sans@5/korean-400-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Jua'; font-weight: 400; font-display: swap; src: url('https://cdn.jsdelivr.net/fontsource/fonts/jua@5/korean-400-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Do Hyeon'; font-weight: 400; font-display: swap; src: url('https://cdn.jsdelivr.net/fontsource/fonts/do-hyeon@5/korean-400-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Nanum Myeongjo'; font-weight: 400 800; font-display: swap; src: url('https://cdn.jsdelivr.net/fontsource/fonts/nanum-myeongjo@5/korean-400-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Nanum Pen Script'; font-weight: 400; font-display: swap; src: url('https://cdn.jsdelivr.net/fontsource/fonts/nanum-pen-script@5/korean-400-normal.woff2') format('woff2'); }
+
 /* ---- Tokens ---- */
 :root {
   --ink:        #111110;

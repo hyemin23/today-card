@@ -29,6 +29,7 @@ export async function generateCards(article: Article, body?: string, tone?: stri
     '- 5번 kind="cta": 팔로우 유도 문구(title). body는 빈 문자열.',
     'kind 값은 반드시 "cover" | "body" | "cta" 중 하나만 사용합니다.',
     '강조 표기 규칙(중요): 핵심 구절은 ==이렇게== 감싸면 형광펜으로, 중요 수치·키워드는 **이렇게** 감싸면 굵게 표시됩니다.',
+    '표기 형식 엄수: 형광펜은 단어 양쪽에 등호 정확히 2개(==단어==), 굵게는 별표 정확히 2개(**단어**). 등호·별표를 3개 이상 붙이거나 한쪽만 닫는 것 절대 금지. 표시할 단어가 없으면 마커를 쓰지 마세요.',
     '- cover title: 가장 궁금증을 일으키는 키워드 하나만 ==형광펜==.',
     '- 각 body 카드: body 안에서 가장 중요한 구절 1개를 ==형광펜==, 수치·고유명사 1~2개를 **굵게**. 과한 강조 금지(카드당 형광펜 1개, 굵게 최대 2개) — 다 강조하면 아무것도 강조되지 않습니다.',
     '- cta에는 강조 표기를 쓰지 않습니다.',
@@ -72,6 +73,25 @@ export async function generateCards(article: Article, body?: string, tone?: stri
   }
 }
 
+/**
+ * Clean emphasis markers from model output so malformed runs
+ * ("====황금비율==?====") never reach a card. Keeps valid bold/highlight pairs,
+ * scrubs leftover runs of 2+ marker chars. Mirrors CardFace's tolerant parser.
+ */
+function sanitizeMarkers(text: string): string {
+  if (!text || (!text.includes('**') && !text.includes('=='))) return text;
+  const re = /(\*\*[^*\n]+?\*\*|==[^=\n]+?==)/g;
+  let out = '';
+  let last = 0;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text))) {
+    out += text.slice(last, m.index).replace(/={2,}/g, '').replace(/\*{2,}/g, '') + m[0];
+    last = re.lastIndex;
+  }
+  out += text.slice(last).replace(/={2,}/g, '').replace(/\*{2,}/g, '');
+  return out;
+}
+
 function normalize(parsed: any, article: Article): GenerateResult {
   const raw: any[] = Array.isArray(parsed?.cards) ? parsed.cards : [];
   const cards: Card[] = raw.slice(0, 5).map((c, i) => {
@@ -81,8 +101,8 @@ function normalize(parsed: any, article: Article): GenerateResult {
     return {
       idx: i,
       kind,
-      title: String(c?.title || ''),
-      body: String(c?.body || ''),
+      title: sanitizeMarkers(String(c?.title || '')),
+      body: sanitizeMarkers(String(c?.body || '')),
       imageUrl: null,
       // body cards render on white — dark text (mirrors mockGenerate)
       textColor: kind === 'body' ? '#111110' : '#ffffff',

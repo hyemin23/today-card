@@ -4,6 +4,8 @@ import { useEffect, useId, useRef, useState } from 'react';
 import type { Magazine } from '@/types/db';
 import { MAGAZINES, BG_SWATCHES, ACCENT_SWATCHES } from './data';
 import { fileToDataUrl } from './imageFile';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 
 const COLOR_NAME: Record<string, string> = {
   '#111110': '잉크 블랙',
@@ -192,10 +194,10 @@ export default function MagazineDrawer({
 
           <section className="fset" aria-labelledby={`${id}-s2`}>
             <div className="fset__t"><span className="idx" aria-hidden="true">02</span><h3 id={`${id}-s2`}>이름 · 로고</h3></div>
-            <div className="field"><label htmlFor={`${id}-name`}>매거진 이름</label><input id={`${id}-name`} className="input" value={draft.name} onChange={(e) => set({ name: e.target.value })} /></div>
+            <div className="field"><label htmlFor={`${id}-name`}>매거진 이름</label><Input id={`${id}-name`} value={draft.name} onChange={(e) => set({ name: e.target.value })} /></div>
             <div className="row2">
-              <div className="field"><label htmlFor={`${id}-logo`}>로고 텍스트</label><input id={`${id}-logo`} className="input" value={draft.logoText} onChange={(e) => set({ logoText: e.target.value })} /></div>
-              <div className="field"><label htmlFor={`${id}-handle`}>인스타 핸들</label><input id={`${id}-handle`} className="input" value={draft.handle} onChange={(e) => set({ handle: e.target.value })} /></div>
+              <div className="field"><label htmlFor={`${id}-logo`}>로고 텍스트</label><Input id={`${id}-logo`} value={draft.logoText} onChange={(e) => set({ logoText: e.target.value })} /></div>
+              <div className="field"><label htmlFor={`${id}-handle`}>인스타 핸들</label><Input id={`${id}-handle`} value={draft.handle} onChange={(e) => set({ handle: e.target.value })} /></div>
             </div>
             <div className="field">
               <span className="field-label">마지막 카드 로고 이미지</span>
@@ -221,8 +223,8 @@ export default function MagazineDrawer({
 
           <section className="fset" aria-labelledby={`${id}-s3`}>
             <div className="fset__t"><span className="idx" aria-hidden="true">03</span><h3 id={`${id}-s3`}>멘트 · 해시태그</h3></div>
-            <div className="field"><label htmlFor={`${id}-cta`}>마지막 카드 헤드라인</label><input id={`${id}-cta`} className="input" value={draft.ctaHeadline} onChange={(e) => set({ ctaHeadline: e.target.value })} /></div>
-            <div className="field"><label htmlFor={`${id}-copy`}>카피</label><textarea id={`${id}-copy`} className="textarea" value={draft.ctaCopy} onChange={(e) => set({ ctaCopy: e.target.value })} /></div>
+            <div className="field"><label htmlFor={`${id}-cta`}>마지막 카드 헤드라인</label><Input id={`${id}-cta`} value={draft.ctaHeadline} onChange={(e) => set({ ctaHeadline: e.target.value })} /></div>
+            <div className="field"><label htmlFor={`${id}-copy`}>카피</label><Textarea id={`${id}-copy`} value={draft.ctaCopy} onChange={(e) => set({ ctaCopy: e.target.value })} /></div>
             <div className="field">
               <label htmlFor={`${id}-tag`}>기본 해시태그</label>
               <ul className="taglist" aria-label="기본 해시태그">
@@ -230,7 +232,7 @@ export default function MagazineDrawer({
                   <li className="t" key={h}>{h} <button type="button" aria-label={`${h} 삭제`} onClick={() => set({ hashtags: draft.hashtags.filter((x) => x !== h) })}>✕</button></li>
                 ))}
               </ul>
-              <input id={`${id}-tag`} className="input" placeholder="태그 입력 후 Enter" onKeyDown={(e) => {
+              <Input id={`${id}-tag`} placeholder="태그 입력 후 Enter" onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   e.preventDefault();
                   const v = (e.target as HTMLInputElement).value.trim();
@@ -277,8 +279,8 @@ export default function MagazineDrawer({
               ) : (
                 <>
                   <div className="bench__row">
-                    <input
-                      className="input"
+                    <Input
+                      className="flex-1"
                       placeholder="@계정명 (공개 계정)"
                       value={benchUser}
                       onChange={(e) => setBenchUser(e.target.value)}

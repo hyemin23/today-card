@@ -1,0 +1,70 @@
+/* ============================================================
+   Tailwind + shadcn/ui layer
+   preflight는 꺼져 있다(tailwind.config.ts) — 기존 INK 디자인
+   시스템(globals.css)의 리셋/토큰을 그대로 보존하기 위함.
+   여기서는 shadcn 컴포넌트가 필요로 하는 테마 토큰과
+   최소한의 border 리셋만 추가한다.
+   ============================================================ */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* INK 모노톤 팔레트를 shadcn 토큰으로 매핑 (HSL 채널) */
+    --background: 0 0% 100%;          /* --paper  #ffffff */
+    --foreground: 48 6% 7%;           /* --ink    #111110 */
+    --card: 0 0% 100%;
+    --card-foreground: 48 6% 7%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 48 6% 7%;
+    --primary: 48 6% 7%;              /* --ink */
+    --primary-foreground: 0 0% 100%;  /* --paper */
+    --secondary: 40 24% 95%;          /* --wash  #f6f4ef */
+    --secondary-foreground: 48 6% 7%;
+    --muted: 40 24% 95%;
+    --muted-foreground: 45 6% 42%;    /* --ink-3 #706e66 */
+    --accent: 40 24% 95%;
+    --accent-foreground: 48 6% 7%;
+    --destructive: 0 72% 45%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 40 18% 87%;             /* --line  #e4e1d9 */
+    --input: 40 18% 87%;
+    --ring: 48 6% 7%;
+    --radius: 0.25rem;                /* 기존 --radius: 4px */
+  }
+
+  .dark {
+    --background: 48 6% 7%;
+    --foreground: 0 0% 98%;
+    --card: 48 6% 7%;
+    --card-foreground: 0 0% 98%;
+    --popover: 48 6% 7%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 48 6% 7%;
+    --secondary: 45 5% 16%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 45 5% 16%;
+    --muted-foreground: 40 6% 64%;
+    --accent: 45 5% 16%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62% 45%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 45 5% 18%;
+    --input: 45 5% 18%;
+    --ring: 0 0% 84%;
+  }
+
+  /* preflight를 껐기 때문에 shadcn의 `border` 유틸이 보이도록
+     border 기본값만 직접 복원한다. 기존 디자인의 테두리는
+     단축 속성(`border: 1px solid var(--line)`)으로 색/스타일을
+     명시하므로 specificity 우위로 이 규칙을 덮어쓴다. */
+  *,
+  ::before,
+  ::after {
+    border-width: 0;
+    border-style: solid;
+    border-color: hsl(var(--border));
+  }
+}

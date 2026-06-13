@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import './a11y.css';
+import './tailwind.css';
+import IntroSplash from '@/components/IntroSplash';
 
 export const metadata: Metadata = {
   title: 'INK. — AI 카드뉴스 스튜디오',
@@ -21,6 +23,7 @@ export default function RootLayout({
             __html: "document.documentElement.classList.add('js')",
           }}
         />
+        <IntroSplash />
         {children}
       </body>
     </html>

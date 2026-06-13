@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
   const tone = typeof article.styleTone === 'string' ? article.styleTone.slice(0, 600) : '';
 
   // --- rate limit (only when Supabase is configured; client signs in anonymously on mount) ---
-  const supa = getServerSupabase();
+  const supa = await getServerSupabase();
   const svc = getServiceSupabase();
   let owner: string | null = null;
   if (supa && svc) {

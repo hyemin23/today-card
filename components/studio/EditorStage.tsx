@@ -88,7 +88,7 @@ export default function EditorStage({
 
   /** Wrap the textarea selection in an emphasis marker (** bold / == highlight). */
   function wrapSelection(
-    ref: React.RefObject<HTMLTextAreaElement>,
+    ref: React.RefObject<HTMLTextAreaElement | null>,
     field: 'title' | 'body',
     marker: '**' | '=='
   ) {
@@ -126,7 +126,7 @@ export default function EditorStage({
     return v.includes('**') || v.includes('==');
   };
 
-  const emphasisTools = (ref: React.RefObject<HTMLTextAreaElement>, field: 'title' | 'body') => (
+  const emphasisTools = (ref: React.RefObject<HTMLTextAreaElement | null>, field: 'title' | 'body') => (
     <span className="mtools" role="group" aria-label="텍스트 강조">
       <button type="button" className="mtool" title="선택한 글자 굵게" onClick={() => wrapSelection(ref, field, '**')}>
         <b>B</b>

@@ -71,23 +71,6 @@
 /* 헤더는 하드코딩된 흰 반투명 배경이라 다크에서 따로 덮어준다 */
 .dark .nav { background: rgba(18,17,15,.82); }
 
-/* 스튜디오는 아직 다크 미대응(어두운 패널을 ink로 가득 씀) — 다크에서도
-   라이트 토큰으로 고정해 깨짐을 방지한다. 풀 다크는 후속 과제. */
-.dark body.studio-body {
-  --ink:        #111110;
-  --ink-2:      #4a4945;
-  --ink-3:      #706e66;
-  --line:       #e4e1d9;
-  --line-2:     #d4d0c6;
-  --paper:      #ffffff;
-  --wash:       #f6f4ef;
-  --wash-2:     #efece4;
-  --black:      #111110;
-  --fill-strong: #111110;
-  --on-strong:   #ffffff;
-  --shadow-card: 0 1px 2px rgba(17,17,16,.04), 0 12px 30px -18px rgba(17,17,16,.22);
-}
-
 /* ---- Reset ---- */
 *, *::before, *::after { box-sizing: border-box; }
 * { margin: 0; padding: 0; }

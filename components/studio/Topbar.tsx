@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { Magazine } from '@/types/db';
+import ThemeToggle from '@/components/ThemeToggle';
 
 const STEPS = [
   { n: 1, label: '주제' },
@@ -53,6 +54,7 @@ export default function Topbar({
       </nav>
 
       <div className="topbar__right">
+        <ThemeToggle />
         <button className="magsel" onClick={onOpenDrawer} aria-haspopup="dialog" aria-label={`매거진 설정 — 현재 ${magazine.name}`}>
           <span className="sw" style={{ background: magazine.bgColor }} aria-hidden="true" />
           <span className="nm">{magazine.name}</span>

@@ -50,7 +50,7 @@
 .fan .c3 { left: 52%; top: 56px;  transform: rotate(7deg)  translateZ(10px);  z-index: 2; box-shadow: 0 28px 58px -28px rgba(17,17,16,.42); }
 .fan__badge {
   position: absolute; right: 0; bottom: 4px; z-index: 5;
-  background: var(--ink); color: var(--paper);
+  background: var(--fill-strong); color: var(--on-strong);
   font-family: var(--mono); font-size: 11px; letter-spacing: .08em;
   padding: 10px 16px; border-radius: 100px; display:flex; gap:8px; align-items:center;
   box-shadow: var(--shadow-card);
@@ -113,15 +113,15 @@
 .trio__c p { font-size:14px; color: var(--ink-2); }
 
 /* notes / rules */
-.notes { background: var(--ink); color: var(--paper); }
-.notes .section__head h2 { color: var(--paper); }
+.notes { background: var(--fill-strong); color: var(--on-strong); }
+.notes .section__head h2 { color: var(--on-strong); }
 .notes .section__head p { color: rgba(255,255,255,.7); }
 .notes__grid { display:grid; grid-template-columns: 1.1fr 1fr; gap: 60px; }
 .rules { display:grid; gap: 2px; }
 .rule-row { display:grid; grid-template-columns: 30px 1fr; gap:16px; padding: 16px 0; border-bottom:1px solid rgba(255,255,255,.12); }
 .rule-row .ri { font-family: var(--mono); font-size:12px; color: rgba(255,255,255,.5); }
 .rule-row p { font-size:14px; color: rgba(255,255,255,.82); line-height:1.6; }
-.rule-row b { color: var(--paper); font-weight:600; }
+.rule-row b { color: var(--on-strong); font-weight:600; }
 .notes__aside { font-size:14px; }
 .notes__aside .box { border:1px solid rgba(255,255,255,.18); padding: 26px; border-radius: var(--radius); }
 .notes__aside .box h4 { font-family: var(--serif); font-weight:800; letter-spacing:-.03em; font-size:22px; margin-bottom:14px; }

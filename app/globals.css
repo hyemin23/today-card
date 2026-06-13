@@ -33,6 +33,8 @@
   --wash:       #f6f4ef;
   --wash-2:     #efece4;
   --black:      #111110;
+  --fill-strong: #111110;   /* 어두운 패널 배경 — 다크모드에서도 어둡게 유지 */
+  --on-strong:   #ffffff;   /* 어두운 패널 위 텍스트 — 항상 밝게 */
 
   /* Pretendard is the single typeface; --serif kept as alias so existing rules resolve to it */
   --serif: 'Pretendard', system-ui, -apple-system, sans-serif;
@@ -43,6 +45,46 @@
   --radius: 4px;
   --ease: cubic-bezier(.22,.61,.36,1);
 
+  --shadow-card: 0 1px 2px rgba(17,17,16,.04), 0 12px 30px -18px rgba(17,17,16,.22);
+}
+
+/* ============================================================
+   Dark theme — next-themes 의 .dark 클래스로 opt-in.
+   현재 토큰 기반 화면(랜딩·관리자 등)에 적용된다.
+   "텍스트로서의 ink"는 밝게 반전하고, "어두운 패널 배경(--fill-strong)"은
+   다크에서도 어둡게 유지해 패널 위 흰 글씨가 깨지지 않게 한다.
+   ============================================================ */
+.dark {
+  --ink:        #f3f1ea;
+  --ink-2:      #c4c1b6;
+  --ink-3:      #908d83;
+  --line:       #2c2b27;
+  --line-2:     #3a3833;
+  --paper:      #141310;
+  --wash:       #1c1b18;
+  --wash-2:     #232220;
+  --black:      #f3f1ea;
+  --fill-strong: #24231f;
+  --on-strong:   #f3f1ea;
+  --shadow-card: 0 1px 2px rgba(0,0,0,.4), 0 12px 30px -18px rgba(0,0,0,.7);
+}
+/* 헤더는 하드코딩된 흰 반투명 배경이라 다크에서 따로 덮어준다 */
+.dark .nav { background: rgba(18,17,15,.82); }
+
+/* 스튜디오는 아직 다크 미대응(어두운 패널을 ink로 가득 씀) — 다크에서도
+   라이트 토큰으로 고정해 깨짐을 방지한다. 풀 다크는 후속 과제. */
+.dark body.studio-body {
+  --ink:        #111110;
+  --ink-2:      #4a4945;
+  --ink-3:      #706e66;
+  --line:       #e4e1d9;
+  --line-2:     #d4d0c6;
+  --paper:      #ffffff;
+  --wash:       #f6f4ef;
+  --wash-2:     #efece4;
+  --black:      #111110;
+  --fill-strong: #111110;
+  --on-strong:   #ffffff;
   --shadow-card: 0 1px 2px rgba(17,17,16,.04), 0 12px 30px -18px rgba(17,17,16,.22);
 }
 
@@ -243,7 +285,7 @@ input, textarea, select { font-family: inherit; font-size: inherit; color: inher
   border: 1px solid var(--line); position: relative; overflow: hidden;
   display: flex; flex-direction: column;
 }
-.cn--ink { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.cn--ink { background: var(--fill-strong); color: var(--on-strong); border-color: var(--fill-strong); }
 
 /* ---- TextRotate (21st.dev danielpetho/text-rotate, Tailwind → plain CSS) ---- */
 .trot { display: inline-flex; flex-wrap: wrap; white-space: pre-wrap; vertical-align: bottom; }

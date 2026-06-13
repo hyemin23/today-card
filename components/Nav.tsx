@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import NavToggle from './NavToggle';
+import ThemeToggle from './ThemeToggle';
 import { Button } from '@/components/ui/button';
 
 export default function Nav() {
@@ -16,6 +17,7 @@ export default function Nav() {
           <a className="nav__link" href="#how">이용 방법</a>
         </nav>
         <div className="nav__right">
+          <ThemeToggle />
           <Button asChild variant="ink" size="pillSm">
             <Link href="/studio">시작하기</Link>
           </Button>

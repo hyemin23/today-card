@@ -3,7 +3,28 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import './admin.css';
+
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 
 export default function AdminPage() {
   const router = useRouter();
@@ -55,44 +76,110 @@ export default function AdminPage() {
   }
 
   return (
-    <main className="admin-wrap">
-      <div className="admin-card">
-        <span className="brand">INK<span style={{ color: 'var(--ink)' }}>.</span></span>
-        <span className="kicker">Admin</span>
-        <h1>관리자 로그인</h1>
-        <p className="sub">로그인하면 스튜디오 편집 화면에서 <b>AI 이미지 생성</b>이 열립니다. 일반 사용에는 필요하지 않아요.</p>
+    <main className="flex min-h-screen items-center justify-center bg-secondary p-6">
+      <Card className="w-full max-w-sm rounded-2xl shadow-xl">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <span className="brand text-[22px]">
+              INK<span className="dot">.</span>
+            </span>
+            <span className="kicker">Admin</span>
+          </div>
+          <CardTitle className="mt-1 text-2xl font-extrabold tracking-tight">
+            관리자 로그인
+          </CardTitle>
+          <CardDescription className="leading-relaxed">
+            로그인하면 스튜디오 편집 화면에서{' '}
+            <b className="font-semibold text-foreground">AI 이미지 생성</b>이
+            열립니다. 일반 사용에는 필요하지 않아요.
+          </CardDescription>
+        </CardHeader>
 
-        {isAdmin ? (
-          <>
-            <div className="admin-status"><span className="dot" aria-hidden="true" /> 이미 로그인되어 있어요.</div>
-            <div className="actions">
-              <Link className="btn btn--dark" href="/studio">스튜디오로 가기 <span aria-hidden="true">→</span></Link>
-              <button type="button" className="btn btn--ghost" onClick={onLogout} disabled={busy}>로그아웃</button>
+        <CardContent>
+          {isAdmin ? (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 rounded-lg border bg-secondary px-3.5 py-3 text-sm text-muted-foreground">
+                <span
+                  className="size-2 rounded-full bg-green-600"
+                  aria-hidden="true"
+                />
+                이미 로그인되어 있어요.
+              </div>
+              <div className="space-y-2.5">
+                <Button asChild className="w-full">
+                  <Link href="/studio">
+                    스튜디오로 가기 <span aria-hidden="true">→</span>
+                  </Link>
+                </Button>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      disabled={busy}
+                    >
+                      로그아웃
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-sm">
+                    <DialogHeader>
+                      <DialogTitle>로그아웃할까요?</DialogTitle>
+                      <DialogDescription>
+                        다시 AI 이미지 생성을 사용하려면 관리자 비밀번호로 다시
+                        로그인해야 해요.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                      <DialogClose asChild>
+                        <Button variant="outline">취소</Button>
+                      </DialogClose>
+                      <Button onClick={onLogout} disabled={busy}>
+                        {busy ? '로그아웃 중…' : '로그아웃'}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </div>
-          </>
-        ) : (
-          <form onSubmit={onSubmit}>
-            <label htmlFor="admin-pw">관리자 비밀번호</label>
-            <input
-              id="admin-pw"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoComplete="current-password"
-              autoFocus
-              placeholder="비밀번호 입력"
-            />
-            {error && <p className="err" role="alert">{error}</p>}
-            <div className="actions">
-              <button type="submit" className="btn btn--dark" disabled={busy || !password}>
+          ) : (
+            <form onSubmit={onSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="admin-pw">관리자 비밀번호</Label>
+                <Input
+                  id="admin-pw"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="current-password"
+                  autoFocus
+                  placeholder="비밀번호 입력"
+                />
+              </div>
+              {error && (
+                <p className="text-sm text-destructive" role="alert">
+                  {error}
+                </p>
+              )}
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={busy || !password}
+              >
                 {busy ? '확인 중…' : '로그인'}
-              </button>
-            </div>
-          </form>
-        )}
+              </Button>
+            </form>
+          )}
+        </CardContent>
 
-        <p className="back"><Link href="/">← 홈으로</Link></p>
-      </div>
+        <CardFooter className="justify-center">
+          <Link
+            href="/"
+            className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+          >
+            ← 홈으로
+          </Link>
+        </CardFooter>
+      </Card>
     </main>
   );
 }

@@ -1,14 +1,17 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { motion, type Variants } from "framer-motion";
 interface HandWrittenTitleProps {
     title?: string;
     subtitle?: string;
+    icon?: ReactNode;
 }
 
 function HandWrittenTitle({
     title = "Hand Written",
     subtitle = "Optional subtitle",
+    icon,
 }: HandWrittenTitleProps) {
     const draw: Variants = {
         hidden: { pathLength: 0, opacity: 0 },
@@ -51,6 +54,16 @@ function HandWrittenTitle({
                 </motion.svg>
             </div>
             <div className="relative text-center z-10 flex flex-col items-center justify-center">
+                {icon && (
+                    <motion.div
+                        className="mb-3 text-foreground"
+                        initial={{ opacity: 0, y: 12, scale: 0.9 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        transition={{ delay: 0.3, duration: 0.7, ease: [0.22, 0.61, 0.36, 1] }}
+                    >
+                        {icon}
+                    </motion.div>
+                )}
                 <motion.h1
                     className="text-4xl md:text-6xl text-foreground tracking-tighter flex items-center gap-2"
                     initial={{ opacity: 0, y: 20 }}

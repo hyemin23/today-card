@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { Feather } from 'lucide-react';
 import { HandWrittenTitle } from '@/components/ui/hand-writing-text';
 
 /** 한 세션에 한 번만 인트로를 보여주기 위한 플래그 키 */
 const SEEN_KEY = 'ink-intro-seen';
 /** 손글씨 애니메이션(원 그리기 2.5s)이 끝나고 잠깐 머무른 뒤 사라지기까지 */
-const HOLD_MS = 2800;
+const HOLD_MS = 2600;
 
 /**
  * 사이트 접속 시 한 번 재생되는 인트로 스플래시.
@@ -69,14 +70,18 @@ export default function IntroSplash() {
         <motion.div
           key="intro-splash"
           className="fixed inset-0 z-[9999] grid place-items-center bg-background px-6 cursor-pointer"
-          initial={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.6, ease: [0.22, 0.61, 0.36, 1] }}
+          initial={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 1.04 }}
+          transition={{ duration: 0.7, ease: [0.22, 0.61, 0.36, 1] }}
           onClick={() => setShow(false)}
           role="presentation"
           aria-hidden="true"
         >
-          <HandWrittenTitle title="INK." subtitle="귀차니즘 연구소" />
+          <HandWrittenTitle
+            title="INK."
+            subtitle="귀차니즘 연구소"
+            icon={<Feather className="size-9 md:size-11" strokeWidth={1.5} />}
+          />
         </motion.div>
       )}
     </AnimatePresence>

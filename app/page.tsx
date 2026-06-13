@@ -5,6 +5,7 @@ import Footer from '@/components/Footer';
 import LandingFx from '@/components/LandingFx';
 import HeroTopicForm from '@/components/HeroTopicForm';
 import { TextRotate } from '@/components/ui/TextRotate';
+import { Button } from '@/components/ui/button';
 import { IconClock, IconDownload, IconLayers, IconSpark } from '@/components/icons';
 
 const CATS = ['정치', '경제', '사회', '문화', 'IT·과학', '스포츠', '연예', '패션', '뷰티', '여행', '푸드', '라이프'];
@@ -194,8 +195,15 @@ export default function LandingPage() {
           <h2 className="reveal" style={{ marginTop: 18 }}>나만의 매거진,<br /><em>지금</em> 시작해보세요</h2>
           <p className="lead reveal">기사를 고르면 AI가 카드뉴스 5컷을 뚝딱. 이름·로고·색 입혀 완성하세요.</p>
           <div className="reveal" style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link className="btn btn--dark btn--lg" href="/studio">지금 만들기 <span className="ar">→</span></Link>
-            <Link className="btn btn--ghost btn--lg" href="/studio">스튜디오 열기</Link>
+            <Button asChild variant="ink" size="pillLg" className="group">
+              <Link href="/studio">
+                지금 만들기
+                <span className="transition-transform duration-200 group-hover:translate-x-[3px]" aria-hidden="true">→</span>
+              </Link>
+            </Button>
+            <Button asChild variant="inkGhost" size="pillLg">
+              <Link href="/studio">스튜디오 열기</Link>
+            </Button>
           </div>
         </div>
       </section>

@@ -18,6 +18,15 @@ const config: Config = {
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
+        // 레거시 INK 디자인 토큰 — 라이트 전용(다크에서 반전하지 않음).
+        // 브랜드 pill 버튼이 테마 토글과 무관하게 항상 온브랜드로 보이게 한다.
+        ink: 'var(--ink)',
+        'ink-2': 'var(--ink-2)',
+        'ink-3': 'var(--ink-3)',
+        paper: 'var(--paper)',
+        wash: 'var(--wash)',
+        line: 'var(--line)',
+        'line-2': 'var(--line-2)',
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
         primary: {

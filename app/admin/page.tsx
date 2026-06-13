@@ -25,6 +25,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import ThemeToggle from '@/components/ThemeToggle';
 
 export default function AdminPage() {
   const router = useRouter();
@@ -76,14 +77,19 @@ export default function AdminPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-secondary p-6">
+    <main className="relative flex min-h-screen items-center justify-center bg-secondary p-6">
+      <div className="absolute right-4 top-4">
+        <ThemeToggle />
+      </div>
       <Card className="w-full max-w-sm rounded-2xl shadow-xl">
         <CardHeader>
           <div className="flex items-center justify-between">
-            <span className="brand text-[22px]">
-              INK<span className="dot">.</span>
+            <span className="font-sans text-[22px] font-extrabold tracking-tighter text-foreground">
+              INK.
             </span>
-            <span className="kicker">Admin</span>
+            <span className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+              Admin
+            </span>
           </div>
           <CardTitle className="mt-1 text-2xl font-extrabold tracking-tight">
             관리자 로그인

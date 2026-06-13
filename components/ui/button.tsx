@@ -18,12 +18,20 @@ const buttonVariants = cva(
           'bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80',
         ghost: 'hover:bg-accent hover:text-accent-foreground',
         link: 'text-primary underline-offset-4 hover:underline',
+        // 브랜드 pill 버튼 (.btn--dark / .btn--ghost 의 shadcn 버전, 레거시 토큰 사용)
+        ink: 'rounded-full bg-ink font-semibold text-paper shadow-sm transition-[transform,background-color,box-shadow] hover:bg-black hover:shadow-[0_10px_24px_-12px_rgba(0,0,0,0.5)] active:translate-y-px',
+        inkGhost:
+          'rounded-full border border-line-2 font-semibold text-ink transition-[transform,background-color,border-color] hover:border-ink hover:bg-wash active:translate-y-px',
       },
       size: {
         default: 'h-9 px-4 py-2',
         sm: 'h-8 rounded-md px-3 text-xs',
         lg: 'h-10 rounded-md px-8',
         icon: 'h-9 w-9',
+        // 레거시 .btn--sm / .btn / .btn--lg 패딩에 맞춘 pill 사이즈
+        pillSm: 'h-auto rounded-full px-4 py-[9px] text-[13px]',
+        pill: 'h-auto rounded-full px-[22px] py-[13px] text-sm',
+        pillLg: 'h-auto rounded-full px-[30px] py-4 text-[15.5px]',
       },
     },
     defaultVariants: {

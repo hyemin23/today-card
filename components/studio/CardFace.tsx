@@ -202,7 +202,8 @@ export default function CardFace({ card, magazine, ctx, hint = true }: { card: C
             return (
               <>
                 {card.body && (
-                  <div style={{ fontSize: ctx === 'canvas' ? 14 : 10.5, lineHeight: 1.6, opacity: 0.8, whiteSpace: 'pre-line', marginTop: ctx === 'canvas' ? 12 : 8 }}>{em(card.body)}</div>
+                  /* CTA 카피도 헤드라인처럼 글씨체·글자 크기 슬라이더에 반응 (줄바꿈은 pre-line) */
+                  <div style={{ fontFamily: headlineFont, fontSize: Math.round((ctx === 'canvas' ? 14 : 10.5) * card.fontScale), lineHeight: 1.6, opacity: 0.8, whiteSpace: 'pre-line', marginTop: ctx === 'canvas' ? 12 : 8 }}>{em(card.body)}</div>
                 )}
                 <div style={{ height: 1, background: 'currentColor', opacity: 0.18, margin: `${ctx === 'canvas' ? 16 : 10}px 0` }} />
                 {tags.length > 0 && <div style={{ fontSize: ctx === 'canvas' ? 13 : 10, opacity: 0.7, lineHeight: 1.6 }}>{tags.join(' ')}</div>}

@@ -170,6 +170,49 @@
   .js .trio.reveal.in .trio__c:nth-child(3){ transition-delay:.24s; }
 }
 
+/* ===== Interactive 3D showcase (Spline) — dark editorial band ===== */
+.splite-card {
+  position: relative; overflow: hidden; border-radius: 28px;
+  background: var(--fill-strong); color: var(--on-strong);
+  border: 1px solid rgba(255,255,255,.08); box-shadow: var(--shadow-float);
+  display: grid; grid-template-columns: 1.02fr 1fr; min-height: 520px;
+}
+.splite-copy { position: relative; z-index: 10; display: flex; flex-direction: column; justify-content: center; padding: 56px 52px; }
+.splite-copy .kicker { color: rgba(255,255,255,.55); }
+.splite-copy h2 {
+  font-family: var(--serif); font-weight: 800; letter-spacing: -.045em; line-height: 1.0;
+  font-size: clamp(34px, 4.4vw, 56px); margin-top: 18px;
+  background: linear-gradient(180deg, #fafafa, #a3a3a3);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.splite-copy p { color: rgba(255,255,255,.72); font-size: 16px; line-height: 1.7; margin-top: 18px; max-width: 44ch; }
+.splite-copy .acts { margin-top: 30px; }
+/* light pill on the dark panel — stays light in both themes via --on-strong/--fill-strong */
+.splite-btn {
+  display: inline-flex; align-items: center; gap: 9px; cursor: pointer;
+  background: var(--on-strong); color: var(--fill-strong);
+  font-weight: 700; font-size: 15px; letter-spacing: -.01em;
+  padding: 14px 24px; border-radius: 100px;
+  transition: transform .15s var(--ease), box-shadow .25s var(--ease);
+}
+.splite-btn:hover { box-shadow: 0 14px 34px -14px rgba(255,255,255,.4); }
+.splite-btn:active { transform: translateY(1px); }
+.splite-stage { position: relative; min-height: 520px; }
+.splite-spline { width: 100%; height: 100%; }
+.splite-fallback { position: absolute; inset: 0; display: grid; place-items: center; }
+.splite-orb {
+  width: 220px; height: 220px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, rgba(255,255,255,.22), rgba(255,255,255,.05) 58%, transparent 70%);
+  animation: splite-float 7s ease-in-out infinite;
+}
+@keyframes splite-float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
+@media (prefers-reduced-motion: reduce) { .splite-orb { animation: none; } }
+@media (max-width: 860px) {
+  .splite-card { grid-template-columns: 1fr; min-height: auto; }
+  .splite-copy { padding: 40px 30px 10px; }
+  .splite-stage { min-height: 340px; }
+}
+
 /* notes / rules */
 .notes { background: var(--fill-strong); color: var(--on-strong); }
 .notes .section__head h2 { color: var(--on-strong); }

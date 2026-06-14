@@ -39,7 +39,7 @@ export default function HeroTopicForm() {
           placeholder="어떤 주제로 만들까요? 예: 기준금리, K-팝, 서울 전시"
           autoComplete="off"
         />
-        <button className="btn btn--dark go" type="submit">
+        <button className="btn btn--dark go" type="submit" data-magnetic>
           뉴스 모으기 <span className="ar" aria-hidden="true">→</span>
         </button>
       </div>

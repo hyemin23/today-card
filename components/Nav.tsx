@@ -19,7 +19,7 @@ export default function Nav() {
         <div className="nav__right">
           <ThemeToggle />
           <Button asChild variant="ink" size="pillSm">
-            <Link href="/studio">시작하기</Link>
+            <Link href="/studio" data-magnetic>시작하기</Link>
           </Button>
           <NavToggle />
         </div>

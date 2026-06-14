@@ -44,7 +44,7 @@
 /* perspective lives on the parent stage so #fan's own rotateY/X tilt renders with real depth */
 .fan-stage { display: block; perspective: 1400px; perspective-origin: 50% 40%; }
 .fan { position: relative; height: 480px; transform-style: preserve-3d; transition: transform .12s linear; }
-.fan .cn { position: absolute; width: 232px; box-shadow: 0 30px 60px -28px rgba(17,17,16,.45); transition: transform .4s var(--ease), box-shadow .4s var(--ease); }
+.fan .cn { position: absolute; width: 232px; box-shadow: 0 30px 60px -28px rgba(17,17,16,.45); transition: transform .4s var(--ease), box-shadow .4s var(--ease); backface-visibility: hidden; -webkit-backface-visibility: hidden; }
 .fan .c1 { left: 0;   top: 40px;  transform: rotate(-8deg) translateZ(-40px); z-index: 1; box-shadow: 0 18px 40px -26px rgba(17,17,16,.35); }
 .fan .c2 { left: 27%; top: 0;     transform: rotate(-1deg) translateZ(60px);  z-index: 3; box-shadow: 0 40px 80px -30px rgba(17,17,16,.5); }
 .fan .c3 { left: 52%; top: 56px;  transform: rotate(7deg)  translateZ(10px);  z-index: 2; box-shadow: 0 28px 58px -28px rgba(17,17,16,.42); }
@@ -89,28 +89,86 @@
 .section__head h2 { font-family: var(--serif); font-weight:800; font-size: clamp(30px,4vw,46px); letter-spacing:-.035em; line-height:1.05; margin-top:18px; }
 .section__head p { margin-top:18px; }
 
-/* steps */
-.steps { display:grid; grid-template-columns: repeat(12,1fr); gap: 0; border-top:1px solid var(--line); }
-.step { grid-column: span 12; display:grid; grid-template-columns: 90px 1fr; gap: 28px; padding: 34px 4px; border-bottom:1px solid var(--line); align-items:start; transition: background .25s var(--ease); }
-.step:hover { background: var(--wash); }
-.step__n { font-family: var(--serif); font-size: 50px; font-weight:800; letter-spacing:-.04em; color: var(--ink); line-height:.9; }
-.step__n small { font-family: var(--mono); font-size:11px; color: var(--ink-3); display:block; letter-spacing:.1em; margin-top:8px;}
-.step__b h3 { font-size: 20px; font-weight:600; letter-spacing:-.01em; margin-bottom:8px; }
-.step__b p { color: var(--ink-2); font-size: 15px; max-width: 620px; }
-.step__b .meta { font-family: var(--mono); font-size:11px; color: var(--ink-3); letter-spacing:.08em; margin-top:12px; }
-@media (min-width: 880px){
-  .step { grid-template-columns: 120px 1fr 280px; }
-  .step__side { font-size:13px; color: var(--ink-3); align-self:center; }
+/* ===== process — sticky 3D scroll showcase ===== */
+.proc { padding: 112px 0 60px; border-top:1px solid var(--line); position:relative; }
+.proc__grid { display:grid; grid-template-columns: .92fr 1.08fr; gap:64px; align-items:start; }
+.proc__left { position:sticky; top:92px; align-self:start; }
+.proc__left .section__head { margin-bottom:30px; }
+.proc__stage { position:relative; height:380px; perspective:1300px; }
+.proc__num {
+  position:absolute; right:6px; top:-58px; font-family:var(--serif); font-weight:800;
+  font-size:190px; letter-spacing:-.06em; color:var(--wash-2); line-height:1; z-index:0;
+  pointer-events:none; user-select:none;
 }
+.proc__panel {
+  position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  opacity:0; transform: rotateY(-22deg) translateZ(-80px) scale(.94); transform-style:preserve-3d;
+  transition: opacity .55s var(--ease), transform .7s var(--ease); z-index:1;
+}
+.proc__panel.is-active { opacity:1; transform: rotateY(0) translateZ(0) scale(1); }
+
+/* panel device */
+.pv { width: 318px; background:var(--paper); border:1px solid var(--line); border-radius:16px;
+  box-shadow: var(--shadow-float); padding:22px; position:relative; }
+/* "dark panel" stays dark in both themes (matches .cn--ink) */
+.pv--dark { background:var(--fill-strong); color:var(--on-strong); border-color:var(--fill-strong); }
+.pv__lb { font-family:var(--mono); font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-3); display:flex; justify-content:space-between; }
+.pv--dark .pv__lb { color:rgba(255,255,255,.5); }
+.pv__field { display:flex; align-items:center; gap:10px; border:1.5px solid var(--ink); border-radius:100px; padding:11px 8px 11px 16px; margin:16px 0 14px; }
+.pv__field .q { flex:1; font-weight:700; font-size:15px; letter-spacing:-.01em; }
+.pv__field .go { background:var(--ink); color:var(--paper); font-family:var(--mono); font-size:10px; letter-spacing:.06em; padding:7px 12px; border-radius:100px; }
+.pv__chips { display:flex; gap:7px; flex-wrap:wrap; }
+.pv__chips span { font-size:12px; color:var(--ink-2); border:1px solid var(--line-2); border-radius:100px; padding:6px 12px; }
+.pv__chips span.on { background:var(--ink); color:var(--paper); border-color:var(--ink); }
+.pv__rows { margin-top:16px; display:grid; gap:8px; }
+.pv__rows i { height:10px; border-radius:3px; background:var(--wash-2); display:block; }
+.pv__rows i:nth-child(1){ width:90% } .pv__rows i:nth-child(2){ width:70% } .pv__rows i:nth-child(3){ width:80% }
+.pv--dark .pv__title { font-family:var(--serif); font-weight:800; letter-spacing:-.03em; font-size:28px; line-height:1.08; margin-top:60px; }
+.pv__tools { display:flex; gap:7px; margin-top:18px; }
+.pv__tools b { width:26px; height:26px; border-radius:7px; border:1px solid rgba(255,255,255,.25); display:flex; align-items:center; justify-content:center; font-size:12px; color:rgba(255,255,255,.8); font-weight:400; }
+.pv__sw { display:flex; gap:6px; margin-top:14px; }
+.pv__sw i { width:20px;height:20px;border-radius:50%; display:block; border:1px solid rgba(255,255,255,.3);}
+.pv--phone { padding:12px; width:230px; border-radius:28px; }
+.pv__bar { display:flex; align-items:center; gap:8px; padding:4px 6px 10px; }
+.pv__bar .av { width:24px;height:24px;border-radius:50%; background:var(--ink); }
+.pv__bar .h { font-size:12px; font-weight:700; }
+.pv__bar .more { margin-left:auto; color:var(--ink-3); }
+.pv__slide { aspect-ratio:1; border-radius:10px; background:var(--fill-strong); color:var(--on-strong); padding:18px; display:flex; flex-direction:column; justify-content:flex-end; }
+.pv__slide b { font-family:var(--serif); font-weight:800; letter-spacing:-.03em; font-size:21px; line-height:1.1; }
+.pv__dots { display:flex; gap:5px; justify-content:center; padding:11px 0 4px; }
+.pv__dots i { width:5px;height:5px;border-radius:50%; background:var(--line-2);}
+.pv__dots i.on { width:14px; border-radius:3px; background:var(--ink);}
+
+.procstep { min-height: 48vh; display:flex; flex-direction:column; justify-content:center; padding: 26px 0; border-bottom:1px solid var(--line); }
+.procstep:last-child { border-bottom:0; }
+.procstep .pn { font-family:var(--mono); font-size:11.5px; letter-spacing:.2em; color:var(--ink-3); margin-bottom:16px; display:flex; align-items:center; gap:12px; }
+.procstep .pn::before { content:""; width:26px; height:1px; background:var(--ink-3); transition:width .4s var(--ease); }
+.procstep.is-active .pn { color:var(--ink); }
+.procstep.is-active .pn::before { width:46px; background:var(--ink); }
+.procstep h3 { font-family:var(--serif); font-weight:800; font-size: clamp(26px,3.4vw,40px); letter-spacing:-.035em; line-height:1.04; }
+.procstep p { color:var(--ink-2); font-size:16px; line-height:1.65; margin-top:14px; max-width:480px; }
+.procstep .meta { font-family:var(--mono); font-size:11px; color:var(--ink-3); letter-spacing:.06em; margin-top:18px; }
+/* steps dim only once the GSAP layer (.fx) is live; without it they stay fully legible */
+.fx .procstep { opacity:.34; transition: opacity .45s var(--ease); }
+.fx .procstep.is-active { opacity:1; }
 
 /* feature trio */
-.trio { display:grid; grid-template-columns: repeat(3,1fr); gap: 1px; background: var(--line); border:1px solid var(--line); }
+.trio { display:grid; grid-template-columns: repeat(3,1fr); gap: 1px; background: var(--line); border:1px solid var(--line); perspective:1100px; }
 .trio__c { background: var(--paper); padding: 36px 30px; transition: background .3s var(--ease), transform .3s var(--ease); }
 .trio__c:hover { background: var(--wash); }
 .trio__c .ic { width:46px; height:46px; border:1px solid var(--ink); border-radius:50%; display:flex; align-items:center; justify-content:center; margin-bottom:22px; font-size:18px; transition: transform .4s var(--ease); }
 .trio__c:hover .ic { transform: rotate(360deg) scale(1.06); }
 .trio__c h4 { font-size:17px; font-weight:700; letter-spacing:-.02em; margin-bottom:10px; }
 .trio__c p { font-size:14px; color: var(--ink-2); }
+/* 3D flip-in for the trio cells (composes with the global .reveal → .in trigger;
+   container itself is neutralised so only the cells fold up into place) */
+@media (prefers-reduced-motion: no-preference){
+  .js .trio.reveal { opacity:1; transform:none; }
+  .js .trio.reveal .trio__c { opacity:0; transform: rotateX(-52deg) translateY(46px); transform-origin:50% 0%; transition: opacity .85s var(--ease), transform .85s var(--ease); }
+  .js .trio.reveal.in .trio__c { opacity:1; transform:none; }
+  .js .trio.reveal.in .trio__c:nth-child(2){ transition-delay:.12s; }
+  .js .trio.reveal.in .trio__c:nth-child(3){ transition-delay:.24s; }
+}
 
 /* notes / rules */
 .notes { background: var(--fill-strong); color: var(--on-strong); }
@@ -128,9 +186,26 @@
 .notes__aside .box p { color: rgba(255,255,255,.7); margin-bottom:12px; }
 
 /* CTA band */
-.cta { padding: 110px 0; text-align:center; }
+.cta { padding: 130px 0; text-align:center; }
 .cta h2 { font-family: var(--serif); font-weight:800; font-size: clamp(34px,5.5vw,64px); letter-spacing:-.045em; line-height:1.02; }
 .cta p { margin: 24px auto 36px; max-width: 460px; }
+
+/* Lenis smooth scroll — neutralise native smooth-scroll so the two don't fight (anchor jank).
+   These hooks only bite while Lenis has tagged <html> (desktop, motion-OK). */
+html.lenis, html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+.lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
+.lenis.lenis-stopped { overflow: hidden; }
+
+/* ===== FX chrome — only visible once the GSAP/Lenis layer boots (.fx / .fx-cursor) ===== */
+.progress { position:fixed; top:0; left:0; height:3px; width:100%; background:var(--ink); transform:scaleX(0); transform-origin:0 50%; z-index:120; display:none; }
+.fx .progress { display:block; }
+.cursor, .cursor-dot { position:fixed; top:0; left:0; pointer-events:none; z-index:200; border-radius:50%; mix-blend-mode:difference; display:none; }
+.cursor { width:36px; height:36px; border:1px solid #fff; background:transparent; transition: width .22s var(--ease), height .22s var(--ease), background .22s; }
+.cursor.big { width:62px; height:62px; background:rgba(255,255,255,.12); }
+.cursor-dot { width:6px; height:6px; background:#fff; }
+.fx-cursor .cursor, .fx-cursor .cursor-dot { display:block; }
+.fx-cursor a, .fx-cursor button, .fx-cursor input, .fx-cursor .htag { cursor:none; }
 
 @media (max-width: 920px){
   .hero__grid { grid-template-columns: 1fr; gap: 30px; }
@@ -141,6 +216,12 @@
   .fan .cn { width: 210px; }
   .notes__grid { grid-template-columns: 1fr; gap: 36px; }
   .trio { grid-template-columns: 1fr; }
+  /* process showcase stacks; sticky preview becomes inline, steps stop dimming */
+  .proc__grid { grid-template-columns:1fr; gap: 8px; }
+  .proc__left { position:relative; top:0; }
+  .proc__stage { height: 320px; margin-bottom: 10px; }
+  .procstep { min-height:auto; padding: 30px 0; }
+  .fx .procstep { opacity:1; }
 }
 
 /* small phones (320–560px): shrink the card fan so it sits comfortably */

@@ -14,6 +14,12 @@ export default function LandingPage() {
   return (
     <>
       <a href="#main" className="skip-link">본문으로 건너뛰기</a>
+
+      {/* FX chrome — shown only once LandingFx boots the GSAP/Lenis layer (.fx / .fx-cursor) */}
+      <div className="progress" aria-hidden="true" />
+      <div className="cursor" aria-hidden="true" />
+      <div className="cursor-dot" aria-hidden="true" />
+
       <Nav />
 
       <main id="main" tabIndex={-1}>
@@ -96,41 +102,64 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* HOW IT WORKS */}
-      <section className="section" id="how">
-        <div className="wrap">
-          <div className="section__head reveal">
-            <span className="kicker">How it works</span>
-            <h2>세 단계, 한 화면에서<br />끝나는 카드뉴스</h2>
-            <p className="lead">페이지 이동 없이 한 작업공간에서 — 고르고, 다듬고, 내려받아요.</p>
+      {/* HOW IT WORKS — sticky 3D scroll showcase */}
+      <section className="proc" id="how">
+        <div className="wrap proc__grid">
+          <div className="proc__left">
+            <div className="section__head reveal" style={{ marginBottom: 24 }}>
+              <span className="kicker">How it works</span>
+              <h2>세 단계,<br />한 화면에서.</h2>
+              <p className="lead">페이지 이동 없이 한 작업공간에서 — 고르고, 다듬고, 내려받아요.</p>
+            </div>
+            <div className="proc__stage" aria-hidden="true">
+              <div className="proc__num" data-num>01</div>
+              {/* panel 1 · topic */}
+              <div className="proc__panel is-active" data-panel>
+                <div className="pv">
+                  <div className="pv__lb"><span>STEP 01 · TOPIC</span><span>＋</span></div>
+                  <div className="pv__field"><span style={{ color: 'var(--ink-3)' }}>⌕</span><span className="q">기준금리</span><span className="go">크롤링 →</span></div>
+                  <div className="pv__chips"><span className="on">경제</span><span># 물가</span><span># 금리</span></div>
+                  <div className="pv__rows"><i /><i /><i /></div>
+                </div>
+              </div>
+              {/* panel 2 · edit */}
+              <div className="proc__panel" data-panel>
+                <div className="pv pv--dark">
+                  <div className="pv__lb"><span>STEP 02 · EDIT</span><span>01 / 05</span></div>
+                  <div className="pv__title">조용하던 도심,<br />다시 붐비기<br />시작했다</div>
+                  <div className="pv__tools"><b>⤒</b><b>A</b><b>↕</b><b>↺</b></div>
+                  <div className="pv__sw"><i style={{ background: '#fff' }} /><i style={{ background: '#111' }} /><i style={{ background: '#e7d9b8' }} /><i style={{ background: '#b8c6e7' }} /></div>
+                </div>
+              </div>
+              {/* panel 3 · ship */}
+              <div className="proc__panel" data-panel>
+                <div className="pv pv--phone">
+                  <div className="pv__bar"><span className="av" /><span className="h">ink.daily</span><span className="more">⋯</span></div>
+                  <div className="pv__slide"><b>팔로우하고<br />더 보기</b></div>
+                  <div className="pv__dots"><i /><i /><i /><i /><i className="on" /></div>
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="steps">
-            <div className="step reveal">
-              <div className="step__n">01<small>TOPIC</small></div>
-              <div className="step__b">
-                <h3>주제·태그로 뉴스 모으기</h3>
-                <p>원하는 주제를 입력하거나 추천 태그를 누르면 관련 뉴스를 실시간으로 모아와요. 마음에 드는 기사를 누르면 AI가 한국어 카드뉴스 5컷을 자동 생성합니다. 약 10–15초면 초안 완성.</p>
-                <div className="meta">→ 주제 입력 · 태그 선택 · 크롤링 · AI 생성</div>
-              </div>
-              <div className="step__side">기사를 요약해 핵심만 담아요.</div>
+
+          <div className="proc__steps">
+            <div className="procstep is-active" data-step>
+              <div className="pn">STEP 01 · TOPIC</div>
+              <h3>주제·태그로<br />뉴스 모으기</h3>
+              <p>원하는 주제를 입력하거나 추천 태그를 누르면 관련 뉴스를 실시간으로 모아와요. 마음에 드는 기사를 누르면 AI가 한국어 카드뉴스 5컷을 자동 생성합니다. 약 10–15초면 초안 완성.</p>
+              <div className="meta">→ 주제 입력 · 태그 선택 · 크롤링 · AI 생성</div>
             </div>
-            <div className="step reveal">
-              <div className="step__n">02<small>EDIT</small></div>
-              <div className="step__b">
-                <h3>사진 넣고 다듬기</h3>
-                <p>5컷을 한 화면에서 넘기며 편집해요. ‘이미지 변경’으로 사진을 올리고 제목·글자색·크기·위치를 자유롭게. 매거진 설정은 옆 패널에서 바로 열려요.</p>
-                <div className="meta">→ 인라인 편집 · 매거진 설정 패널</div>
-              </div>
-              <div className="step__side">저작권 보호를 위해 기사 사진은 자동으로 넣지 않아요.</div>
+            <div className="procstep" data-step>
+              <div className="pn">STEP 02 · EDIT</div>
+              <h3>사진 넣고<br />다듬기</h3>
+              <p>5컷을 한 화면에서 넘기며 편집해요. ‘이미지 변경’으로 사진을 올리고 제목·글자색·크기·위치를 자유롭게. 매거진 설정은 옆 패널에서 바로 열려요.</p>
+              <div className="meta">→ 인라인 편집 · 매거진 설정 패널</div>
             </div>
-            <div className="step reveal">
-              <div className="step__n">03<small>SHIP</small></div>
-              <div className="step__b">
-                <h3>피드로 내보내기</h3>
-                <p>인스타그램 캐러셀로 어떻게 보일지 미리 확인하고, 카드를 한 장씩 또는 전체 ZIP으로 받아요. 캡션·해시태그도 ‘전체 복사’로 그대로 올리면 끝.</p>
-                <div className="meta">→ 캐러셀 미리보기 · PNG · ZIP · 캡션 복사</div>
-              </div>
-              <div className="step__side">1080 × 1080 — 인스타 정사각 규격.</div>
+            <div className="procstep" data-step>
+              <div className="pn">STEP 03 · SHIP</div>
+              <h3>피드로<br />내보내기</h3>
+              <p>인스타그램 캐러셀로 어떻게 보일지 미리 확인하고, 카드를 한 장씩 또는 전체 ZIP으로 받아요. 캡션·해시태그도 ‘전체 복사’로 그대로 올리면 끝.</p>
+              <div className="meta">→ 캐러셀 미리보기 · PNG · ZIP · 캡션 복사</div>
             </div>
           </div>
         </div>
@@ -139,7 +168,7 @@ export default function LandingPage() {
       {/* FEATURE TRIO */}
       <section className="section" style={{ paddingTop: 0 }}>
         <div className="wrap">
-          <div className="trio reveal" data-stagger>
+          <div className="trio reveal">
             <div className="trio__c">
               <div className="ic" aria-hidden="true"><IconLayers /></div>
               <h4>매거진처럼, 일관되게</h4>
@@ -196,13 +225,13 @@ export default function LandingPage() {
           <p className="lead reveal">기사를 고르면 AI가 카드뉴스 5컷을 뚝딱. 이름·로고·색 입혀 완성하세요.</p>
           <div className="reveal" style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap' }}>
             <Button asChild variant="ink" size="pillLg" className="group">
-              <Link href="/studio">
+              <Link href="/studio" data-magnetic>
                 지금 만들기
                 <span className="transition-transform duration-200 group-hover:translate-x-[3px]" aria-hidden="true">→</span>
               </Link>
             </Button>
             <Button asChild variant="inkGhost" size="pillLg">
-              <Link href="/studio">스튜디오 열기</Link>
+              <Link href="/studio" data-magnetic>스튜디오 열기</Link>
             </Button>
           </div>
         </div>

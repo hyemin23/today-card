@@ -46,6 +46,7 @@
   --ease: cubic-bezier(.22,.61,.36,1);
 
   --shadow-card: 0 1px 2px rgba(17,17,16,.04), 0 12px 30px -18px rgba(17,17,16,.22);
+  --shadow-float: 0 50px 90px -44px rgba(17,17,16,.5);   /* deep "floating device" lift (proc panels) */
 }
 
 /* ============================================================
@@ -67,6 +68,7 @@
   --fill-strong: #24231f;
   --on-strong:   #f3f1ea;
   --shadow-card: 0 1px 2px rgba(0,0,0,.4), 0 12px 30px -18px rgba(0,0,0,.7);
+  --shadow-float: 0 50px 90px -44px rgba(0,0,0,.7);
 }
 /* 헤더는 하드코딩된 흰 반투명 배경이라 다크에서 따로 덮어준다 */
 .dark .nav { background: rgba(18,17,15,.82); }
@@ -74,7 +76,7 @@
 /* ---- Reset ---- */
 *, *::before, *::after { box-sizing: border-box; }
 * { margin: 0; padding: 0; }
-html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; scroll-padding-top: 72px; }
 body {
   font-family: var(--sans);
   color: var(--ink);

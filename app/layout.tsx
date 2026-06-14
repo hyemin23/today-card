@@ -21,7 +21,12 @@ export default function RootLayout({
       <body>
         <script
           dangerouslySetInnerHTML={{
-            __html: "document.documentElement.classList.add('js')",
+            // Add `.js` so reveal elements start hidden, but guarantee they can never stay
+            // hidden: this library-independent timer un-hides everything even if the React
+            // reveal driver (LandingFx) fails to hydrate (chunk error, client exception).
+            __html:
+              "document.documentElement.classList.add('js');" +
+              "setTimeout(function(){document.querySelectorAll('.reveal,[data-stagger],.lift').forEach(function(e){e.classList.add('in')})},2400);",
           }}
         />
         <ThemeProvider

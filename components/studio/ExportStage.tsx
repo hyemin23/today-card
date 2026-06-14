@@ -34,6 +34,8 @@ export default function ExportStage({
   hashtags,
   source,
   onGo,
+  ratio,
+  setRatio,
 }: {
   cards: Card[];
   magazine: Magazine;
@@ -41,6 +43,8 @@ export default function ExportStage({
   hashtags: string[];
   source: string;
   onGo: (n: number) => void;
+  ratio: '1:1' | '4:5';
+  setRatio: (r: '1:1' | '4:5') => void;
 }) {
   const [cur, setCur] = useState(0);
   const [copied, setCopied] = useState(false);
@@ -51,6 +55,9 @@ export default function ExportStage({
   const renderRef = useRef<HTMLDivElement>(null);
   const swipeX = useRef<number | null>(null);
   const n = cards.length;
+  // 4:5 세로(1080×1350)는 RENDER_SIZE를 세로로 늘려 렌더 → pixelRatio 2로 1080폭 유지
+  const renderH = ratio === '4:5' ? Math.round((RENDER_SIZE * 5) / 4) : RENDER_SIZE;
+  const dimLabel = `1080 × ${ratio === '4:5' ? 1350 : 1080}`;
   const kindLabel = (k: Card['kind']) => (k === 'cover' ? '표지' : k === 'cta' ? 'CTA' : '본문');
 
   // new generation → start the preview from the cover again
@@ -144,7 +151,7 @@ export default function ExportStage({
     return htmlToImage.toPng(node, {
       pixelRatio: 2,
       width: RENDER_SIZE,
-      height: RENDER_SIZE,
+      height: renderH,
       fontEmbedCSS: cachedFontCss,
     });
   }
@@ -260,6 +267,11 @@ export default function ExportStage({
       </div>
 
       <div className="export__r">
+        <div className="ratiosel" role="group" aria-label="이미지 비율">
+          <span className="ratiosel__lb">비율</span>
+          <button type="button" className={ratio === '1:1' ? 'on' : ''} aria-pressed={ratio === '1:1'} onClick={() => setRatio('1:1')}>정사각 1:1</button>
+          <button type="button" className={ratio === '4:5' ? 'on' : ''} aria-pressed={ratio === '4:5'} onClick={() => setRatio('4:5')}>세로 4:5</button>
+        </div>
         <div className="zip">
           <h3>전체 한 번에 받기</h3>
           <p>{canShare ? `${n}장의 카드를 바로 공유하거나 ZIP으로 내려받아요.` : `${n}장의 카드를 ZIP 한 파일로 내려받아요.`}</p>
@@ -277,10 +289,10 @@ export default function ExportStage({
             {busy === 'zip' ? '◌ 만드는 중…' : '⤓ 전체 ZIP 다운로드'}
           </button>
           <p className="zip__hint">ZIP은 압축 해제 후 사진 앱에 저장해야 해요</p>
-          <div className="meta"><span>{fileBase(magazine)}.ZIP</span><span>{n} PNG · 1080 × 1080</span></div>
+          <div className="meta"><span>{fileBase(magazine)}.ZIP</span><span>{n} PNG · {dimLabel}</span></div>
         </div>
         <div className="panel">
-          <div className="panel__h"><h3>카드 개별 받기</h3><span className="tag">1080 × 1080</span></div>
+          <div className="panel__h"><h3>카드 개별 받기</h3><span className="tag">{dimLabel}</span></div>
           <div className="panel__b">
             <div className="dlrow">
               {cards.map((c, i) => (
@@ -313,7 +325,7 @@ export default function ExportStage({
       {/* offscreen 540×540 render targets for PNG/ZIP export (pixelRatio 2 → 1080×1080) */}
       <div ref={renderRef} aria-hidden style={{ position: 'fixed', left: -9999, top: 0, pointerEvents: 'none' }}>
         {cards.map((c, i) => (
-          <div key={i} className="canvas" style={{ width: RENDER_SIZE, maxWidth: RENDER_SIZE, height: RENDER_SIZE }}>
+          <div key={i} className="canvas" style={{ width: RENDER_SIZE, maxWidth: RENDER_SIZE, height: renderH }}>
             <CardFace card={c} magazine={magazine} ctx="canvas" hint={false} />
           </div>
         ))}

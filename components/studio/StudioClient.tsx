@@ -42,6 +42,7 @@ interface PersistedSession {
   maxReached: number;
   sel: number;
   genFallback: boolean;
+  ratio?: '1:1' | '4:5';
   article: Article | null;
 }
 
@@ -77,6 +78,7 @@ export default function StudioClient() {
   const [hashtags, setHashtags] = useState<string[]>([]);
   const [source, setSource] = useState('뉴스');
   const [genFallback, setGenFallback] = useState(false);
+  const [ratio, setRatio] = useState<'1:1' | '4:5'>('1:1'); // 인스타 출력 비율
   const [isAdmin, setIsAdmin] = useState(false);
   const [restored, setRestored] = useState(false);
 
@@ -111,6 +113,7 @@ export default function StudioClient() {
       setStageRaw(Math.min(Math.max(s.stage || 2, 1), 3));
       setSel(Math.min(s.sel || 0, s.cards.length - 1));
       setGenFallback(!!s.genFallback);
+      setRatio(s.ratio === '4:5' ? '4:5' : '1:1');
       lastArticle.current = s.article;
     }
     setRestored(true);
@@ -121,10 +124,10 @@ export default function StudioClient() {
   useEffect(() => {
     if (!restored || cards.length === 0) return;
     saveJSON(sessionStorage, SESSION_KEY, {
-      cards, originalCards, caption, hashtags, source, stage, maxReached, sel, genFallback,
+      cards, originalCards, caption, hashtags, source, stage, maxReached, sel, genFallback, ratio,
       article: lastArticle.current,
     } satisfies PersistedSession);
-  }, [restored, cards, originalCards, caption, hashtags, source, stage, maxReached, sel, genFallback]);
+  }, [restored, cards, originalCards, caption, hashtags, source, stage, maxReached, sel, genFallback, ratio]);
 
   useEffect(() => {
     if (restored) saveJSON(localStorage, MAGAZINE_KEY, magazine);
@@ -317,7 +320,7 @@ export default function StudioClient() {
   }
 
   return (
-    <div className="studio">
+    <div className="studio" style={{ '--card-ar': ratio === '4:5' ? '4 / 5' : '1 / 1' } as React.CSSProperties}>
       <a href="#studio-main" className="skip-link">본문으로 건너뛰기</a>
       <div ref={uiRef} style={{ display: 'contents' }}>
         <Topbar
@@ -345,7 +348,7 @@ export default function StudioClient() {
           </section>
           <section className={`stage-pane ${stage === 3 ? 'is-active' : ''}`} tabIndex={-1} aria-label="3단계: 내보내기" aria-hidden={stage !== 3}>
             {cards.length > 0 && (
-              <ExportStage cards={cards} magazine={magazine} caption={caption} hashtags={hashtags} source={source} onGo={setStage} />
+              <ExportStage cards={cards} magazine={magazine} caption={caption} hashtags={hashtags} source={source} onGo={setStage} ratio={ratio} setRatio={setRatio} />
             )}
           </section>
         </div>

@@ -16,10 +16,8 @@ export default function LandingPage() {
     <>
       <a href="#main" className="skip-link">본문으로 건너뛰기</a>
 
-      {/* FX chrome — shown only once LandingFx boots the GSAP/Lenis layer (.fx / .fx-cursor) */}
+      {/* scroll progress bar — shown only once LandingFx boots the GSAP/Lenis layer (.fx) */}
       <div className="progress" aria-hidden="true" />
-      <div className="cursor" aria-hidden="true" />
-      <div className="cursor-dot" aria-hidden="true" />
 
       <Nav />
 

@@ -240,15 +240,9 @@ html.lenis, html.lenis body { height: auto; }
 .lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
 .lenis.lenis-stopped { overflow: hidden; }
 
-/* ===== FX chrome — only visible once the GSAP/Lenis layer boots (.fx / .fx-cursor) ===== */
+/* ===== scroll progress bar — only visible once the GSAP/Lenis layer boots (.fx) ===== */
 .progress { position:fixed; top:0; left:0; height:3px; width:100%; background:var(--ink); transform:scaleX(0); transform-origin:0 50%; z-index:120; display:none; }
 .fx .progress { display:block; }
-.cursor, .cursor-dot { position:fixed; top:0; left:0; pointer-events:none; z-index:200; border-radius:50%; mix-blend-mode:difference; display:none; }
-.cursor { width:36px; height:36px; border:1px solid #fff; background:transparent; transition: width .22s var(--ease), height .22s var(--ease), background .22s; }
-.cursor.big { width:62px; height:62px; background:rgba(255,255,255,.12); }
-.cursor-dot { width:6px; height:6px; background:#fff; }
-.fx-cursor .cursor, .fx-cursor .cursor-dot { display:block; }
-.fx-cursor a, .fx-cursor button, .fx-cursor input, .fx-cursor .htag { cursor:none; }
 
 @media (max-width: 920px){
   .hero__grid { grid-template-columns: 1fr; gap: 30px; }

@@ -202,40 +202,6 @@ export default function LandingFx() {
             gsap.set(btn, { x: 0, y: 0 });
           });
         });
-
-        /* blend-mode custom cursor */
-        const ring = document.querySelector<HTMLElement>('.cursor');
-        const dot = document.querySelector<HTMLElement>('.cursor-dot');
-        if (ring && dot) {
-          html.classList.add('fx-cursor');
-          gsap.set([ring, dot], { xPercent: -50, yPercent: -50 });
-          const dx = gsap.quickTo(dot, 'x', { duration: 0.06, ease: 'power2' });
-          const dy = gsap.quickTo(dot, 'y', { duration: 0.06, ease: 'power2' });
-          const rx = gsap.quickTo(ring, 'x', { duration: 0.22, ease: 'power3' });
-          const ry = gsap.quickTo(ring, 'y', { duration: 0.22, ease: 'power3' });
-          const onCursor = (e: MouseEvent) => {
-            dx(e.clientX);
-            dy(e.clientY);
-            rx(e.clientX);
-            ry(e.clientY);
-          };
-          window.addEventListener('mousemove', onCursor);
-          cleanups.push(() => window.removeEventListener('mousemove', onCursor));
-
-          const bigOffs = Array.from(
-            document.querySelectorAll<HTMLElement>('a, button, input, .htag, .trio__c')
-          ).map((el) => {
-            const enter = () => ring.classList.add('big');
-            const leave = () => ring.classList.remove('big');
-            el.addEventListener('mouseenter', enter);
-            el.addEventListener('mouseleave', leave);
-            return () => {
-              el.removeEventListener('mouseenter', enter);
-              el.removeEventListener('mouseleave', leave);
-            };
-          });
-          cleanups.push(() => bigOffs.forEach((off) => off()));
-        }
       }
 
       const onLoad = () => ScrollTrigger.refresh();
@@ -258,8 +224,7 @@ export default function LandingFx() {
         gsap.ticker.lagSmoothing(500, 33);
       }
       lenis?.destroy();
-      const html = document.documentElement;
-      html.classList.remove('fx', 'fx-cursor');
+      document.documentElement.classList.remove('fx');
     };
   }, []);
 

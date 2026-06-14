@@ -25,7 +25,8 @@ export async function POST(req: NextRequest) {
   }
   const title = (body.title || '').trim();
   if (!title) return NextResponse.json({ error: 'title required' }, { status: 400 });
-  const style = body.style === 'trend' ? 'trend' : 'editorial';
+  // default to vivid full-color ('trend'); only opt into B&W when explicitly asked
+  const style = body.style === 'editorial' ? 'editorial' : 'trend';
   const customLook = typeof body.imageStyle === 'string' ? body.imageStyle.slice(0, 600).trim() : '';
 
   try {

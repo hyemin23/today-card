@@ -108,7 +108,7 @@ export default function CardFace({ card, magazine, ctx, hint = true, ratio }: { 
   const mono = { fontFamily: 'var(--mono)' } as const;
   /* 'trend' cover layout (benchmark: full-bleed visual, letterspaced watermark
      top-right, outlined category pill sitting right above the headline) */
-  const trendCover = ctx !== 'thumb' && card.kind === 'cover' && magazine.coverStyle === 'trend';
+  const trendCover = ctx !== 'thumb' && card.kind === 'cover' && (magazine.coverStyle || 'trend') === 'trend';
   // cards with the dark scrim (dark kinds or any photo) read as dark surfaces
   const surfaceLight = !dark && !card.imageUrl;
   const em = (text: string) => renderEmphasis(text, magazine.accentColor, surfaceLight);

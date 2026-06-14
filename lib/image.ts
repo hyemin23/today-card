@@ -1,12 +1,13 @@
 /**
  * Topic-driven cover-image generation via Gemini's native image model.
  *
- * Two-stage: a text model first invents a witty visual CONCEPT for the topic
- * (visual metaphor / surreal twist / unexpected scale — The Economist-cover
- * energy), then the image model renders that concept. One-stage "editorial
- * news photo" prompts kept producing generic stock-photo lookalikes.
+ * Two-stage: a text model first invents a visual CONCEPT for the topic, then
+ * the image model renders it. One-stage "news photo" prompts kept producing
+ * generic stock-photo lookalikes.
  *
- * Stays on-brand: high-contrast black-and-white, no text/logos, no real
+ * Default look is VIVID FULL-COLOR, photorealistic, scroll-stopping ('trend')
+ * — the high-CTR cover that performs on Instagram. A monochrome editorial
+ * option stays available ('editorial'). Both: no text/logos, no real
  * identifiable individuals, darker lower negative space for the headline.
  *
  * Admin-only: gated by the admin session cookie, verified in the route.
@@ -17,8 +18,16 @@ const CONCEPT_MODEL = process.env.LLM_MODEL || 'gemini-2.5-flash';
 const CHAT_URL =
   process.env.LLM_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
 
-/* a different lens per call keeps a 5-card batch from looking same-y */
-const ART_DIRECTIONS = [
+/* a different lens per call keeps a 5-card batch from looking same-y.
+   color pool leans realistic + high-CTR; b&w pool keeps the witty metaphor look */
+const ART_DIRECTIONS_COLOR = [
+  'a real, in-the-moment documentary-style scene that captures the human stakes of the story — candid, cinematic, emotionally charged',
+  'one bold hero subject shot like a premium editorial/product photo: dramatic directional light, rich color, shallow depth of field',
+  'a believable real-world scene with dramatic scale or perspective that pulls the eye straight to the subject',
+  'an unexpected but realistic juxtaposition of two real elements that instantly frames the topic',
+  'a striking macro close-up of a real, tactile object central to the story — beautiful light, vivid color, fine texture',
+];
+const ART_DIRECTIONS_BW = [
   'a clever visual metaphor staged as a minimal still-life: one or two symbolic objects on a plain background',
   'a surreal twist on an everyday scene — something impossible yet instantly readable',
   'dramatic play with scale: something tiny made monumental, or something huge made pocket-sized',
@@ -29,9 +38,17 @@ const ART_DIRECTIONS = [
 export type ImageStyle = 'editorial' | 'trend';
 
 async function imagineConcept(title: string, category: string, apiKey: string, style: ImageStyle): Promise<string> {
-  const direction = ART_DIRECTIONS[Math.floor(Math.random() * ART_DIRECTIONS.length)];
-  const colorRule = style === 'trend'
-    ? 'must work as a polished full-color cinematic visual'
+  const color = style === 'trend';
+  const directions = color ? ART_DIRECTIONS_COLOR : ART_DIRECTIONS_BW;
+  const direction = directions[Math.floor(Math.random() * directions.length)];
+  const persona = color
+    ? 'You are an art director for a premium, high-engagement Korean news/trend Instagram cover.'
+    : 'You are a witty editorial art director in the spirit of The Economist and New Yorker covers.';
+  const aim = color
+    ? 'invent ONE realistic, photographable scene that makes people stop scrolling — vivid, cinematic, with a clear hero subject and real emotional pull. It should look like an actual professional photograph, not an abstract illustration.'
+    : 'invent ONE memorable visual concept that makes people stop scrolling. Smart and playful, never silly or random.';
+  const colorRule = color
+    ? 'must work as a vivid, photorealistic full-color image with lively (not muted) color'
     : 'must work in black-and-white';
   const res = await fetch(CHAT_URL, {
     method: 'POST',
@@ -42,10 +59,10 @@ async function imagineConcept(title: string, category: string, apiKey: string, s
         {
           role: 'system',
           content: [
-            'You are a witty editorial art director in the spirit of The Economist and New Yorker covers.',
-            'Given a Korean news headline, invent ONE memorable visual concept that makes people stop scrolling.',
+            persona,
+            `Given a Korean news headline, ${aim}`,
             `Preferred device for this one: ${direction}.`,
-            'The concept must be CLEARLY and SPECIFICALLY tied to the topic — a stranger should guess the subject from the image alone. Smart and playful, never silly or random.',
+            'The concept must be CLEARLY and SPECIFICALLY tied to the topic — a stranger should guess the subject from the image alone.',
             'Reply with 1–2 English sentences describing only the scene to photograph/illustrate.',
             `Constraints: no text or letters anywhere in the scene, no real identifiable public figures, ${colorRule}.`,
           ].join(' '),
@@ -69,9 +86,9 @@ function buildPrompt(title: string, category: string, style: ImageStyle, concept
   const look = customLook
     ? `Render in this exact art direction (from a benchmark account analysis): ${customLook}`
     : style === 'trend'
-    // benchmark look: full-color cinematic photo with a modern muted grade and
-    // soft glowing accents — the polished viral Korean tech/trend-page vibe
-    ? 'Render as a polished FULL-COLOR cinematic photorealistic image, modern slightly-muted color grade, soft volumetric light; subtle glowing holographic/UI light elements are welcome when they fit the topic. The refined look of a viral Korean tech-trend Instagram page.'
+    // default high-CTR look: a vivid, realistic full-color photograph — punchy
+    // natural color, one clear subject, the premium viral-cover vibe
+    ? 'Render as a vivid, photorealistic FULL-COLOR editorial photograph — like a real, professionally shot news/lifestyle image. Rich, saturated-yet-natural color, bright clean lighting with gentle contrast, one clear hero subject in crisp focus against a softly blurred background (shallow depth of field), high dynamic range. The composition must be scroll-stopping and emotionally engaging — the premium look of a top-performing Korean news/trend Instagram cover. Avoid washed-out, muted, gray, flat, or overly stylized grading; the colors should feel alive and the scene believable.'
     : 'Render as dramatic high-contrast BLACK AND WHITE editorial photography / photo-illustration, cinematic lighting, bold composition, magazine-cover energy that hooks instantly.';
   return [
     scene,
@@ -85,7 +102,7 @@ function buildPrompt(title: string, category: string, style: ImageStyle, concept
 export async function generateCardImage(
   title: string,
   category: string,
-  style: ImageStyle = 'editorial',
+  style: ImageStyle = 'trend',
   customLook?: string
 ): Promise<string> {
   const apiKey = process.env.LLM_API_KEY;

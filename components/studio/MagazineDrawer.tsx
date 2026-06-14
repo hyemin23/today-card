@@ -293,24 +293,24 @@ export default function MagazineDrawer({
             <div className="stylepick" role="group" aria-labelledby={`${id}-s5`}>
               <button
                 type="button"
-                className={`stylecard ${(draft.coverStyle || 'editorial') === 'editorial' ? 'is-active' : ''}`}
-                aria-pressed={(draft.coverStyle || 'editorial') === 'editorial'}
+                className={`stylecard ${(draft.coverStyle || 'trend') === 'trend' ? 'is-active' : ''}`}
+                aria-pressed={(draft.coverStyle || 'trend') === 'trend'}
+                onClick={() => set({ coverStyle: 'trend' })}
+              >
+                <b>트렌드 비주얼 <span style={{ color: 'var(--ink-3)', fontWeight: 400 }}>· 기본</span></b>
+                <span>풀컬러 · 현실적이고 시선을 끄는 표지 (CTR↑)</span>
+              </button>
+              <button
+                type="button"
+                className={`stylecard ${draft.coverStyle === 'editorial' ? 'is-active' : ''}`}
+                aria-pressed={draft.coverStyle === 'editorial'}
                 onClick={() => set({ coverStyle: 'editorial' })}
               >
                 <b>잉크 에디토리얼</b>
                 <span>흑백 매거진 무드 · 차분한 신뢰감</span>
               </button>
-              <button
-                type="button"
-                className={`stylecard ${draft.coverStyle === 'trend' ? 'is-active' : ''}`}
-                aria-pressed={draft.coverStyle === 'trend'}
-                onClick={() => set({ coverStyle: 'trend' })}
-              >
-                <b>트렌드 비주얼</b>
-                <span>풀컬러 시네마틱 · 워터마크 + 카테고리 필 표지</span>
-              </button>
             </div>
-            <p className="hint">표지 레이아웃과 AI 이미지의 톤(흑백/컬러)이 함께 바뀌어요.</p>
+            <p className="hint">표지 레이아웃과 AI 이미지의 톤(컬러/흑백)이 함께 바뀌어요. 기본은 풀컬러예요.</p>
 
             <div className="bench">
               <div className="bench__t">벤치마킹 계정 분석 <span className="hint" style={{ display: 'inline', marginTop: 0 }}>· 관리자 전용</span></div>

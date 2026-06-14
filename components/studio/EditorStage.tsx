@@ -151,7 +151,7 @@ export default function EditorStage({
     const res = await fetch('/api/image', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title: promptTitle, category: c.category || '뉴스', style: magazine.coverStyle || 'editorial', imageStyle: magazine.benchImagePrompt || '' }),
+      body: JSON.stringify({ title: promptTitle, category: c.category || '뉴스', style: magazine.coverStyle || 'trend', imageStyle: magazine.benchImagePrompt || '' }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || '생성 실패');

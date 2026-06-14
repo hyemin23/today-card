@@ -198,7 +198,7 @@
 .splite-btn:hover { box-shadow: 0 14px 34px -14px rgba(255,255,255,.4); }
 .splite-btn:active { transform: translateY(1px); }
 .splite-stage { position: relative; min-height: 520px; }
-.splite-spline { width: 100%; height: 100%; }
+.splite-spline { position: absolute; inset: 0; width: 100%; height: 100%; }
 .splite-fallback { position: absolute; inset: 0; display: grid; place-items: center; }
 .splite-orb {
   width: 220px; height: 220px; border-radius: 50%;

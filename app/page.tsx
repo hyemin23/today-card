@@ -3,7 +3,7 @@ import './landing.css';
 import Nav from '@/components/Nav';
 import Footer from '@/components/Footer';
 import LandingFx from '@/components/LandingFx';
-import SplineShowcase from '@/components/SplineShowcase';
+import Showcase3D from '@/components/Showcase3D';
 import HeroTopicForm from '@/components/HeroTopicForm';
 import { TextRotate } from '@/components/ui/TextRotate';
 import { Button } from '@/components/ui/button';
@@ -166,8 +166,8 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* INTERACTIVE 3D SHOWCASE (Spline) */}
-      <SplineShowcase />
+      {/* INTERACTIVE 3D SHOWCASE (floating card-news, R3F) */}
+      <Showcase3D />
 
       {/* FEATURE TRIO */}
       <section className="section" style={{ paddingTop: 0 }}>

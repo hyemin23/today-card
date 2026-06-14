@@ -1,5 +1,17 @@
 import type { Article, Card, GenerateResult } from '@/types/db';
 
+/** 인스타 캡션 길이 상한 — 사용자 지정(공백 포함 500자). 참고: 인스타 실제 한도는 2,200자. */
+const MAX_CAPTION = 500;
+
+/** 캡션이 상한을 넘으면 마지막 문장/줄 경계에서 깔끔히 자른다(단어 중간 끊김 방지). */
+export function capCaption(text: string): string {
+  const cp = [...(text || '')];
+  if (cp.length <= MAX_CAPTION) return text;
+  const cut = cp.slice(0, MAX_CAPTION).join('');
+  const end = Math.max(cut.lastIndexOf('.'), cut.lastIndexOf('!'), cut.lastIndexOf('?'), cut.lastIndexOf('\n'));
+  return (end > MAX_CAPTION * 0.5 ? cut.slice(0, end + 1) : cut).trimEnd();
+}
+
 /**
  * Generate a 5-card news carousel from an article.
  * Uses the configured LLM when LLM_API_KEY is present; otherwise returns
@@ -33,7 +45,7 @@ export async function generateCards(article: Article, body?: string, tone?: stri
     '- cover title: 가장 궁금증을 일으키는 키워드 하나만 ==형광펜==.',
     '- 각 body 카드: body 안에서 가장 중요한 구절 1개를 ==형광펜==, 수치·고유명사 1~2개를 **굵게**. 과한 강조 금지(카드당 형광펜 1개, 굵게 최대 2개) — 다 강조하면 아무것도 강조되지 않습니다.',
     '- cta에는 강조 표기를 쓰지 않습니다.',
-    'caption: 기사 전체를 읽기 좋게 요약한 인스타그램 캡션. 첫 문장은 전체를 압축한 요지, 이어서 핵심 포인트를 줄바꿈(\\n)으로 정리해 가독성을 높이세요. 200~400자 정도로 충분히 길어도 됩니다.',
+    'caption: 기사 전체를 읽기 좋게 요약한 인스타그램 캡션. 첫 문장은 전체를 압축한 요지, 이어서 핵심 포인트를 줄바꿈(\\n)으로 정리해 가독성을 높이세요. 공백 포함 500자를 절대 넘기지 마세요(권장 300~480자). 끝맺음을 문장 단위로 깔끔하게.',
     'hashtags: 주제와 직접 관련된 한글 해시태그 5~8개.',
     '규칙: 기사 본문에 근거한 사실만 사용. 과장·허위·본문 밖 사실 추가 금지. 수치·고유명사는 본문 그대로.',
     'JSON으로만 응답: {"cards":[{"kind","title","body"}], "caption":"...", "hashtags":["#태그", ...]}',
@@ -125,7 +137,7 @@ function normalize(parsed: any, article: Article): GenerateResult {
   if (cta && (!cta.hashtags || !cta.hashtags.length)) cta.hashtags = hashtags.slice(0, 4);
   return {
     cards,
-    caption: typeof parsed?.caption === 'string' && parsed.caption ? parsed.caption : article.summary,
+    caption: capCaption(typeof parsed?.caption === 'string' && parsed.caption ? parsed.caption : article.summary),
     hashtags,
   };
 }
@@ -143,7 +155,7 @@ function mockGenerate(article: Article): GenerateResult {
   ];
   return {
     cards,
-    caption: `${s0}\n\n• ${s1}\n• 오늘의 이슈를 한눈에 정리했어요.\n\n출처 · ${article.source}`,
+    caption: capCaption(`${s0}\n\n• ${s1}\n• 오늘의 이슈를 한눈에 정리했어요.\n\n출처 · ${article.source}`),
     hashtags: ['#카드뉴스', '#오늘의이슈', '#INK매거진', '#뉴스요약'],
   };
 }

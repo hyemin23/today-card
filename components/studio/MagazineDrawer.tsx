@@ -17,6 +17,45 @@ const COLOR_NAME: Record<string, string> = {
   '#7c8f6b': '올리브',
 };
 
+const LIGHT_BG = ['#ffffff', '#f6f4ef'];
+const LIGHT_ACCENT = ['#ffffff'];
+
+/** 추가/제거 가능한 색 팔레트(최대 max개). 무지개 원으로 색을 고르고 ＋로 추가, 스와치 위 ✕로 제거. */
+function EditablePalette({ label, idBase, swatches, value, onValue, onSwatches, lightColors, hint, max = 5 }: {
+  label: string; idBase: string; swatches: string[]; value: string;
+  onValue: (c: string) => void; onSwatches: (s: string[]) => void;
+  lightColors: string[]; hint: string; max?: number;
+}) {
+  const isLight = (c: string) => lightColors.includes(c.toLowerCase());
+  const exists = swatches.map((s) => s.toLowerCase()).includes(value.toLowerCase());
+  const atMax = swatches.length >= max;
+  return (
+    <div className="field">
+      <span className="field-label" id={idBase}>{label} <span style={{ color: 'var(--ink-3)', fontWeight: 400 }}>· 최대 {max}개</span></span>
+      <div className="swatches" role="group" aria-labelledby={idBase}>
+        {swatches.map((c) => (
+          <span className="sw-wrap" key={c}>
+            <button type="button" className={`swatch ${isLight(c) ? 'light' : 'dark'} ${value.toLowerCase() === c.toLowerCase() ? 'is-on' : ''}`} style={{ background: c }} aria-label={`${label} ${COLOR_NAME[c] || c}`} aria-pressed={value.toLowerCase() === c.toLowerCase()} onClick={() => onValue(c)} />
+            <button type="button" className="sw-del" aria-label={`${COLOR_NAME[c] || c} 삭제`} onClick={() => onSwatches(swatches.filter((x) => x !== c))}>✕</button>
+          </span>
+        ))}
+        <label className="swatch swatch--custom" title="색 직접 선택">
+          <input type="color" value={value} onChange={(e) => onValue(e.target.value)} aria-label={`${label} 직접 선택`} />
+        </label>
+        <button
+          type="button"
+          className="sw-add"
+          onClick={() => { if (!atMax && !exists) onSwatches([...swatches, value]); }}
+          disabled={atMax || exists}
+          aria-label="현재 색을 팔레트에 추가"
+          title={atMax ? `최대 ${max}개까지 추가할 수 있어요` : exists ? '이미 팔레트에 있어요' : '현재 색을 팔레트에 추가'}
+        >＋</button>
+      </div>
+      <p className="hint">{hint}</p>
+    </div>
+  );
+}
+
 export default function MagazineDrawer({
   open,
   current,
@@ -304,24 +343,20 @@ export default function MagazineDrawer({
 
           <section className="fset" aria-labelledby={`${id}-s4`}>
             <div className="fset__t"><span className="idx" aria-hidden="true">05</span><h3 id={`${id}-s4`}>색</h3></div>
-            <div className="field"><span className="field-label" id={`${id}-bg`}>배경색</span><div className="swatches" role="group" aria-labelledby={`${id}-bg`}>
-              {BG_SWATCHES.map((c) => {
-                const light = c === '#ffffff' || c === '#f6f4ef';
-                return <button key={c} type="button" className={`swatch ${light ? 'light' : 'dark'} ${draft.bgColor === c ? 'is-on' : ''}`} style={{ background: c }} aria-label={`배경색 ${COLOR_NAME[c] || c}`} aria-pressed={draft.bgColor === c} onClick={() => set({ bgColor: c })} />;
-              })}
-              <label className={`swatch swatch--custom ${BG_SWATCHES.includes(draft.bgColor) ? '' : 'is-on'}`} title="원하는 색 직접 선택">
-                <input type="color" value={draft.bgColor} onChange={(e) => set({ bgColor: e.target.value })} aria-label="배경색 직접 선택" />
-              </label>
-            </div><p className="hint">표지·CTA 카드의 배경에 적용돼요. 무지개 원을 누르면 모든 색을 직접 고를 수 있어요.</p></div>
-            <div className="field"><span className="field-label" id={`${id}-ac`}>포인트색</span><div className="swatches" role="group" aria-labelledby={`${id}-ac`}>
-              {ACCENT_SWATCHES.map((c) => {
-                const light = c === '#ffffff';
-                return <button key={c} type="button" className={`swatch ${light ? 'light' : 'dark'} ${draft.accentColor === c ? 'is-on' : ''}`} style={{ background: c }} aria-label={`포인트색 ${COLOR_NAME[c] || c}`} aria-pressed={draft.accentColor === c} onClick={() => set({ accentColor: c })} />;
-              })}
-              <label className={`swatch swatch--custom ${ACCENT_SWATCHES.includes(draft.accentColor) ? '' : 'is-on'}`} title="원하는 색 직접 선택">
-                <input type="color" value={draft.accentColor} onChange={(e) => set({ accentColor: e.target.value })} aria-label="포인트색 직접 선택" />
-              </label>
-            </div><p className="hint">형광펜 강조의 기본색으로도 쓰여요.</p></div>
+            <EditablePalette
+              label="배경색" idBase={`${id}-bg`}
+              swatches={draft.bgSwatches ?? BG_SWATCHES} value={draft.bgColor}
+              onValue={(c) => set({ bgColor: c })} onSwatches={(s) => set({ bgSwatches: s })}
+              lightColors={LIGHT_BG}
+              hint="표지·CTA 카드의 배경에 적용돼요. 무지개 원으로 색을 고르고 ＋로 팔레트에 추가, 스와치에 마우스를 올려 ✕로 제거해요."
+            />
+            <EditablePalette
+              label="포인트색" idBase={`${id}-ac`}
+              swatches={draft.accentSwatches ?? ACCENT_SWATCHES} value={draft.accentColor}
+              onValue={(c) => set({ accentColor: c })} onSwatches={(s) => set({ accentSwatches: s })}
+              lightColors={LIGHT_ACCENT}
+              hint="형광펜 강조의 기본색으로도 쓰여요."
+            />
           </section>
         </div>
         <div className="drawer__foot">

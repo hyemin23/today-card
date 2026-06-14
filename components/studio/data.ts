@@ -21,7 +21,7 @@ export const BG_SWATCHES = ['#111110', '#ffffff', '#f6f4ef', '#1a2b22', '#2a2438
 export const ACCENT_SWATCHES = ['#ffffff', '#111110', '#9a8456', '#7c8f6b'];
 
 export const MAGAZINES: Magazine[] = [
-  { id: 'ink', name: 'INK Daily', logoText: 'INK.', handle: '@ink.daily', ctaHeadline: '팔로우하고 더 보기', ctaCopy: '매일 한 편, 가볍게 읽는 오늘의 뉴스. 저장하고 친구에게 공유해요.', hashtags: ['#카드뉴스', '#오늘의이슈', '#INK매거진'], bgColor: '#111110', accentColor: '#ffffff', isDefault: true },
-  { id: 'soso', name: '소소한 기록', logoText: 'soso', handle: '@soso.log', ctaHeadline: '팔로우하고 더 보기', ctaCopy: '', hashtags: ['#소소한기록'], bgColor: '#f6f4ef', accentColor: '#111110' },
-  { id: 'green', name: '초록잡지', logoText: 'GREEN', handle: '@green.zine', ctaHeadline: '팔로우하고 더 보기', ctaCopy: '', hashtags: ['#초록잡지'], bgColor: '#1a2b22', accentColor: '#ffffff' },
+  { id: 'ink', name: 'INK Daily', logoText: 'INK.', handle: '@ink.daily', ctaHeadline: '팔로우하고 더 보기', ctaCopy: '매일 한 편, 가볍게 읽는 오늘의 뉴스. 저장하고 친구에게 공유해요.', hashtags: [], bgColor: '#111110', accentColor: '#ffffff', isDefault: true },
+  { id: 'soso', name: '소소한 기록', logoText: 'soso', handle: '@soso.log', ctaHeadline: '팔로우하고 더 보기', ctaCopy: '', hashtags: [], bgColor: '#f6f4ef', accentColor: '#111110' },
+  { id: 'green', name: '초록잡지', logoText: 'GREEN', handle: '@green.zine', ctaHeadline: '팔로우하고 더 보기', ctaCopy: '', hashtags: [], bgColor: '#1a2b22', accentColor: '#ffffff' },
 ];

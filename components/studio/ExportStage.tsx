@@ -124,7 +124,9 @@ export default function ExportStage({
   }
 
   async function copyCaption() {
-    const txt = `${caption}\n\n${hashtags.join(' ')}\n\n출처 · ${source}`;
+    // 해시태그가 없으면(기본값) 빈 줄을 만들지 않는다
+    const tags = hashtags.filter(Boolean).join(' ');
+    const txt = [caption, tags, `출처 · ${source}`].filter(Boolean).join('\n\n');
     let ok = false;
     try {
       await navigator.clipboard.writeText(txt);

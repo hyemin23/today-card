@@ -46,9 +46,9 @@ export async function generateCards(article: Article, body?: string, tone?: stri
     '- 각 body 카드: body 안에서 가장 중요한 구절 1개를 ==형광펜==, 수치·고유명사 1~2개를 **굵게**. 과한 강조 금지(카드당 형광펜 1개, 굵게 최대 2개) — 다 강조하면 아무것도 강조되지 않습니다.',
     '- cta에는 강조 표기를 쓰지 않습니다.',
     'caption: 기사 전체를 읽기 좋게 요약한 인스타그램 캡션. 첫 문장은 전체를 압축한 요지, 이어서 핵심 포인트를 줄바꿈(\\n)으로 정리해 가독성을 높이세요. 공백 포함 500자를 절대 넘기지 마세요(권장 300~480자). 끝맺음을 문장 단위로 깔끔하게.',
-    'hashtags: 주제와 직접 관련된 한글 해시태그 5~8개.',
+    'hashtags: 빈 배열 []로 둡니다. 해시태그는 사용자가 직접 추가하므로 자동 생성하지 않습니다.',
     '규칙: 기사 본문에 근거한 사실만 사용. 과장·허위·본문 밖 사실 추가 금지. 수치·고유명사는 본문 그대로.',
-    'JSON으로만 응답: {"cards":[{"kind","title","body"}], "caption":"...", "hashtags":["#태그", ...]}',
+    'JSON으로만 응답: {"cards":[{"kind","title","body"}], "caption":"...", "hashtags":[]}',
   ].join('\n');
 
   const source = (body && body.length > 120 ? body : article.summary).slice(0, 3000);
@@ -129,9 +129,8 @@ function normalize(parsed: any, article: Article): GenerateResult {
     cards[0] = { ...cards[0], kind: 'cover' };
     cards[4] = { ...cards[4], kind: 'cta' };
   }
-  const hashtags = Array.isArray(parsed?.hashtags) && parsed.hashtags.length
-    ? parsed.hashtags.map(String)
-    : ['#카드뉴스', '#오늘의이슈'];
+  // 해시태그는 기본 없음 — 사용자가 직접 추가. LLM이 굳이 채워 보내도 무시하고 비운다.
+  const hashtags: string[] = [];
   // seed the CTA card's own hashtags so they're shown + editable per-card
   const cta = cards.find((c) => c.kind === 'cta');
   if (cta && (!cta.hashtags || !cta.hashtags.length)) cta.hashtags = hashtags.slice(0, 4);
@@ -156,6 +155,6 @@ function mockGenerate(article: Article): GenerateResult {
   return {
     cards,
     caption: capCaption(`${s0}\n\n• ${s1}\n• 오늘의 이슈를 한눈에 정리했어요.\n\n출처 · ${article.source}`),
-    hashtags: ['#카드뉴스', '#오늘의이슈', '#INK매거진', '#뉴스요약'],
+    hashtags: [],
   };
 }

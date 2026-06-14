@@ -20,6 +20,9 @@ export interface Magazine {
   hashtags: string[];
   bgColor: string;
   accentColor: string;
+  /** 드로어 배경색/포인트색 피커의 편집 가능한 스와치 팔레트(최대 5개). 없으면 기본 팔레트 사용 */
+  bgSwatches?: string[];
+  accentSwatches?: string[];
   isDefault?: boolean;
 }
 

@@ -23,6 +23,8 @@ export interface Magazine {
   /** 드로어 배경색/포인트색 피커의 편집 가능한 스와치 팔레트(최대 5개). 없으면 기본 팔레트 사용 */
   bgSwatches?: string[];
   accentSwatches?: string[];
+  /** AI 해시태그 자동 추천 — 기본 false(해시태그 없음). true면 생성 시 주제 해시태그 제안 */
+  autoHashtags?: boolean;
   isDefault?: boolean;
 }
 

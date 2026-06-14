@@ -242,7 +242,7 @@ export default function StudioClient() {
       const res = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...article, styleTone: magazine.benchTone || '' }),
+        body: JSON.stringify({ ...article, styleTone: magazine.benchTone || '', autoHashtags: !!magazine.autoHashtags }),
         signal: ctrl.signal,
       });
       const data = await res.json().catch(() => null);

@@ -279,6 +279,13 @@ export default function MagazineDrawer({
                 }
               }} />
             </div>
+            <div className="field">
+              <div className="tog">
+                <span className="tog__lb">AI 해시태그 자동 추천 <span style={{ color: 'var(--ink-3)', fontWeight: 400 }}>· 생성 시 주제 해시태그 제안</span></span>
+                <button type="button" role="switch" aria-checked={!!draft.autoHashtags} aria-label="AI 해시태그 자동 추천" className="switch" onClick={() => set({ autoHashtags: !draft.autoHashtags })} />
+              </div>
+              <p className="hint">끄면(기본) 해시태그가 비어 있어요. 켜면 생성할 때 AI가 기사 주제에 맞는 해시태그를 제안해요.</p>
+            </div>
           </section>
 
           <section className="fset" aria-labelledby={`${id}-s5`}>

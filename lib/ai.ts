@@ -20,11 +20,11 @@ export function capCaption(text: string): string {
  * Output contract (validate with zod in production):
  *   { cards: Card[5], caption: string, hashtags: string[] }
  */
-export async function generateCards(article: Article, body?: string, tone?: string): Promise<GenerateResult> {
+export async function generateCards(article: Article, body?: string, tone?: string, autoHashtags = false): Promise<GenerateResult> {
   const apiKey = process.env.LLM_API_KEY;
 
   if (!apiKey) {
-    return mockGenerate(article);
+    return mockGenerate(article, autoHashtags);
   }
 
   const system = [
@@ -46,7 +46,9 @@ export async function generateCards(article: Article, body?: string, tone?: stri
     '- 각 body 카드: body 안에서 가장 중요한 구절 1개를 ==형광펜==, 수치·고유명사 1~2개를 **굵게**. 과한 강조 금지(카드당 형광펜 1개, 굵게 최대 2개) — 다 강조하면 아무것도 강조되지 않습니다.',
     '- cta에는 강조 표기를 쓰지 않습니다.',
     'caption: 기사 전체를 읽기 좋게 요약한 인스타그램 캡션. 첫 문장은 전체를 압축한 요지, 이어서 핵심 포인트를 줄바꿈(\\n)으로 정리해 가독성을 높이세요. 공백 포함 500자를 절대 넘기지 마세요(권장 300~480자). 끝맺음을 문장 단위로 깔끔하게.',
-    'hashtags: 빈 배열 []로 둡니다. 해시태그는 사용자가 직접 추가하므로 자동 생성하지 않습니다.',
+    autoHashtags
+      ? 'hashtags: 주제와 직접 관련된 한글 해시태그 5~8개.'
+      : 'hashtags: 빈 배열 []로 둡니다. 해시태그는 자동 생성하지 않습니다.',
     '규칙: 기사 본문에 근거한 사실만 사용. 과장·허위·본문 밖 사실 추가 금지. 수치·고유명사는 본문 그대로.',
     'JSON으로만 응답: {"cards":[{"kind","title","body"}], "caption":"...", "hashtags":[]}',
   ].join('\n');
@@ -79,9 +81,9 @@ export async function generateCards(article: Article, body?: string, tone?: stri
     const data = await res.json();
     const content: string = data.choices?.[0]?.message?.content ?? '';
     const parsed = JSON.parse(content.replace(/^\s*```(?:json)?\s*|\s*```\s*$/g, ''));
-    return normalize(parsed, article);
+    return normalize(parsed, article, autoHashtags);
   } catch {
-    return mockGenerate(article);
+    return mockGenerate(article, autoHashtags);
   }
 }
 
@@ -104,7 +106,7 @@ function sanitizeMarkers(text: string): string {
   return out;
 }
 
-function normalize(parsed: any, article: Article): GenerateResult {
+function normalize(parsed: any, article: Article, autoHashtags: boolean): GenerateResult {
   const raw: any[] = Array.isArray(parsed?.cards) ? parsed.cards : [];
   const cards: Card[] = raw.slice(0, 5).map((c, i) => {
     const kind = c?.kind === 'cover' || c?.kind === 'cta' || c?.kind === 'body'
@@ -129,8 +131,10 @@ function normalize(parsed: any, article: Article): GenerateResult {
     cards[0] = { ...cards[0], kind: 'cover' };
     cards[4] = { ...cards[4], kind: 'cta' };
   }
-  // 해시태그는 기본 없음 — 사용자가 직접 추가. LLM이 굳이 채워 보내도 무시하고 비운다.
-  const hashtags: string[] = [];
+  // 토글 OFF면 비움(기본). ON이면 LLM이 제안한 주제 해시태그를 사용.
+  const hashtags: string[] = autoHashtags && Array.isArray(parsed?.hashtags)
+    ? parsed.hashtags.map(String).filter(Boolean).slice(0, 8)
+    : [];
   // seed the CTA card's own hashtags so they're shown + editable per-card
   const cta = cards.find((c) => c.kind === 'cta');
   if (cta && (!cta.hashtags || !cta.hashtags.length)) cta.hashtags = hashtags.slice(0, 4);
@@ -141,7 +145,7 @@ function normalize(parsed: any, article: Article): GenerateResult {
   };
 }
 
-function mockGenerate(article: Article): GenerateResult {
+function mockGenerate(article: Article, autoHashtags = false): GenerateResult {
   const sentences = article.summary.split(/(?<=[.!?다])\s+/).filter(Boolean);
   const s0 = sentences[0] || article.summary;
   const s1 = sentences[1] || article.summary;
@@ -152,9 +156,10 @@ function mockGenerate(article: Article): GenerateResult {
     { idx: 3, kind: 'body', title: '왜 중요한가', body: '이 사안은 앞으로의 흐름에 영향을 줄 수 있어 눈여겨볼 필요가 있습니다.', imageUrl: null, textColor: '#111110', fontScale: 1, align: '6' },
     { idx: 4, kind: 'cta', title: '팔로우하고 더 보기', hashtags: ['#카드뉴스', '#오늘의이슈', '#INK매거진'], imageUrl: null, textColor: '#ffffff', fontScale: 1, align: '6' },
   ];
+  const cat = (article.category || '').replace(/[^가-힣A-Za-z0-9]/g, '');
   return {
     cards,
     caption: capCaption(`${s0}\n\n• ${s1}\n• 오늘의 이슈를 한눈에 정리했어요.\n\n출처 · ${article.source}`),
-    hashtags: [],
+    hashtags: autoHashtags ? ([cat && `#${cat}`, '#카드뉴스', '#오늘의이슈'].filter(Boolean) as string[]) : [],
   };
 }

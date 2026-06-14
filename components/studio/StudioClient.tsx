@@ -78,7 +78,7 @@ export default function StudioClient() {
   const [hashtags, setHashtags] = useState<string[]>([]);
   const [source, setSource] = useState('뉴스');
   const [genFallback, setGenFallback] = useState(false);
-  const [ratio, setRatio] = useState<'1:1' | '4:5'>('1:1'); // 인스타 출력 비율
+  const [ratio, setRatio] = useState<'1:1' | '4:5'>('4:5'); // 인스타 출력 비율 (기본 4:5 — 2025 그리드 변경 후 인스타 권장)
   const [isAdmin, setIsAdmin] = useState(false);
   const [restored, setRestored] = useState(false);
 
@@ -113,7 +113,8 @@ export default function StudioClient() {
       setStageRaw(Math.min(Math.max(s.stage || 2, 1), 3));
       setSel(Math.min(s.sel || 0, s.cards.length - 1));
       setGenFallback(!!s.genFallback);
-      setRatio(s.ratio === '4:5' ? '4:5' : '1:1');
+      // 명시적으로 저장된 비율만 복원 — 비율 없는(옛) 세션은 새 기본값(4:5) 유지
+      if (s.ratio === '1:1' || s.ratio === '4:5') setRatio(s.ratio);
       lastArticle.current = s.article;
     }
     setRestored(true);

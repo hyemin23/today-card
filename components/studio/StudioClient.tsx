@@ -43,6 +43,7 @@ interface PersistedSession {
   sel: number;
   genFallback: boolean;
   ratio?: '1:1' | '4:5';
+  ratioExplicit?: boolean;
   article: Article | null;
 }
 
@@ -79,6 +80,7 @@ export default function StudioClient() {
   const [source, setSource] = useState('뉴스');
   const [genFallback, setGenFallback] = useState(false);
   const [ratio, setRatio] = useState<'1:1' | '4:5'>('4:5'); // 인스타 출력 비율 (기본 4:5 — 2025 그리드 변경 후 인스타 권장)
+  const [ratioExplicit, setRatioExplicit] = useState(false); // 사용자가 직접 비율을 골랐는지 — 아니면 현재 기본값(4:5) 적용
   const [isAdmin, setIsAdmin] = useState(false);
   const [restored, setRestored] = useState(false);
 
@@ -113,8 +115,8 @@ export default function StudioClient() {
       setStageRaw(Math.min(Math.max(s.stage || 2, 1), 3));
       setSel(Math.min(s.sel || 0, s.cards.length - 1));
       setGenFallback(!!s.genFallback);
-      // 명시적으로 저장된 비율만 복원 — 비율 없는(옛) 세션은 새 기본값(4:5) 유지
-      if (s.ratio === '1:1' || s.ratio === '4:5') setRatio(s.ratio);
+      // 사용자가 직접 고른 비율만 복원 — 안 골랐으면(옛 세션의 기본 1:1 포함) 새 기본값 4:5 유지
+      if (s.ratioExplicit && (s.ratio === '1:1' || s.ratio === '4:5')) { setRatio(s.ratio); setRatioExplicit(true); }
       lastArticle.current = s.article;
     }
     setRestored(true);
@@ -125,10 +127,10 @@ export default function StudioClient() {
   useEffect(() => {
     if (!restored || cards.length === 0) return;
     saveJSON(sessionStorage, SESSION_KEY, {
-      cards, originalCards, caption, hashtags, source, stage, maxReached, sel, genFallback, ratio,
+      cards, originalCards, caption, hashtags, source, stage, maxReached, sel, genFallback, ratio, ratioExplicit,
       article: lastArticle.current,
     } satisfies PersistedSession);
-  }, [restored, cards, originalCards, caption, hashtags, source, stage, maxReached, sel, genFallback, ratio]);
+  }, [restored, cards, originalCards, caption, hashtags, source, stage, maxReached, sel, genFallback, ratio, ratioExplicit]);
 
   useEffect(() => {
     if (restored) saveJSON(localStorage, MAGAZINE_KEY, magazine);
@@ -349,7 +351,7 @@ export default function StudioClient() {
           </section>
           <section className={`stage-pane ${stage === 3 ? 'is-active' : ''}`} tabIndex={-1} aria-label="3단계: 내보내기" aria-hidden={stage !== 3}>
             {cards.length > 0 && (
-              <ExportStage cards={cards} magazine={magazine} caption={caption} hashtags={hashtags} source={source} onGo={setStage} ratio={ratio} setRatio={setRatio} />
+              <ExportStage cards={cards} magazine={magazine} caption={caption} hashtags={hashtags} source={source} onGo={setStage} ratio={ratio} setRatio={(r) => { setRatio(r); setRatioExplicit(true); }} />
             )}
           </section>
         </div>

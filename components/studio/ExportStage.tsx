@@ -251,7 +251,7 @@ export default function ExportStage({
             >
               {cards.map((c, i) => (
                 <div className="cslide" key={i} style={{ position: 'relative' }} role="group" aria-roledescription="슬라이드" aria-label={`${i + 1} / ${n} · ${kindLabel(c.kind)}`} aria-hidden={i !== cur}>
-                  <CardFace card={c} magazine={magazine} ctx="slide" />
+                  <CardFace card={c} magazine={magazine} ctx="slide" ratio={ratio} />
                 </div>
               ))}
             </div>
@@ -326,7 +326,7 @@ export default function ExportStage({
       <div ref={renderRef} aria-hidden style={{ position: 'fixed', left: -9999, top: 0, pointerEvents: 'none' }}>
         {cards.map((c, i) => (
           <div key={i} className="canvas" style={{ width: RENDER_SIZE, maxWidth: RENDER_SIZE, height: renderH }}>
-            <CardFace card={c} magazine={magazine} ctx="canvas" hint={false} />
+            <CardFace card={c} magazine={magazine} ctx="canvas" hint={false} ratio={ratio} />
           </div>
         ))}
       </div>

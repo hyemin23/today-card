@@ -32,6 +32,7 @@ export default function EditorStage({
   magazine,
   onGo,
   isAdmin,
+  ratio,
 }: {
   cards: Card[];
   sel: number;
@@ -42,6 +43,7 @@ export default function EditorStage({
   magazine: Magazine;
   onGo: (n: number) => void;
   isAdmin?: boolean;
+  ratio?: '1:1' | '4:5';
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const titleTaRef = useRef<HTMLTextAreaElement>(null);
@@ -218,7 +220,7 @@ export default function EditorStage({
               onClick={() => setSel(i)}
             >
               <span className="tnum" aria-hidden="true">{String(i + 1).padStart(2, '0')} {kindLabelOf(c.kind)}</span>
-              <CardFace card={c} magazine={magazine} ctx="thumb" />
+              <CardFace card={c} magazine={magazine} ctx="thumb" ratio={ratio} />
             </button>
           ))}
         </div>
@@ -233,7 +235,7 @@ export default function EditorStage({
           {/* fixed 540px layout scaled down on mobile, so the preview keeps the
               exact text-to-card proportions of the exported 1080px PNG */}
           <div className="canvas__fit">
-            <CardFace card={card} magazine={magazine} ctx="canvas" />
+            <CardFace card={card} magazine={magazine} ctx="canvas" ratio={ratio} />
           </div>
           {card.kind === 'cover' && !card.imageUrl && (
             /* the visual "이미지를 올려주세요" hint lives in CardFace — this makes it actually clickable */

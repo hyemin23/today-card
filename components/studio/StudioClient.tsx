@@ -346,7 +346,7 @@ export default function StudioClient() {
               </div>
             )}
             {cards.length > 0 && (
-              <EditorStage cards={cards} sel={sel} setSel={setSel} updateCard={updateCard} restoreCard={restoreCard} hasOriginals={originalCards.length > 0} magazine={magazine} onGo={setStage} isAdmin={isAdmin} />
+              <EditorStage cards={cards} sel={sel} setSel={setSel} updateCard={updateCard} restoreCard={restoreCard} hasOriginals={originalCards.length > 0} magazine={magazine} onGo={setStage} isAdmin={isAdmin} ratio={ratio} />
             )}
           </section>
           <section className={`stage-pane ${stage === 3 ? 'is-active' : ''}`} tabIndex={-1} aria-label="3단계: 내보내기" aria-hidden={stage !== 3}>

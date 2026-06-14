@@ -90,7 +90,7 @@ export function alignIndex(align: string): number {
   return Number.isNaN(n) || !(n in ALIGN) ? 6 : n;
 }
 
-export default function CardFace({ card, magazine, ctx, hint = true }: { card: Card; magazine: Magazine; ctx: Ctx; hint?: boolean }) {
+export default function CardFace({ card, magazine, ctx, hint = true, ratio }: { card: Card; magazine: Magazine; ctx: Ctx; hint?: boolean; ratio?: '1:1' | '4:5' }) {
   const dark = card.kind !== 'body';
   const bg = dark ? magazine.bgColor : '#ffffff';
   const fg = card.textColor || (dark ? '#ffffff' : '#111110');
@@ -98,7 +98,11 @@ export default function CardFace({ card, magazine, ctx, hint = true }: { card: C
   // prototype slideHTML: cover 25 / cta 23 / body 21
   const slideBase = card.kind === 'cover' ? 25 : card.kind === 'cta' ? 23 : 21;
   const titleBase = ctx === 'canvas' ? 42 : ctx === 'slide' ? slideBase : 11;
-  const titleSize = Math.round(titleBase * (ctx === 'thumb' ? 1 : card.fontScale));
+  // 4:5는 세로 여백이 넓어 글씨를 키워 가독성·주목도(CTR)↑. 폰트 크기를 키우면 같은 콘텐츠
+  // 폭에서 재줄바꿈돼 세로로만 커지고 좌우는 패딩 안에 머물러 그리드 크롭에 안 잘린다.
+  // (transform 확대는 좌우로도 커져 잘리므로 금지 — 반드시 font-size로 키운다.)
+  const sizeBump = ratio === '4:5' && ctx !== 'thumb' ? 1.4 : 1;
+  const titleSize = Math.round(titleBase * (ctx === 'thumb' ? 1 : card.fontScale) * sizeBump);
   const align = ALIGN[alignIndex(card.align)];
   const num = `0${card.idx + 1} / 05`;
   const mono = { fontFamily: 'var(--mono)' } as const;
@@ -224,7 +228,7 @@ export default function CardFace({ card, magazine, ctx, hint = true }: { card: C
           {ctx !== 'thumb' && card.kind === 'body' && card.body && (
             <>
               <div style={{ height: 1, background: 'currentColor', opacity: 0.16, margin: `${ctx === 'canvas' ? 16 : 10}px 0` }} />
-              <div style={{ fontSize: ctx === 'canvas' ? 15 : 11, lineHeight: 1.6, opacity: 0.85, whiteSpace: 'pre-line', wordBreak: 'keep-all', overflowWrap: 'break-word' }}>{em(card.body)}</div>
+              <div style={{ fontSize: Math.round((ctx === 'canvas' ? 15 : 11) * sizeBump), lineHeight: 1.6, opacity: 0.85, whiteSpace: 'pre-line', wordBreak: 'keep-all', overflowWrap: 'break-word' }}>{em(card.body)}</div>
             </>
           )}
           {ctx !== 'thumb' && card.kind === 'cta' && (() => {
@@ -233,7 +237,7 @@ export default function CardFace({ card, magazine, ctx, hint = true }: { card: C
               <>
                 {card.body && (
                   /* CTA 카피도 헤드라인처럼 글씨체·글자 크기 슬라이더에 반응 (줄바꿈은 pre-line) */
-                  <div style={{ fontFamily: headlineFont, fontSize: Math.round((ctx === 'canvas' ? 14 : 10.5) * card.fontScale), lineHeight: 1.6, opacity: 0.8, whiteSpace: 'pre-line', wordBreak: 'keep-all', overflowWrap: 'break-word', marginTop: ctx === 'canvas' ? 12 : 8 }}>{em(card.body)}</div>
+                  <div style={{ fontFamily: headlineFont, fontSize: Math.round((ctx === 'canvas' ? 14 : 10.5) * card.fontScale * sizeBump), lineHeight: 1.6, opacity: 0.8, whiteSpace: 'pre-line', wordBreak: 'keep-all', overflowWrap: 'break-word', marginTop: ctx === 'canvas' ? 12 : 8 }}>{em(card.body)}</div>
                 )}
                 <div style={{ height: 1, background: 'currentColor', opacity: 0.18, margin: `${ctx === 'canvas' ? 16 : 10}px 0` }} />
                 {tags.length > 0 && <div style={{ fontSize: ctx === 'canvas' ? 13 : 10, opacity: 0.7, lineHeight: 1.6 }}>{tags.join(' ')}</div>}

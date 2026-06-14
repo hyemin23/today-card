@@ -1,4 +1,6 @@
-import type { CSSProperties, ReactNode } from 'react';
+'use client';
+
+import { useLayoutEffect, useRef, type CSSProperties, type ReactNode } from 'react';
 import type { Card, Magazine } from '@/types/db';
 import { FONT_CSS } from './data';
 
@@ -109,6 +111,33 @@ export default function CardFace({ card, magazine, ctx, hint = true }: { card: C
   // chosen headline font (falls back to Pretendard); handwriting needs a touch more line-height
   const headlineFont = FONT_CSS[card.fontFamily || ''] || FONT_CSS[''];
 
+  const vOrigin = align.v === 'flex-start' ? 'top' : align.v === 'flex-end' ? 'bottom' : 'center';
+  const hOrigin = align.t === 'left' ? 'left' : align.t === 'right' ? 'right' : 'center';
+
+  // AUTO-FIT: a long headline/body (or a big font-size) must never be clipped by the
+  // card's overflow:hidden in the 1080×1080 export. Measure the text block's natural
+  // height vs the available area and shrink it (transform only — no reflow) so it always
+  // fits. Re-runs once webfonts settle, since their metrics change the line count.
+  const areaRef = useRef<HTMLDivElement>(null);
+  const fitRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    if (ctx === 'thumb') return;
+    const area = areaRef.current;
+    const block = fitRef.current;
+    if (!area || !block) return;
+    const apply = () => {
+      block.style.transform = 'none';
+      const avail = area.clientHeight;
+      const natural = block.scrollHeight;
+      const s = natural > avail && natural > 0 ? Math.max(0.4, avail / natural) : 1;
+      block.style.transform = s < 1 ? `scale(${s})` : 'none';
+    };
+    apply();
+    let alive = true;
+    document.fonts?.ready?.then(() => { if (alive) apply(); });
+    return () => { alive = false; };
+  }, [card.title, card.body, (card.hashtags || []).join(' '), card.fontFamily, card.fontScale, card.category, card.hideNum, card.hideLabel, card.hideHandle, card.hideSwipe, ctx, magazine.handle, magazine.logoUrl, magazine.coverStyle]);
+
   return (
     <div style={{ position: 'absolute', inset: 0, background: bg, color: fg, overflow: 'hidden' }}>
       {card.imageUrl && (
@@ -156,7 +185,8 @@ export default function CardFace({ card, magazine, ctx, hint = true }: { card: C
           );
         })()}
 
-        <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', justifyContent: align.v, textAlign: align.t }}>
+        <div ref={areaRef} style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', justifyContent: align.v }}>
+          <div ref={fitRef} style={{ display: 'flex', flexDirection: 'column', textAlign: align.t, transformOrigin: `${hOrigin} ${vOrigin}`, willChange: 'transform' }}>
           {trendCover && card.category && (
             <span
               style={{
@@ -211,6 +241,7 @@ export default function CardFace({ card, magazine, ctx, hint = true }: { card: C
               </>
             );
           })()}
+          </div>
         </div>
         {/* swipe cue — covers that hint "more inside" get swiped more (toggleable) */}
         {ctx !== 'thumb' && card.kind === 'cover' && !card.hideSwipe && (

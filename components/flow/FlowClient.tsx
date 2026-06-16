@@ -1,11 +1,12 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import type { FlowCard, FlowDeck, FlowInput, FlowRole } from '@/types/db';
 import { DEFAULT_FLOW_TONE, MAGAZINES } from '@/components/studio/data';
 import { renumberDeck } from '@/lib/flowShared';
-import CardFace from '@/components/studio/CardFace';
+import CardFace, { stripEmphasis } from '@/components/studio/CardFace';
+import { resizeDataUrl } from '@/components/studio/imageFile';
 import ThemeToggle from '@/components/ThemeToggle';
 
 const MAGAZINE = MAGAZINES[0]; // 미리보기용 기본 매거진(INK Daily) — 색·핸들 기준
@@ -30,7 +31,20 @@ export default function FlowClient() {
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState('');
   const [status, setStatus] = useState(''); // 보조기기 안내(aria-live)
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const [imgStyle, setImgStyle] = useState<'trend' | 'editorial'>('trend');
+  const [genIdx, setGenIdx] = useState<number | null>(null); // 개별 이미지 생성 중인 카드
+  const [batchMsg, setBatchMsg] = useState(''); // 전체 이미지 생성 진행률
   const renderRef = useRef<HTMLDivElement>(null);
+  const imgWorking = genIdx !== null || !!batchMsg;
+
+  // 이미지 생성(NB2)은 관리자 전용 — 버튼 노출 여부 결정
+  useEffect(() => {
+    fetch('/api/admin/status')
+      .then((r) => r.json())
+      .then((d) => setIsAdmin(!!d?.admin))
+      .catch(() => setIsAdmin(false));
+  }, []);
 
   const setField = (k: keyof FlowInput, v: string) => setInput((s) => ({ ...s, [k]: v }));
 
@@ -154,6 +168,75 @@ export default function FlowClient() {
     }
   }
 
+  // ── 이미지 생성 (NB2, 관리자 전용 — 기존 /api/image 재사용) ─────────────
+  async function requestImage(c: FlowCard): Promise<string> {
+    const title = stripEmphasis(c.title).replace(/\n/g, ' ').trim();
+    const body = c.body ? stripEmphasis(c.body).replace(/\n/g, ' ').trim() : '';
+    const promptTitle = body ? `${title} — ${body.slice(0, 90)}` : title;
+    const res = await fetch('/api/image', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: promptTitle, category: deck?.meta.topic?.slice(0, 40) || '카드뉴스', style: imgStyle, imageStyle: '' }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.error || '이미지 생성 실패');
+    return resizeDataUrl(data.image); // 메가바이트 PNG → 축소
+  }
+
+  /** 흰 배경 body 카드에 이미지를 깔면 스크림으로 어두워지므로 글자색을 흰색으로 뒤집는다. */
+  function imagePatch(c: FlowCard, imageUrl: string): Partial<FlowCard> {
+    return c.kind === 'body' && c.textColor === '#111110' ? { imageUrl, textColor: '#ffffff' } : { imageUrl };
+  }
+
+  async function genOne(idx: number) {
+    if (!deck || !isAdmin || imgWorking) return;
+    setGenIdx(idx);
+    setError('');
+    setStatus(`${idx + 1}번 카드 이미지를 만드는 중…`);
+    try {
+      const url = await requestImage(deck.cards[idx]);
+      updateCard(idx, imagePatch(deck.cards[idx], url));
+      setStatus(`${idx + 1}번 카드 이미지를 만들었어요.`);
+    } catch (e: any) {
+      setError(e?.message || '이미지 생성에 실패했어요.');
+      setStatus('');
+    } finally {
+      setGenIdx(null);
+    }
+  }
+
+  async function genAll() {
+    if (!deck || !isAdmin || imgWorking) return;
+    const targets = deck.cards.map((c, i) => ({ c, i })).filter(({ c }) => !c.imageUrl);
+    if (!targets.length) {
+      setError('이미 모든 카드에 이미지가 있어요. 카드별 “↺ 이미지 제거” 후 다시 시도하세요.');
+      return;
+    }
+    setError('');
+    let failed = 0;
+    for (let k = 0; k < targets.length; k++) {
+      const { c, i } = targets[k];
+      setBatchMsg(`이미지 생성 중… ${k + 1}/${targets.length}`);
+      setStatus(`이미지 생성 중… ${k + 1}/${targets.length}`);
+      try {
+        updateCard(i, imagePatch(c, await requestImage(c)));
+      } catch {
+        failed++;
+      }
+    }
+    setBatchMsg('');
+    setStatus(failed ? `완료 — ${failed}장 실패. 다시 시도해 보세요.` : `이미지 ${targets.length}장을 모두 만들었어요.`);
+    if (failed) setError(`${failed}장 생성에 실패했어요(관리자 로그인·NB2 권한을 확인하세요).`);
+  }
+
+  function clearImage(idx: number) {
+    if (!deck || imgWorking) return;
+    const c = deck.cards[idx];
+    const patch: Partial<FlowCard> = { imageUrl: null };
+    if (c.kind === 'body' && c.textColor === '#ffffff') patch.textColor = '#111110'; // 흰 글자 되돌리기
+    updateCard(idx, patch);
+  }
+
   const n = deck?.cards.length ?? 0;
   const stepCount = deck?.cards.filter((c) => c.role === 'step').length ?? 0;
 
@@ -221,8 +304,8 @@ export default function FlowClient() {
         {deck && (
           <>
             <div className="flow__banner">
-              📋 <b>카드 구성표</b> · 총 {n}장 (단계 {deck.cards.filter((c) => c.role === 'step').length}개)
-              <span>확인·수정 후 → 이미지(NB2)는 다음 단계</span>
+              📋 <b>카드 구성표</b> · 총 {n}장 (단계 {stepCount}개)
+              <span>확인·수정 후 아래 미리보기에서 이미지(NB2) 생성</span>
             </div>
 
             {/* 카드 구성표 (편집 가능) */}
@@ -274,16 +357,38 @@ export default function FlowClient() {
               </div>
             </section>
 
-            {/* 라이브 미리보기 */}
+            {/* 라이브 미리보기 + 이미지(NB2) */}
             <section className="flow__previewwrap" aria-label="미리보기">
-              <h2 className="flow__h2">미리보기 <small>4:5 · 이미지 없이 텍스트 카드</small></h2>
+              <div className="flow__previewhead">
+                <h2 className="flow__h2">미리보기 <small>4:5{deck.cards.some((c) => c.imageUrl) ? '' : ' · 이미지 없이 텍스트 카드'}</small></h2>
+                {isAdmin && (
+                  <div className="flow__imgctl">
+                    <div className="flow__styletoggle" role="group" aria-label="이미지 스타일">
+                      <button type="button" className={imgStyle === 'trend' ? 'on' : ''} aria-pressed={imgStyle === 'trend'} onClick={() => setImgStyle('trend')} disabled={imgWorking}>풀컬러</button>
+                      <button type="button" className={imgStyle === 'editorial' ? 'on' : ''} aria-pressed={imgStyle === 'editorial'} onClick={() => setImgStyle('editorial')} disabled={imgWorking}>흑백</button>
+                    </div>
+                    <button type="button" className="flow__btn flow__btn--primary" onClick={genAll} disabled={imgWorking} aria-busy={!!batchMsg}>
+                      {batchMsg || '✦ 전체 이미지 생성 (NB2)'}
+                    </button>
+                  </div>
+                )}
+                {isAdmin === false && (
+                  <span className="flow__adminnote">이미지 생성은 관리자 전용 — <Link href="/admin">/admin 로그인</Link></span>
+                )}
+              </div>
               <div className="flow__rail">
                 {deck.cards.map((c, i) => (
                   <figure className="flow__pcard" key={i}>
                     <div className="flow__pcard-inner">
                       <CardFace card={c} magazine={MAGAZINE} ctx="slide" ratio="4:5" total={n} />
                     </div>
-                    <figcaption>{String(i + 1).padStart(2, '0')} · {ROLE_KO[c.role]}</figcaption>
+                    <figcaption>
+                      <span>{String(i + 1).padStart(2, '0')} · {ROLE_KO[c.role]}</span>
+                      {isAdmin && (c.imageUrl
+                        ? <button type="button" className="flow__pcardbtn" onClick={() => clearImage(i)} disabled={imgWorking}>↺ 제거</button>
+                        : <button type="button" className="flow__pcardbtn" onClick={() => genOne(i)} disabled={imgWorking} aria-busy={genIdx === i}>{genIdx === i ? '◌ 생성…' : '✦ 이미지'}</button>
+                      )}
+                    </figcaption>
                   </figure>
                 ))}
               </div>

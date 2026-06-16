@@ -11,9 +11,14 @@
  * identifiable individuals, darker lower negative space for the headline.
  *
  * Admin-only: gated by the admin session cookie, verified in the route.
+ *
+ * IMAGE MODEL POLICY (see design-system/design.md §8): card images are
+ * generated ONLY by Gemini "Nano Banana 2" (NB2) = `gemini-3-pro-image-preview`.
+ * No other image provider. Override via IMAGE_MODEL if your key exposes a
+ * different NB2 id (or, temporarily, the older NB1 `gemini-2.5-flash-image`).
  */
 
-const MODEL = process.env.IMAGE_MODEL || 'gemini-2.5-flash-image';
+const MODEL = process.env.IMAGE_MODEL || 'gemini-3-pro-image-preview';
 const CONCEPT_MODEL = process.env.LLM_MODEL || 'gemini-2.5-flash';
 const CHAT_URL =
   process.env.LLM_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';

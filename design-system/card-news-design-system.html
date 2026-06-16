@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>카드뉴스 디자인 시스템 — today-card</title>
+<!-- 앱(app/globals.css)과 동일한 폰트 소스를 그대로 사용 -->
+<style>
+  /* @import 는 반드시 다른 규칙보다 먼저 와야 한다 (CSS 스펙) — 그래야 Space Mono 가 실제 로드됨 */
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+  @font-face{font-family:'Pretendard';font-style:normal;font-weight:100 900;font-display:swap;
+    src:url(https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/variable/woff2/PretendardVariable.woff2) format('woff2-variations');}
+  @font-face{font-family:'Black Han Sans';font-style:normal;font-weight:400;font-display:swap;
+    src:url(https://cdn.jsdelivr.net/fontsource/fonts/black-han-sans@5/korean-400-normal.woff2) format('woff2');}
+  @font-face{font-family:'Jua';font-style:normal;font-weight:400;font-display:swap;
+    src:url(https://cdn.jsdelivr.net/fontsource/fonts/jua@5/korean-400-normal.woff2) format('woff2');}
+
+  :root{
+    --ink:#111110; --ink-2:#4a4945; --ink-3:#706e66;
+    --paper:#ffffff; --wash:#f6f4ef; --wash-2:#efece4; --line:#e4e1d9; --line-2:#d4d0c6;
+    --accent-gold:#9a8456; --accent-green:#7c8f6b;
+    --sans:'Pretendard',system-ui,-apple-system,sans-serif;
+    --mono:'Space Mono',ui-monospace,monospace;
+    --radius:8px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--wash);color:var(--ink);font-family:var(--sans);line-height:1.6;
+    -webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 24px}
+  a{color:inherit}
+
+  /* ---- header ---- */
+  header.top{background:var(--ink);color:#fff;padding:64px 0 56px}
+  .kicker{font-family:var(--mono);font-size:11.5px;letter-spacing:.22em;text-transform:uppercase;opacity:.6}
+  header.top h1{font-size:clamp(30px,5vw,52px);line-height:1.08;letter-spacing:-.03em;font-weight:800;margin:14px 0 12px}
+  header.top p{max-width:62ch;opacity:.82;margin:0}
+  .pairs{display:flex;gap:10px;flex-wrap:wrap;margin-top:24px}
+  .pill{font-family:var(--mono);font-size:11px;letter-spacing:.06em;border:1px solid rgba(255,255,255,.28);
+    border-radius:100px;padding:7px 13px;opacity:.9}
+
+  /* ---- section scaffolding ---- */
+  section{padding:56px 0;border-bottom:1px solid var(--line)}
+  .sec-no{font-family:var(--mono);font-size:11.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3)}
+  h2{font-size:clamp(24px,3.4vw,36px);line-height:1.12;letter-spacing:-.02em;font-weight:800;margin:8px 0 6px}
+  .sub{color:var(--ink-2);max-width:70ch;margin:0 0 28px}
+  h3{font-size:18px;font-weight:700;letter-spacing:-.01em;margin:30px 0 12px}
+
+  /* ---- swatches ---- */
+  .swgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:14px}
+  .sw{border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;background:#fff}
+  .sw .chip{height:74px}
+  .sw .meta{padding:10px 12px}
+  .sw .name{font-weight:700;font-size:13px}
+  .sw .hex{font-family:var(--mono);font-size:11.5px;color:var(--ink-3)}
+  .sw .use{font-size:12px;color:var(--ink-2);margin-top:2px}
+
+  /* ---- type scale ---- */
+  .scale{display:grid;gap:6px}
+  .scale .row{display:flex;align-items:baseline;gap:16px;border-bottom:1px dashed var(--line);padding:14px 0}
+  .scale .lab{flex:0 0 150px;font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:var(--ink-3);text-transform:uppercase}
+  .scale .samp{flex:1;min-width:0}
+  .h-head{font-weight:800;letter-spacing:-.035em;line-height:1.16;font-size:42px;word-break:keep-all}
+  .h-body{font-size:15px;opacity:.85}
+  .h-label{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+
+  /* ---- card-news cards (4:5) ---- */
+  .deck{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:20px}
+  .card{position:relative;aspect-ratio:4/5;border-radius:14px;overflow:hidden;color:#fff;
+    box-shadow:0 1px 2px rgba(17,17,16,.05),0 18px 38px -22px rgba(17,17,16,.5);isolation:isolate}
+  /* "사진" placeholder = CSS 그라데이션 (정책상 실제/레퍼런스 사진은 넣지 않음) */
+  .ph-dark{background:linear-gradient(150deg,#3a3530,#16140f 70%)}
+  .ph-moody{background:radial-gradient(120% 90% at 70% 20%,#5b4a3e,#1c1813 75%)}
+  .ph-street{background:linear-gradient(160deg,#8a8d90,#3c3e40 60%,#222 100%)}
+  .ph-airy{background:linear-gradient(160deg,#f3efe8,#e7ded2)}
+  .ph-jazz{background:linear-gradient(160deg,#2a2a2a,#0c0c0c)}
+  .scrim{position:absolute;inset:0;background:linear-gradient(to top,rgba(17,17,16,.82),rgba(17,17,16,.2) 48%,rgba(17,17,16,.55));z-index:1}
+  .card.light{color:#111110}
+  .card.light .scrim{display:none}
+  .inner{position:absolute;inset:0;z-index:2;padding:20px;display:flex;flex-direction:column}
+  .meta-row{display:flex;justify-content:space-between;align-items:center;font-family:var(--mono);
+    font-size:9px;letter-spacing:.14em;text-transform:uppercase;opacity:.72}
+  .grow{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:flex-end}
+  .ctitle{font-weight:800;letter-spacing:-.035em;line-height:1.16;font-size:27px;word-break:keep-all;white-space:pre-line}
+  .ctitle.impact{font-family:'Black Han Sans',var(--sans);font-weight:400;letter-spacing:-.01em}
+  .csub{font-size:11px;opacity:.85;margin-top:8px;word-break:keep-all}
+  .pillcat{align-self:flex-start;font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;
+    border:1.5px solid rgba(255,255,255,.85);background:rgba(17,17,16,.32);border-radius:100px;padding:4px 11px;margin-bottom:9px}
+  .boxcat{align-self:flex-start;font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;
+    background:#fff;color:#111110;padding:4px 10px;margin-bottom:9px;font-weight:700}
+  .bar{display:flex;gap:11px}
+  .bar::before{content:"";width:5px;border-radius:3px;background:currentColor;flex:0 0 5px;margin-top:3px}
+  mark.hl{background:var(--accent-gold);color:#fff;border-radius:3px;padding:0 .14em;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+  .swipe{font-family:var(--mono);font-size:9px;letter-spacing:.1em;opacity:.75;text-align:right;margin-top:12px}
+  .hr{height:1px;background:currentColor;opacity:.18;margin:10px 0}
+  .tags{font-size:9.5px;opacity:.72}
+  .handle{font-family:var(--mono);font-size:9px;opacity:.55;margin-top:7px}
+  .stepno{font-family:var(--mono);font-size:10px;letter-spacing:.18em;opacity:.7;margin-bottom:6px}
+  .caplabel{text-align:center;font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);margin-top:10px}
+
+  /* ---- flow ---- */
+  .flow{display:flex;gap:10px;flex-wrap:wrap;align-items:stretch}
+  .step{flex:1;min-width:150px;border:1px solid var(--line);border-radius:var(--radius);background:#fff;padding:16px}
+  .step .n{font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--ink-3)}
+  .step .t{font-weight:800;font-size:17px;margin:4px 0 6px;letter-spacing:-.01em}
+  .step .d{font-size:13px;color:var(--ink-2)}
+  .step .k{display:inline-block;margin-top:10px;font-family:var(--mono);font-size:10px;color:#fff;background:var(--ink);border-radius:100px;padding:3px 9px}
+  .formula{font-family:var(--mono);font-size:13px;background:var(--ink);color:#fff;border-radius:var(--radius);padding:14px 16px;margin-top:18px;overflow-x:auto}
+
+  /* ---- do/don't ---- */
+  .dd{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .col{border:1px solid var(--line);border-radius:var(--radius);background:#fff;padding:18px 20px}
+  .col.bad{border-color:#e3c9c4;background:#fcf6f5}
+  .col h4{margin:0 0 10px;font-size:15px;letter-spacing:-.01em}
+  .col.good h4::before{content:"✅ ";}
+  .col.bad h4::before{content:"⛔ ";}
+  .col ul{margin:0;padding-left:18px}
+  .col li{margin:7px 0;font-size:13.5px;color:var(--ink-2)}
+
+  /* ---- tables ---- */
+  table{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:6px}
+  th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);font-weight:400}
+  td code,p code,li code{font-family:var(--mono);font-size:12px;background:var(--wash-2);padding:1px 6px;border-radius:4px}
+
+  .note{background:var(--wash-2);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;font-size:13.5px}
+  .note b{color:var(--ink)}
+  footer{padding:40px 0 70px;color:var(--ink-3);font-size:13px}
+  @media(max-width:680px){.dd{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="kicker">today-card · Card-News Design System</div>
+    <h1>카드뉴스 디자인 시스템</h1>
+    <p>잘 만든 레퍼런스에서 <b>규칙(원리)만</b> 뽑아 우리 프로젝트에 맞춘 시각 가이드입니다.
+       글로 적은 원본 규칙은 <code style="background:rgba(255,255,255,.12);color:#fff">design-system/design.md</code> 를 보세요 —
+       이 페이지는 그 규칙을 <b>눈으로 확인</b>하는 용도입니다.</p>
+    <div class="pairs">
+      <span class="pill">4:5 · 1080×1350</span>
+      <span class="pill">왼쪽 아래 앵커</span>
+      <span class="pill">두꺼운 산세 2줄</span>
+      <span class="pill">고대비 흑/백 + 포인트 1색</span>
+      <span class="pill">Hook→Pain→Steps→Result→CTA</span>
+      <span class="pill">이미지: Gemini 나노바나나 2(NB2)</span>
+    </div>
+  </div>
+</header>
+
+<!-- 1. 색 -->
+<section><div class="wrap">
+  <div class="sec-no">01 — Color</div>
+  <h2>색감 · 팔레트</h2>
+  <p class="sub">한 덱은 <b>배경색 1 + 포인트색 1</b>로 통일. 본문 텍스트는 고대비 흑/백만 사용하고, 포인트색은 점·pill·형광펜 한 곳에만 절제해서 씁니다.</p>
+
+  <h3>배경 스와치 (<code>bgColor</code> 후보)</h3>
+  <div class="swgrid">
+    <div class="sw"><div class="chip" style="background:#111110"></div><div class="meta"><div class="name">ink</div><div class="hex">#111110</div><div class="use">기본 다크 배경</div></div></div>
+    <div class="sw"><div class="chip" style="background:#ffffff;border-bottom:1px solid var(--line)"></div><div class="meta"><div class="name">paper</div><div class="hex">#ffffff</div><div class="use">밝은 배경</div></div></div>
+    <div class="sw"><div class="chip" style="background:#f6f4ef"></div><div class="meta"><div class="name">wash</div><div class="hex">#f6f4ef</div><div class="use">웜 베이지</div></div></div>
+    <div class="sw"><div class="chip" style="background:#1a2b22"></div><div class="meta"><div class="name">green</div><div class="hex">#1a2b22</div><div class="use">딥 그린</div></div></div>
+    <div class="sw"><div class="chip" style="background:#2a2438"></div><div class="meta"><div class="name">plum</div><div class="hex">#2a2438</div><div class="use">딥 플럼</div></div></div>
+  </div>
+
+  <h3>포인트 스와치 (<code>accentColor</code> 후보)</h3>
+  <div class="swgrid">
+    <div class="sw"><div class="chip" style="background:#ffffff;border-bottom:1px solid var(--line)"></div><div class="meta"><div class="name">white</div><div class="hex">#ffffff</div></div></div>
+    <div class="sw"><div class="chip" style="background:#111110"></div><div class="meta"><div class="name">ink</div><div class="hex">#111110</div></div></div>
+    <div class="sw"><div class="chip" style="background:#9a8456"></div><div class="meta"><div class="name">gold</div><div class="hex">#9a8456</div></div></div>
+    <div class="sw"><div class="chip" style="background:#7c8f6b"></div><div class="meta"><div class="name">sage</div><div class="hex">#7c8f6b</div></div></div>
+  </div>
+
+  <h3>텍스트 색 (<code>card.textColor</code> 후보)</h3>
+  <div class="swgrid">
+    <div class="sw"><div class="chip" style="background:#ffffff;border-bottom:1px solid var(--line)"></div><div class="meta"><div class="name">흰 글자</div><div class="hex">#ffffff</div><div class="use">어두운 사진 위</div></div></div>
+    <div class="sw"><div class="chip" style="background:#111110"></div><div class="meta"><div class="name">검은 글자</div><div class="hex">#111110</div><div class="use">밝은 사진 위</div></div></div>
+    <div class="sw"><div class="chip" style="background:#e7d9b8"></div><div class="meta"><div class="name">크림</div><div class="hex">#e7d9b8</div></div></div>
+    <div class="sw"><div class="chip" style="background:#b8c6e7"></div><div class="meta"><div class="name">페일블루</div><div class="hex">#b8c6e7</div></div></div>
+  </div>
+</div></section>
+
+<!-- 2. 타이포 -->
+<section><div class="wrap">
+  <div class="sec-no">02 — Typography</div>
+  <h2>타이포 · 위계</h2>
+  <p class="sub">헤드라인은 두껍게·크게·짧게(최대 2줄). 본문은 작게·옅게. 라벨은 mono로. 한글은 항상 <code>word-break: keep-all</code>(어절 단위 줄바꿈).</p>
+  <div class="scale">
+    <div class="row"><div class="lab">Headline · 800</div><div class="samp"><div class="h-head">왜 몰랐지<br>진짜 느좋인데</div></div></div>
+    <div class="row"><div class="lab">Body · 0.85</div><div class="samp"><div class="h-body">밤마다 뒤척였다면, 이유는 온도였을 수 있어요.</div></div></div>
+    <div class="row"><div class="lab">Label · mono</div><div class="samp"><div class="h-label">DAILY · 03 / 09</div></div></div>
+  </div>
+  <h3>헤드라인 폰트 (<code>FONTS</code> — 덱당 하나만 선택)</h3>
+  <table>
+    <tr><th>key</th><th>이름</th><th>용도</th><th>샘플</th></tr>
+    <tr><td><code>''</code></td><td>프리텐다드</td><td>기본·범용</td><td style="font-family:var(--sans);font-weight:800;font-size:18px">오늘의 카드뉴스</td></tr>
+    <tr><td><code>blackhan</code></td><td>블랙한산스</td><td>임팩트</td><td style="font-family:'Black Han Sans',var(--sans);font-size:20px">오늘의 카드뉴스</td></tr>
+    <tr><td><code>jua</code></td><td>주아</td><td>둥근·친근</td><td style="font-family:'Jua',var(--sans);font-size:19px">오늘의 카드뉴스</td></tr>
+    <tr><td><code>dohyeon</code> / <code>myeongjo</code> / <code>pen</code></td><td>도현 / 나눔명조 / 나눔손글씨</td><td>고딕 / 명조 / 손글씨</td><td style="color:var(--ink-3)">앱에서 선택 가능</td></tr>
+  </table>
+</div></section>
+
+<!-- 3. 예시 카드 (두 그레이드) -->
+<section><div class="wrap">
+  <div class="sec-no">03 — Cards</div>
+  <h2>예시 카드 (4:5) — 두 가지 그레이드</h2>
+  <p class="sub">사진은 두 그레이드 중 하나로 통일합니다. <b>Bright/Airy</b>(밝은 사진 → 검은 글자) 또는 <b>Dark/Moody</b>(어두운 사진 → 흰 글자). 모든 글자는 스크림 위에 올라가 항상 읽힙니다.
+  <br><em style="color:var(--ink-3)">아래 "사진"은 정책상 실제·레퍼런스 사진 대신 CSS 그라데이션 플레이스홀더입니다.</em></p>
+  <div class="deck">
+    <div>
+      <div class="card ph-moody">
+        <div class="scrim"></div>
+        <div class="inner">
+          <div class="meta-row"><span>DAILY</span><span>01 / 09</span></div>
+          <div class="grow">
+            <span class="pillcat">Hook · 표지</span>
+            <div class="ctitle">왜 몰랐지<br>진짜 느좋인데</div>
+            <div class="csub">느좋남 나눔의 매력</div>
+            <div class="swipe">밀어서 보기 →</div>
+          </div>
+        </div>
+      </div>
+      <div class="caplabel">Dark / Moody · cover</div>
+    </div>
+
+    <div>
+      <div class="card light ph-airy">
+        <div class="inner">
+          <div class="meta-row" style="opacity:.55"><span>@yourbrand</span><span>01 / 05</span></div>
+          <div class="grow">
+            <div class="ctitle impact" style="font-size:30px">잘자요 굿나잇 🌙<br>꿀잠 파자마.zip</div>
+          </div>
+        </div>
+      </div>
+      <div class="caplabel">Bright / Airy · cover</div>
+    </div>
+
+    <div>
+      <div class="card ph-street">
+        <div class="scrim"></div>
+        <div class="inner">
+          <div class="grow">
+            <div class="bar">
+              <div>
+                <div class="ctitle" style="font-size:24px">화이트 팬츠<br><mark class="hl">도전</mark>해볼래?</div>
+                <div class="csub">@yourbrand · 세로 막대 강조 예시</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="caplabel">세로 막대 + 형광펜 강조 1곳</div>
+    </div>
+  </div>
+</div></section>
+
+<!-- 4. 흐름 -->
+<section><div class="wrap">
+  <div class="sec-no">04 — Flow</div>
+  <h2>카드뉴스 흐름 · Hook → Pain → Steps → Result → CTA</h2>
+  <p class="sub">5개는 "장 수"가 아니라 <b>역할</b>입니다. 각 역할을 우리 카드 종류 <code>cover</code>·<code>body</code>·<code>cta</code>에 매핑합니다.</p>
+  <div class="flow">
+    <div class="step"><div class="n">01</div><div class="t">Hook</div><div class="d">멈추게 하는 한 방. 후킹 헤드라인.</div><span class="k">cover</span></div>
+    <div class="step"><div class="n">02</div><div class="t">Pain</div><div class="d">독자의 문제·공감. "이런 적 있죠?"</div><span class="k">body</span></div>
+    <div class="step" style="border-color:var(--ink);border-width:1.5px"><div class="n">03 … 0n</div><div class="t">Steps ×N</div><div class="d"><b>단계마다 한 장.</b> 3단계면 3장.</div><span class="k">body × N</span></div>
+    <div class="step"><div class="n">0n+1</div><div class="t">Result</div><div class="d">그래서 얻는 변화. 비포→애프터.</div><span class="k">body</span></div>
+    <div class="step"><div class="n">0T</div><div class="t">CTA</div><div class="d">팔로우·저장·공유 + 핸들·해시태그.</div><span class="k">cta</span></div>
+  </div>
+  <div class="formula">총 장수 = 1(Hook) + 1(Pain) + N(Steps) + 1(Result) + 1(CTA) = N + 4&nbsp;&nbsp;//&nbsp; 예) 3단계 → 7장, 5단계 → 9장</div>
+  <div class="note" style="margin-top:14px">🚧 <b>현재 상태:</b> 생성기(<code>lib/ai.ts</code>)는 지금 <b>5장 고정</b>(표지+본문×3+CTA)이라 페이지번호도 <code>0n / 05</code>로 나옵니다. 아래 예시의 <code>0n / 07</code>·<code>0n / 09</code>는 <b>목표 동작</b>(N단계 가변)을 보여주는 것 — 실제 출력과 헷갈리지 마세요. (자세히는 <code>design.md §5</code>)</div>
+
+  <h3>역할별 예시 카드</h3>
+  <div class="deck">
+    <div>
+      <div class="card ph-dark"><div class="scrim"></div><div class="inner">
+        <div class="meta-row"><span>본문</span><span>02 / 07</span></div>
+        <div class="grow"><div class="ctitle" style="font-size:24px">밤마다 뒤척인 적,<br>있으시죠?</div>
+        <div class="csub">잠들기까지 30분 넘게 걸린다면.</div></div>
+      </div></div>
+      <div class="caplabel">Pain · body</div>
+    </div>
+    <div>
+      <div class="card ph-dark"><div class="scrim"></div><div class="inner">
+        <div class="meta-row"><span>본문</span><span>03 / 07</span></div>
+        <div class="grow"><div class="stepno">STEP 1 / 3</div><div class="ctitle" style="font-size:24px">방 온도를<br><mark class="hl">1도</mark> 낮추기</div>
+        <div class="csub">수면엔 18~20℃가 가장 좋아요.</div></div>
+      </div></div>
+      <div class="caplabel">Step · body (단계마다 한 장)</div>
+    </div>
+    <div>
+      <div class="card ph-dark"><div class="scrim"></div><div class="inner">
+        <div class="meta-row"><span>본문</span><span>06 / 07</span></div>
+        <div class="grow"><div class="ctitle" style="font-size:24px">아침이<br>가벼워졌어요</div>
+        <div class="csub">3일이면 몸이 먼저 압니다.</div></div>
+      </div></div>
+      <div class="caplabel">Result · body</div>
+    </div>
+    <div>
+      <div class="card ph-jazz"><div class="scrim"></div><div class="inner">
+        <div class="meta-row"><span>07 / 07</span><span>CTA</span></div>
+        <div class="grow"><div class="ctitle" style="font-size:25px">팔로우하고<br>더 보기</div>
+        <div class="hr"></div>
+        <div class="tags">#꿀잠 #수면루틴 #파자마</div>
+        <div class="handle">@yourbrand ↗</div></div>
+      </div></div>
+      <div class="caplabel">CTA · cta</div>
+    </div>
+  </div>
+</div></section>
+
+<!-- 5. 일관성 -->
+<section><div class="wrap">
+  <div class="sec-no">05 — Consistency</div>
+  <h2>일관성 규칙 (전 장 동일)</h2>
+  <p class="sub">독자가 "5장"이 아니라 "한 템플릿"으로 느끼게. 한 번 정하고 전 장에 똑같이. (값은 <code>components/studio/CardFace.tsx</code> 기준)</p>
+  <table>
+    <tr><th>항목</th><th>값</th><th>규칙</th></tr>
+    <tr><td>제목 크기</td><td><code>round(titleBase × fontScale × sizeBump)</code> · 4:5 <code>sizeBump 1.4</code></td><td>전 장 동일. <code>fontScale</code>(0.7~1.5)는 꼭 필요할 때 한 단계만</td></tr>
+    <tr><td>제목 스타일</td><td><code>800</code> / <code>-.035em</code> / <code>line-height 1.16</code></td><td>강조어만 900</td></tr>
+    <tr><td>본문 크기</td><td><code>round(15 × sizeBump)</code> / 행간 1.6 / opacity .85</td><td>전 장 동일</td></tr>
+    <tr><td>줄바꿈</td><td>최대 2줄 · <code>keep-all</code> · 어절 단위 · <code>pre-line</code></td><td>전 장 동일</td></tr>
+    <tr><td>위치 <code>align</code></td><td>3×3 그리드, 기본 <code>'6'</code>(왼쪽 아래)</td><td>전 장 동일</td></tr>
+    <tr><td>폰트 / 팔레트 / 포인트색</td><td>덱당 1 / 1세트 / 1색</td><td>장마다 바꾸지 않음</td></tr>
+  </table>
+</div></section>
+
+<!-- 6. Do / Don't -->
+<section><div class="wrap">
+  <div class="sec-no">06 — Do / Don't</div>
+  <h2>레퍼런스 활용 · 복제 금지</h2>
+  <p class="sub">레퍼런스는 <b>규칙(원리)을 배우는 자료</b>입니다. 결과물을 베끼는 게 아닙니다.</p>
+  <div class="dd">
+    <div class="col good">
+      <h4>가져와도 되는 것 (원리)</h4>
+      <ul>
+        <li>4:5 풀블리드 + 왼쪽 아래 앵커</li>
+        <li>고대비 흑/백 + 포인트 1색</li>
+        <li>두꺼운 산세 2줄, keep-all, 스크림</li>
+        <li>후킹 제목 컨벤션(<code>.zip</code> / 고백형 / 질문형)</li>
+        <li>"장당 장치 1개" · 일관 그리드</li>
+      </ul>
+    </div>
+    <div class="col bad">
+      <h4>그대로 베끼면 안 되는 것</h4>
+      <ul>
+        <li>남의 <b>로고·워드마크·핸들</b> (상표 침해)</li>
+        <li>남의 <b>사진</b> 그대로 사용 (저작권 침해)</li>
+        <li>남의 <b>문구</b> 토씨까지 복사</li>
+        <li>시그니처 장치 1:1 모사</li>
+        <li>→ <b>우리 사진·우리 팔레트·우리 카피</b>로 재현</li>
+      </ul>
+    </div>
+  </div>
+</div></section>
+
+<!-- 7. NB2 -->
+<section><div class="wrap">
+  <div class="sec-no">07 — Image API</div>
+  <h2>이미지 생성은 Gemini 나노바나나 2(NB2)만</h2>
+  <p class="sub">카드 배경/표지 이미지를 만드는 <b>모든 API 호출</b>은 오직 NB2만 사용합니다. (Imagen·DALL·E·Midjourney·SD 금지)</p>
+  <table>
+    <tr><th>구분</th><th>모델</th><th>위치</th></tr>
+    <tr><td>나노바나나 (NB1)</td><td><code>gemini-2.5-flash-image</code></td><td>이전 기본값</td></tr>
+    <tr><td><b>나노바나나 2 (NB2)</b></td><td><code>gemini-3-pro-image-preview</code> ← 사용</td><td><code>IMAGE_MODEL</code> · <code>lib/image.ts</code></td></tr>
+    <tr><td>텍스트/문구/해시태그 (별개)</td><td><code>gemini-2.5-flash</code></td><td><code>lib/ai.ts</code> · 이 규칙 미적용</td></tr>
+  </table>
+  <div class="note" style="margin-top:16px">
+    <b>설정</b> — <code>.env.local</code> 에 <code>IMAGE_MODEL=gemini-3-pro-image-preview</code>.
+    프롬프트엔 항상 <b>글자·로고·실존인물 금지 + 하단 어둡게</b>(흰 헤드라인 가독성)를 박습니다.
+    키에 NB2 접근 권한이 없으면 <code>IMAGE_MODEL</code>을 가용한 ID로 교체하세요.
+  </div>
+</div></section>
+
+<footer><div class="wrap">
+  규칙 원본: <code>design-system/design.md</code> · 구현: <code>components/studio/CardFace.tsx</code>, <code>components/studio/data.ts</code>, <code>lib/image.ts</code><br>
+  이 페이지는 정적 HTML입니다 — 브라우저로 그냥 열어 확인하세요. (today-card 카드뉴스 디자인 시스템)
+</div></footer>
+
+</body>
+</html>

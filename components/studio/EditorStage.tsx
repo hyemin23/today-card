@@ -207,8 +207,8 @@ export default function EditorStage({
     <div className="editor">
       <h1 className="sr-only">2단계 · 카드 편집</h1>
       {/* rail */}
-      <nav className="rail" aria-label="카드 5컷">
-        <div className="rail__lb" aria-hidden="true">5컷 · 카드</div>
+      <nav className="rail" aria-label={`카드 ${cards.length}컷`}>
+        <div className="rail__lb" aria-hidden="true">{cards.length}컷 · 카드</div>
         <div className="thumbs" role="group" aria-label="카드 선택">
           {cards.map((c, i) => (
             <button
@@ -220,7 +220,7 @@ export default function EditorStage({
               onClick={() => setSel(i)}
             >
               <span className="tnum" aria-hidden="true">{String(i + 1).padStart(2, '0')} {kindLabelOf(c.kind)}</span>
-              <CardFace card={c} magazine={magazine} ctx="thumb" ratio={ratio} />
+              <CardFace card={c} magazine={magazine} ctx="thumb" ratio={ratio} total={cards.length} />
             </button>
           ))}
         </div>
@@ -229,13 +229,13 @@ export default function EditorStage({
       {/* canvas */}
       <div className="stage">
         <div className="stage__bar">
-          <p className="aiflag"><span className="dot" aria-hidden="true" /> AI가 5컷을 생성했어요 · 자유롭게 다듬어보세요</p>
+          <p className="aiflag"><span className="dot" aria-hidden="true" /> AI가 {cards.length}컷을 생성했어요 · 자유롭게 다듬어보세요</p>
         </div>
         <div className="canvas" role="group" aria-label={`${kindLabel} 카드 미리보기: ${stripEmphasis(card.title)}`}>
           {/* fixed 540px layout scaled down on mobile, so the preview keeps the
               exact text-to-card proportions of the exported 1080px PNG */}
           <div className="canvas__fit">
-            <CardFace card={card} magazine={magazine} ctx="canvas" ratio={ratio} />
+            <CardFace card={card} magazine={magazine} ctx="canvas" ratio={ratio} total={cards.length} />
           </div>
           {card.kind === 'cover' && !card.imageUrl && (
             /* the visual "이미지를 올려주세요" hint lives in CardFace — this makes it actually clickable */
@@ -255,7 +255,7 @@ export default function EditorStage({
 
       {/* inspector */}
       <aside className="insp" aria-label={`${kindLabel} 카드 편집`}>
-        <div className="insp__head"><h2>{kindLabel} 카드 편집</h2><span className="badge">{String(sel + 1).padStart(2, '0')} / 05</span></div>
+        <div className="insp__head"><h2>{kindLabel} 카드 편집</h2><span className="badge">{String(sel + 1).padStart(2, '0')} / {String(cards.length).padStart(2, '0')}</span></div>
         <div className="insp__body">
           <div className="ig">
             <div className="ig__t" id={`${titleId}-img`}>이미지</div>
@@ -359,7 +359,7 @@ export default function EditorStage({
               <button
                 type="button"
                 className="minib fontsel__all"
-                title="이 글씨체를 5컷 전체에 적용"
+                title="이 글씨체를 전체 카드에 적용"
                 onClick={() => { const ff = card.fontFamily || ''; cards.forEach((_, i) => updateCard(i, { fontFamily: ff })); }}
               >
                 전체 적용
@@ -392,7 +392,7 @@ export default function EditorStage({
           <div className="ig">
             <div className="ig__t">표시 요소</div>
             <div className="tog">
-              <span className="tog__lb">페이지 번호 ({String(sel + 1).padStart(2, '0')}/05)</span>
+              <span className="tog__lb">페이지 번호 ({String(sel + 1).padStart(2, '0')}/{String(cards.length).padStart(2, '0')})</span>
               <button type="button" role="switch" aria-checked={!card.hideNum} aria-label="페이지 번호 표시" className="switch" onClick={() => updateCard(sel, { hideNum: !card.hideNum })} />
             </div>
             {(card.kind === 'body' || card.kind === 'cta') && (

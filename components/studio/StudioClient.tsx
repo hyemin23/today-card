@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import type { Article, Card, GenerateResult, Magazine } from '@/types/db';
+import { FLOW_HANDOFF_KEY, type FlowHandoff } from '@/lib/flowShared';
 import { MAGAZINES } from './data';
 import Topbar from './Topbar';
 import TopicStage from './TopicStage';
@@ -103,6 +104,26 @@ export default function StudioClient() {
   useEffect(() => {
     const mag = loadJSON<Magazine>(localStorage, MAGAZINE_KEY);
     if (mag?.id && mag.name) setMagazine(mag);
+
+    // /flow에서 넘어온 덱이 있으면 일반 세션보다 먼저 적용하고 바로 편집 단계로.
+    // 1회성: 읽는 즉시 삭제해 새로고침 시 재적용되지 않게 한다.
+    const handoff = loadJSON<FlowHandoff>(sessionStorage, FLOW_HANDOFF_KEY);
+    if (handoff?.cards?.length) {
+      try { sessionStorage.removeItem(FLOW_HANDOFF_KEY); } catch { /* private mode */ }
+      const built = handoff.cards.map((c, i) => ({ ...c, idx: i }));
+      setCards(built);
+      setOriginalCards(built.map((c) => ({ ...c })));
+      setCaption(handoff.caption || '');
+      setHashtags(handoff.hashtags || []);
+      setSource(handoff.source || '카드뉴스');
+      setMaxReached(3);
+      setStageRaw(2);
+      setSel(0);
+      setRatio('4:5');
+      setRatioExplicit(true);
+      setRestored(true);
+      return;
+    }
 
     const s = loadJSON<PersistedSession>(sessionStorage, SESSION_KEY);
     if (s?.cards?.length) {

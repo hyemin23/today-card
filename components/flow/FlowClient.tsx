@@ -2,12 +2,15 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import type { FlowCard, FlowDeck, FlowInput, FlowRole } from '@/types/db';
+import { useRouter } from 'next/navigation';
+import type { Card, FlowCard, FlowDeck, FlowInput, FlowRole } from '@/types/db';
 import { DEFAULT_FLOW_TONE, MAGAZINES } from '@/components/studio/data';
-import { renumberDeck } from '@/lib/flowShared';
+import { FLOW_HANDOFF_KEY, type FlowHandoff, renumberDeck } from '@/lib/flowShared';
 import CardFace, { stripEmphasis } from '@/components/studio/CardFace';
 import { resizeDataUrl } from '@/components/studio/imageFile';
 import ThemeToggle from '@/components/ThemeToggle';
+
+const STUDIO_SESSION_KEY = 'ink.studio.v1'; // 기존 작업 보호용(StudioClient SESSION_KEY)
 
 const MAGAZINE = MAGAZINES[0]; // 미리보기용 기본 매거진(INK Daily) — 색·핸들 기준
 const RENDER_SIZE = 540; // 4:5 → 1080×1350 (pixelRatio 2)
@@ -24,6 +27,7 @@ const EXAMPLES: FlowInput[] = [
 let cachedFontCss: string | null = null;
 
 export default function FlowClient() {
+  const router = useRouter();
   const [input, setInput] = useState<FlowInput>({ topic: '', target: '', tone: DEFAULT_FLOW_TONE, goal: '' });
   const [deck, setDeck] = useState<FlowDeck | null>(null);
   const [loading, setLoading] = useState(false);
@@ -237,6 +241,37 @@ export default function FlowClient() {
     updateCard(idx, patch);
   }
 
+  // ── 스튜디오 편집기로 보내기 ────────────────────────────────────────────
+  function buildCaption(d: FlowDeck): string {
+    const clean = (t?: string) => stripEmphasis(t || '').replace(/\n/g, ' ').trim();
+    const hook = d.cards.find((c) => c.role === 'hook');
+    const points = d.cards
+      .filter((c) => c.role === 'pain' || c.role === 'step' || c.role === 'result')
+      .map((c) => `• ${clean(c.title)}${c.body ? ` — ${clean(c.body)}` : ''}`);
+    return [clean(hook?.title) || d.meta.topic, ...(points.length ? ['', ...points] : [])].join('\n');
+  }
+
+  function sendToStudio() {
+    if (!deck || imgWorking || loading) return;
+    try {
+      const existing = sessionStorage.getItem(STUDIO_SESSION_KEY);
+      if (existing) {
+        const p = JSON.parse(existing);
+        if (p?.cards?.length && !window.confirm('스튜디오에 편집 중인 카드가 있어요. 이 구성으로 덮어쓸까요?')) return;
+      }
+    } catch { /* ignore */ }
+    const cards: Card[] = deck.cards.map((c, i) => ({ ...c, idx: i }));
+    const cta = deck.cards.find((c) => c.role === 'cta');
+    const handoff: FlowHandoff = { cards, caption: buildCaption(deck), hashtags: cta?.hashtags || [], source: deck.meta.topic || '카드뉴스' };
+    try {
+      sessionStorage.setItem(FLOW_HANDOFF_KEY, JSON.stringify(handoff));
+    } catch {
+      setError('덱이 너무 커서 스튜디오로 전달하지 못했어요(이미지가 많을 때). 일부 이미지를 “↺ 제거”한 뒤 다시 시도해 주세요.');
+      return;
+    }
+    router.push('/studio');
+  }
+
   const n = deck?.cards.length ?? 0;
   const stepCount = deck?.cards.filter((c) => c.role === 'step').length ?? 0;
 
@@ -352,6 +387,7 @@ export default function FlowClient() {
                 <div className="flow__copygrp">
                   <button type="button" className="flow__btn flow__btn--ghost" onClick={() => copy('md')}>{copied === 'md' ? '✓ 복사됨' : '표 복사(MD)'}</button>
                   <button type="button" className="flow__btn flow__btn--ghost" onClick={() => copy('json')}>{copied === 'json' ? '✓ 복사됨' : 'JSON 복사'}</button>
+                  <button type="button" className="flow__btn flow__btn--ghost" onClick={sendToStudio} disabled={imgWorking || loading} title="이 구성을 스튜디오 편집기로 보내 폰트·색·위치를 다듬어요">✎ 스튜디오에서 편집</button>
                   <button type="button" className="flow__btn flow__btn--primary" onClick={downloadZip} disabled={busy} aria-busy={busy}>{busy ? '◌ 내보내는 중…' : copied === 'zip' ? '✓ 저장됨' : '⤓ PNG ZIP'}</button>
                 </div>
               </div>

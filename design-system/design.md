@@ -105,7 +105,9 @@
 
 > **목표: 독자가 "5장이 아니라 한 템플릿"으로 느끼게.** 한 번 정하고, 전 장에 똑같이 적용.
 
-### 3.1 "한 번 정의, 전 장 적용" 토큰 (현재 `CardFace.tsx` 값)
+### 3.1 "한 번 정의, 전 장 적용" 토큰
+
+> ⭐ 이 수치들의 **단일 원본은 `lib/designTokens.ts`** 입니다(`CardFace.tsx`가 import해 사용). 값을 바꾸려면 그 파일을 고치세요 — 미리보기·내보내기·스튜디오·/flow가 함께 바뀝니다. (클라이언트 렌더라 design.md를 런타임에 읽을 수 없어, 토큰만은 이 TS 파일이 원본이고 아래 표는 현재 값 스냅샷입니다.)
 
 | 항목 | 값(미리보기 canvas 기준) | 비고 |
 |---|---|---|
@@ -236,12 +238,40 @@ LLM_API_KEY=AIza...   # https://aistudio.google.com/apikey
 > ⚠️ **처음 실행 시 401/403/404가 나면** 키에 `gemini-3-pro-image-preview` 권한이 없는 것입니다(프리뷰 모델은 신규 키에서 비활성인 경우가 흔함). 해결: ① [AI Studio](https://aistudio.google.com/)에서 해당 모델 ID가 활성인지 확인하거나, ② `IMAGE_MODEL`을 키에서 쓸 수 있는 **다른 NB2 ID**로 바꾸거나, ③ 임시로 NB1(`gemini-2.5-flash-image`)로 되돌리세요. (규칙상 정식 운영은 NB2로.)
 
 ### 8.3 프롬프트에 항상 박는 제약(브랜드 안전)
-- 글자/숫자/로고/워터마크 **금지**, 실존 인물 **금지**, **하단을 어둡게**(흰 헤드라인 가독성). (이미 `lib/image.ts`의 `buildPrompt`에 있음.)
-- 2단계 생성(컨셉→이미지)으로 스톡사진 같은 진부함을 피함. 기본 룩은 풀컬러·현실적·고CTR(`trend`), 흑백 에디토리얼(`editorial`) 옵션.
+- 글자/숫자/로고/워터마크 **금지**, 실존 인물 **금지**, **하단을 어둡게**(흰 헤드라인 가독성). → 실제 문구는 **§8.5 `IMG-CONSTRAINTS` 블록이 단일 원본**(`lib/image.ts`가 런타임에 읽음).
+- 2단계 생성(컨셉→이미지)으로 스톡사진 같은 진부함을 피함. 기본 룩은 풀컬러·현실적·고CTR(`trend`), 흑백 에디토리얼(`editorial`) 옵션. → 룩 문구도 §8.5 블록이 원본.
 
 ### 8.4 "이미지 생성"과 "텍스트 생성"은 다른 호출
 - **이미지(NB2 규칙 적용):** `lib/image.ts` → 위 모델.
 - **텍스트/문구/해시태그/컨셉/계정분석:** `lib/ai.ts`, `lib/styleAnalyze.ts`, `imagineConcept` → **텍스트 모델 `gemini-2.5-flash`**(별개). 이 규칙(§8)은 **이미지 생성에만** 적용된다.
+
+### 8.5 이미지 프롬프트 원본 (코드가 런타임에 읽음)
+
+> ⭐ 아래 세 블록이 **이미지 프롬프트의 단일 원본**입니다. `lib/image.ts`가 NB2 호출 직전 이 블록들을
+> 읽어 최종 프롬프트(장면 + 룩 + 제약)를 조립합니다 — **캐시 없음**이라 고치면 다음 생성부터 즉시 반영되고,
+> 코드에 사본이 없어 문서와 절대 어긋나지 않습니다. 영문은 모델 지시문이라 그대로 둡니다.
+> 마커(`IMG-*:START`/`END`)와 코드펜스는 지우지 마세요.
+
+**① 브랜드 안전 제약 (trend·editorial 공통, 항상 적용)**
+<!-- IMG-CONSTRAINTS:START -->
+```text
+The image must clearly evoke the news topic — clever, not generic. Leave some darker negative space toward the lower area so overlaid white headline text stays readable. STRICT: no text, no letters, no words, no numbers, no logos, no watermarks; do not depict specific real, identifiable public figures.
+```
+<!-- IMG-CONSTRAINTS:END -->
+
+**② 풀컬러(trend) 룩 — 기본**
+<!-- IMG-TREND:START -->
+```text
+Render as a vivid, photorealistic FULL-COLOR editorial photograph — like a real, professionally shot news/lifestyle image. Rich, saturated-yet-natural color, bright clean lighting with gentle contrast, one clear hero subject in crisp focus against a softly blurred background (shallow depth of field), high dynamic range. The composition must be scroll-stopping and emotionally engaging — the premium look of a top-performing Korean news/trend Instagram cover. Avoid washed-out, muted, gray, flat, or overly stylized grading; the colors should feel alive and the scene believable.
+```
+<!-- IMG-TREND:END -->
+
+**③ 흑백(editorial) 룩**
+<!-- IMG-EDITORIAL:START -->
+```text
+Render as dramatic high-contrast BLACK AND WHITE editorial photography / photo-illustration, cinematic lighting, bold composition, magazine-cover energy that hooks instantly.
+```
+<!-- IMG-EDITORIAL:END -->
 
 ---
 
@@ -262,6 +292,9 @@ LLM_API_KEY=AIza...   # https://aistudio.google.com/apikey
 | 디자인 토큰(사이트) | `app/globals.css`, `tailwind.config.ts` | `--ink/--paper/--wash/--line` 등 |
 
 ### 9.1 디자인 토큰(색)
+
+> 단일 원본: 카드 기본색(ink/paper/white)은 `lib/designTokens.ts`, **스와치 후보**(배경·포인트·텍스트)는 `components/studio/data.ts`, 사이트 CSS 변수(`--ink` 등)는 `app/globals.css`. 아래 표는 스냅샷.
+
 | 토큰 | 값 | 용도 |
 |---|---|---|
 | `--ink` | `#111110` | 기본 텍스트·다크 배경 |
@@ -288,4 +321,7 @@ LLM_API_KEY=AIza...   # https://aistudio.google.com/apikey
 
 ---
 
-*규칙 변경 시: 이 문서 → `card-news-design-system.html` → 코드(`CardFace.tsx`/`data.ts`/`lib/image.ts`) 순으로 동기화하세요.*
+*규칙 변경 가이드 —*
+*• **문서가 곧 동작(런타임에 코드가 읽음, 캐시 없음):** 카드뉴스 문구 규칙 = [`card-flow.md §8`](./card-flow.md), 이미지 프롬프트 = 이 문서 **§8.5**. 고치면 다음 생성부터 즉시 반영.*
+*• **단일 원본 파일(여기만 고치면 전 화면 반영):** 렌더 토큰 = `lib/designTokens.ts`, 폰트·스와치 = `components/studio/data.ts`.*
+*• 그 외 레이아웃 로직은 `CardFace.tsx` 코드. 눈으로 확인은 `card-news-design-system.html`.*

@@ -18,6 +18,8 @@
  * different NB2 id (or, temporarily, the older NB1 `gemini-2.5-flash-image`).
  */
 
+import { loadImageRules, type ImageRules } from './imageRules';
+
 const MODEL = process.env.IMAGE_MODEL || 'gemini-3-pro-image-preview';
 const CONCEPT_MODEL = process.env.LLM_MODEL || 'gemini-2.5-flash';
 const CHAT_URL =
@@ -83,7 +85,8 @@ async function imagineConcept(title: string, category: string, apiKey: string, s
   return concept.slice(0, 600);
 }
 
-function buildPrompt(title: string, category: string, style: ImageStyle, concept?: string, customLook?: string): string {
+// 룩(trend/editorial)·제약 문구의 단일 원본은 design.md §8.5 (loadImageRules가 읽음).
+function buildPrompt(title: string, category: string, style: ImageStyle, rules: ImageRules, concept?: string, customLook?: string): string {
   const scene = concept
     ? `Scene concept (follow it closely): ${concept}`
     : `A striking, eye-catching editorial magazine-cover image that clearly represents this Korean news topic: "${title}" (category: ${category}).`;
@@ -91,17 +94,9 @@ function buildPrompt(title: string, category: string, style: ImageStyle, concept
   const look = customLook
     ? `Render in this exact art direction (from a benchmark account analysis): ${customLook}`
     : style === 'trend'
-    // default high-CTR look: a vivid, realistic full-color photograph — punchy
-    // natural color, one clear subject, the premium viral-cover vibe
-    ? 'Render as a vivid, photorealistic FULL-COLOR editorial photograph — like a real, professionally shot news/lifestyle image. Rich, saturated-yet-natural color, bright clean lighting with gentle contrast, one clear hero subject in crisp focus against a softly blurred background (shallow depth of field), high dynamic range. The composition must be scroll-stopping and emotionally engaging — the premium look of a top-performing Korean news/trend Instagram cover. Avoid washed-out, muted, gray, flat, or overly stylized grading; the colors should feel alive and the scene believable.'
-    : 'Render as dramatic high-contrast BLACK AND WHITE editorial photography / photo-illustration, cinematic lighting, bold composition, magazine-cover energy that hooks instantly.';
-  return [
-    scene,
-    look,
-    'The image must clearly evoke the news topic — clever, not generic.',
-    'Leave some darker negative space toward the lower area so overlaid white headline text stays readable.',
-    'STRICT: no text, no letters, no words, no numbers, no logos, no watermarks; do not depict specific real, identifiable public figures.',
-  ].join(' ');
+    ? rules.trend
+    : rules.editorial;
+  return [scene, look, rules.constraints].join(' ');
 }
 
 export async function generateCardImage(
@@ -112,6 +107,9 @@ export async function generateCardImage(
 ): Promise<string> {
   const apiKey = process.env.LLM_API_KEY;
   if (!apiKey) throw new Error('LLM_API_KEY not configured');
+
+  // 룩·제약 문구의 단일 원본을 design.md §8.5 에서 읽는다(실패 시 throw → 라우트 502, 낡은 사본 없음)
+  const rules = await loadImageRules();
 
   // concept stage is best-effort — any failure falls back to the direct prompt
   let concept: string | undefined;
@@ -126,7 +124,7 @@ export async function generateCardImage(
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
     body: JSON.stringify({
-      contents: [{ parts: [{ text: buildPrompt(title, category, style, concept, customLook) }] }],
+      contents: [{ parts: [{ text: buildPrompt(title, category, style, rules, concept, customLook) }] }],
       generationConfig: { responseModalities: ['IMAGE'] },
     }),
   });

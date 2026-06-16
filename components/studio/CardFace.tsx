@@ -2,6 +2,7 @@
 
 import { useLayoutEffect, useRef, type CSSProperties, type ReactNode } from 'react';
 import type { Card, Magazine } from '@/types/db';
+import { TOKENS } from '@/lib/designTokens';
 import { FONT_CSS } from './data';
 
 type Ctx = 'canvas' | 'slide' | 'thumb';
@@ -72,7 +73,7 @@ function renderEmphasis(text: string, accent: string, surfaceLight: boolean): Re
     WebkitBoxDecorationBreak: 'clone',
   };
   return splitEmphasis(text).map((p, i) => {
-    if (p.type === 'bold') return <b key={i} style={{ fontWeight: 900 }}>{p.text}</b>;
+    if (p.type === 'bold') return <b key={i} style={{ fontWeight: TOKENS.headline.boldWeight }}>{p.text}</b>;
     if (p.type === 'hl') return <mark key={i} style={hlStyle}>{p.text}</mark>;
     return <span key={i}>{p.text}</span>;
   });
@@ -87,21 +88,21 @@ const ALIGN: Record<number, { v: 'flex-start' | 'center' | 'flex-end'; t: 'left'
 
 export function alignIndex(align: string): number {
   const n = Number(align);
-  return Number.isNaN(n) || !(n in ALIGN) ? 6 : n;
+  return Number.isNaN(n) || !(n in ALIGN) ? TOKENS.defaultAlignIndex : n;
 }
 
 export default function CardFace({ card, magazine, ctx, hint = true, ratio, total = 5 }: { card: Card; magazine: Magazine; ctx: Ctx; hint?: boolean; ratio?: '1:1' | '4:5'; total?: number }) {
   const dark = card.kind !== 'body';
-  const bg = dark ? magazine.bgColor : '#ffffff';
-  const fg = card.textColor || (dark ? '#ffffff' : '#111110');
-  const pad = ctx === 'canvas' ? 40 : ctx === 'slide' ? 22 : 12;
+  const bg = dark ? magazine.bgColor : TOKENS.color.paper;
+  const fg = card.textColor || (dark ? TOKENS.color.white : TOKENS.color.ink);
+  const pad = ctx === 'canvas' ? TOKENS.pad.canvas : ctx === 'slide' ? TOKENS.pad.slide : TOKENS.pad.thumb;
   // prototype slideHTML: cover 25 / cta 23 / body 21
-  const slideBase = card.kind === 'cover' ? 25 : card.kind === 'cta' ? 23 : 21;
-  const titleBase = ctx === 'canvas' ? 42 : ctx === 'slide' ? slideBase : 11;
+  const slideBase = card.kind === 'cover' ? TOKENS.title.slideCover : card.kind === 'cta' ? TOKENS.title.slideCta : TOKENS.title.slideBody;
+  const titleBase = ctx === 'canvas' ? TOKENS.title.canvas : ctx === 'slide' ? slideBase : TOKENS.title.thumb;
   // 4:5는 세로 여백이 넓어 글씨를 키워 가독성·주목도(CTR)↑. 폰트 크기를 키우면 같은 콘텐츠
   // 폭에서 재줄바꿈돼 세로로만 커지고 좌우는 패딩 안에 머물러 그리드 크롭에 안 잘린다.
   // (transform 확대는 좌우로도 커져 잘리므로 금지 — 반드시 font-size로 키운다.)
-  const sizeBump = ratio === '4:5' && ctx !== 'thumb' ? 1.4 : 1;
+  const sizeBump = ratio === '4:5' && ctx !== 'thumb' ? TOKENS.sizeBump45 : 1;
   const titleSize = Math.round(titleBase * (ctx === 'thumb' ? 1 : card.fontScale) * sizeBump);
   const align = ALIGN[alignIndex(card.align)];
   // 페이지번호 0n / 0T (가변 길이 덱 지원; total 기본 5 → 기존 스튜디오 출력과 동일)
@@ -135,7 +136,7 @@ export default function CardFace({ card, magazine, ctx, hint = true, ratio, tota
       block.style.transform = 'none';
       const avail = area.clientHeight;
       const natural = block.scrollHeight;
-      const s = natural > avail && natural > 0 ? Math.max(0.4, avail / natural) : 1;
+      const s = natural > avail && natural > 0 ? Math.max(TOKENS.autofitMin, avail / natural) : 1;
       block.style.transform = s < 1 ? `scale(${s})` : 'none';
     };
     apply();
@@ -166,7 +167,7 @@ export default function CardFace({ card, magazine, ctx, hint = true, ratio, tota
       {(dark || card.imageUrl) && (
         /* the scrim also covers body cards once they carry an image — without it
            text of either color drowns in the photo */
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top,rgba(17,17,16,.82),rgba(17,17,16,.2) 48%,rgba(17,17,16,.55))' }} />
+        <div style={{ position: 'absolute', inset: 0, background: TOKENS.scrim }} />
       )}
       <div style={{ position: 'absolute', inset: 0, padding: pad, display: 'flex', flexDirection: 'column' }}>
         {trendCover ? (
@@ -224,13 +225,13 @@ export default function CardFace({ card, magazine, ctx, hint = true, ratio, tota
               }}
             />
           )}
-          <div style={{ fontFamily: headlineFont, fontWeight: 800, letterSpacing: '-.035em', lineHeight: 1.16, fontSize: titleSize, whiteSpace: 'pre-line', wordBreak: 'keep-all', overflowWrap: 'break-word', marginTop: align.v === 'flex-start' ? (ctx === 'thumb' ? 14 : 16) : 0 }}>
+          <div style={{ fontFamily: headlineFont, fontWeight: TOKENS.headline.weight, letterSpacing: TOKENS.headline.letterSpacing, lineHeight: TOKENS.headline.lineHeight, fontSize: titleSize, whiteSpace: 'pre-line', wordBreak: 'keep-all', overflowWrap: 'break-word', marginTop: align.v === 'flex-start' ? (ctx === 'thumb' ? 14 : 16) : 0 }}>
             {ctx === 'thumb' ? stripEmphasis(card.title) : em(card.title)}
           </div>
           {ctx !== 'thumb' && card.kind === 'body' && card.body && (
             <>
               <div style={{ height: 1, background: 'currentColor', opacity: 0.16, margin: `${ctx === 'canvas' ? 16 : 10}px 0` }} />
-              <div style={{ fontSize: Math.round((ctx === 'canvas' ? 15 : 11) * sizeBump), lineHeight: 1.6, opacity: 0.85, whiteSpace: 'pre-line', wordBreak: 'keep-all', overflowWrap: 'break-word' }}>{em(card.body)}</div>
+              <div style={{ fontSize: Math.round((ctx === 'canvas' ? TOKENS.body.canvas : TOKENS.body.slide) * sizeBump), lineHeight: TOKENS.body.lineHeight, opacity: TOKENS.body.opacity, whiteSpace: 'pre-line', wordBreak: 'keep-all', overflowWrap: 'break-word' }}>{em(card.body)}</div>
             </>
           )}
           {ctx !== 'thumb' && card.kind === 'cta' && (() => {

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { motion, useReducedMotion, type Variants } from 'framer-motion';
 import type { Card, FlowCard, FlowDeck, FlowInput, FlowRole } from '@/types/db';
 import { DEFAULT_FLOW_TONE, MAGAZINES } from '@/components/studio/data';
 import { FLOW_HANDOFF_KEY, type FlowHandoff, renumberDeck } from '@/lib/flowShared';
@@ -18,6 +19,10 @@ const RENDER_H = Math.round((RENDER_SIZE * 5) / 4); // 675
 const MAX_STEPS = 6; // 총 10장 상한 (card-flow.md §3)
 
 const ROLE_KO: Record<FlowRole, string> = { hook: 'Hook', pain: 'Pain', step: 'Step', result: 'Result', cta: 'CTA' };
+
+const STEPS = ['입력', '카드 구성표', '이미지', '내보내기'];
+const GEN_STAGES = ['주제를 분석하는 중…', 'Hook → Pain → Steps 흐름을 짜는 중…', '카드 문구를 다듬는 중…', '거의 다 됐어요…'];
+const EASE: [number, number, number, number] = [0.22, 0.61, 0.36, 1];
 
 const EXAMPLES: FlowInput[] = [
   { topic: '사회초년생 첫 적금 시작하기', target: '막 취업한 20대, 저축 처음', tone: DEFAULT_FLOW_TONE, goal: '오늘 자유적금 1개 개설 + 자동이체 걸기' },
@@ -39,8 +44,12 @@ export default function FlowClient() {
   const [imgStyle, setImgStyle] = useState<'trend' | 'editorial'>('trend');
   const [genIdx, setGenIdx] = useState<number | null>(null); // 개별 이미지 생성 중인 카드
   const [batchMsg, setBatchMsg] = useState(''); // 전체 이미지 생성 진행률
+  const [genId, setGenId] = useState(0); // 생성 회차 — 결과 입장 애니메이션 재실행 키
+  const [genStage, setGenStage] = useState(0); // 생성 중 단계 메시지 인덱스
   const renderRef = useRef<HTMLDivElement>(null);
+  const resultRef = useRef<HTMLDivElement>(null);
   const imgWorking = genIdx !== null || !!batchMsg;
+  const reduce = useReducedMotion();
 
   // 이미지 생성(NB2)은 관리자 전용 — 버튼 노출 여부 결정
   useEffect(() => {
@@ -49,6 +58,13 @@ export default function FlowClient() {
       .then((d) => setIsAdmin(!!d?.admin))
       .catch(() => setIsAdmin(false));
   }, []);
+
+  // 생성 중 단계 메시지를 순차 진행 — ~10초 대기를 가이드처럼 보이게
+  useEffect(() => {
+    if (!loading) { setGenStage(0); return; }
+    const id = setInterval(() => setGenStage((s) => Math.min(s + 1, GEN_STAGES.length - 1)), 2400);
+    return () => clearInterval(id);
+  }, [loading]);
 
   const setField = (k: keyof FlowInput, v: string) => setInput((s) => ({ ...s, [k]: v }));
 
@@ -66,7 +82,9 @@ export default function FlowClient() {
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || '생성에 실패했어요.');
       setDeck(data as FlowDeck);
+      setGenId((g) => g + 1); // 결과 입장 애니메이션 재실행
       setStatus(`카드 ${data?.cards?.length ?? 0}장 구성표를 만들었어요. 확인·수정 후 이미지를 만들 수 있어요.`);
+      setTimeout(() => resultRef.current?.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' }), 120);
     } catch (e: any) {
       setError(e?.message || '생성에 실패했어요. 잠시 후 다시 시도해 주세요.');
       setStatus('');
@@ -275,10 +293,17 @@ export default function FlowClient() {
   const n = deck?.cards.length ?? 0;
   const stepCount = deck?.cards.filter((c) => c.role === 'step').length ?? 0;
 
+  // 진행 단계: 입력(1) → 구성표(2) → 이미지(3) → 내보내기(4)
+  const step = !deck ? 1 : deck.cards.some((c) => c.imageUrl) ? 3 : 2;
+  // 입장 애니메이션 — ease-out, 짧고 절제된 스태거(접근성: reduced-motion이면 0)
+  const listV: Variants = { hidden: {}, show: { transition: { staggerChildren: reduce ? 0 : 0.055, delayChildren: reduce ? 0 : 0.04 } } };
+  const itemV: Variants = { hidden: { opacity: 0, y: reduce ? 0 : 14 }, show: { opacity: 1, y: 0, transition: { duration: reduce ? 0 : 0.45, ease: EASE } } };
+  const fadeV: Variants = { hidden: { opacity: 0, y: reduce ? 0 : 8 }, show: { opacity: 1, y: 0, transition: { duration: reduce ? 0 : 0.35, ease: EASE } } };
+
   return (
     <div className="flow">
       <header className="flow__top">
-        <Link className="flow__brand" href="/">INK<span>.</span> <small>자동 흐름</small></Link>
+        <Link className="flow__brand" href="/">INK<span>.</span> <small>카드 기획</small></Link>
         <div className="flow__topr">
           <Link className="flow__homelink" href="/studio">스튜디오 →</Link>
           <ThemeToggle />
@@ -287,11 +312,26 @@ export default function FlowClient() {
 
       <main className="flow__main">
         <section className="flow__intro">
-          <span className="flow__kicker">CARD-FLOW · 자동 카드뉴스</span>
+          <span className="flow__kicker">CARD-FLOW · 카드 기획</span>
           <h1>주제만 넣으면 <b>카드 구성표</b>부터</h1>
           <p>입력 4개로 <b>Hook → Pain → Steps(단계만큼) → Result → CTA</b> 흐름을 짭니다. 단계 수에 따라 장수가 늘어나요(5~10장).
             <br /><strong>이미지는 구성표를 확인·수정한 뒤에 만듭니다.</strong></p>
         </section>
+
+        {/* 진행 스텝 — 스튜디오(편집)와 달리 '기획 → 이미지 → 내보내기' 흐름임을 보여줌 */}
+        <nav className="flow__steps" aria-label="진행 단계">
+          <span className="flow__steps-line" aria-hidden="true"><i style={{ width: `${((step - 1) / (STEPS.length - 1)) * 100}%` }} /></span>
+          {STEPS.map((s, i) => {
+            const num = i + 1;
+            const state = num < step ? 'done' : num === step ? 'current' : 'upcoming';
+            return (
+              <div key={s} className={`flow__step is-${state}`} aria-current={state === 'current' ? 'step' : undefined}>
+                <span className="flow__stepdot">{num < step ? '✓' : num}</span>
+                <span className="flow__steplb">{s}</span>
+              </div>
+            );
+          })}
+        </nav>
 
         {/* 입력 폼 */}
         <section className="flow__form" aria-label="입력">
@@ -318,7 +358,7 @@ export default function FlowClient() {
                 <button key={i} type="button" className="flow__chip" onClick={() => setInput(ex)}>{ex.topic}</button>
               ))}
             </div>
-            <button className="flow__btn flow__btn--primary" onClick={generate} disabled={loading || !input.topic.trim()} aria-busy={loading}>
+            <button className={`flow__btn flow__btn--primary${input.topic.trim() && !loading ? ' is-ready' : ''}`} onClick={generate} disabled={loading || !input.topic.trim()} aria-busy={loading}>
               {loading ? '◌ 구성표 만드는 중…' : '카드 구성표 만들기'}
             </button>
           </div>
@@ -336,20 +376,36 @@ export default function FlowClient() {
           </section>
         )}
 
+        {/* 생성 중 — 스피너 대신 '구성표가 짜이는' 스켈레톤 + 단계 메시지 */}
+        {loading && (
+          <section className="flow__skeleton" aria-hidden="true">
+            <div className="flow__skelmsg"><span className="flow__skeldot" />{GEN_STAGES[genStage]}</div>
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div className="flow__skelrow" key={i} style={{ animationDelay: `${i * 90}ms` }}>
+                <span className="sk sk--num" />
+                <span className="sk sk--role" />
+                <span className="sk sk--title" />
+                <span className="sk sk--body" />
+              </div>
+            ))}
+          </section>
+        )}
+
         {deck && (
-          <>
-            <div className="flow__banner">
+          <div className="flow__result" ref={resultRef}>
+            <motion.div className="flow__banner" variants={fadeV} initial="hidden" animate="show" key={`b${genId}`}>
               📋 <b>카드 구성표</b> · 총 {n}장 (단계 {stepCount}개)
               <span>확인·수정 후 아래 미리보기에서 이미지(NB2) 생성</span>
-            </div>
+            </motion.div>
 
             {/* 카드 구성표 (편집 가능) */}
             <section className="flow__table" aria-label="카드 구성표">
               <div className="flow__row flow__row--head" aria-hidden="true">
                 <span>#</span><span>역할</span><span>큰 제목</span><span>짧은 본문</span><span></span>
               </div>
+              <motion.div className="flow__rows" variants={listV} initial="hidden" animate="show" key={`t${genId}`}>
               {deck.cards.map((c, i) => (
-                <div className={`flow__row flow__row--${c.role}`} key={i}>
+                <motion.div className={`flow__row flow__row--${c.role}`} key={i} variants={itemV}>
                   <span className="flow__num">{String(i + 1).padStart(2, '0')}</span>
                   <span className="flow__role">
                     <b>{ROLE_KO[c.role]}</b>
@@ -377,8 +433,9 @@ export default function FlowClient() {
                       <button type="button" aria-label={`${i + 1}번 카드 삭제`} onClick={() => removeCard(i)} disabled={busy}>✕</button>
                     )}
                   </span>
-                </div>
+                </motion.div>
               ))}
+              </motion.div>
               <div className="flow__tableact">
                 <span className="flow__addwrap">
                   <button type="button" className="flow__btn flow__btn--ghost" onClick={addStep} disabled={busy || stepCount >= MAX_STEPS}>＋ 단계 추가</button>
@@ -412,9 +469,9 @@ export default function FlowClient() {
                   <span className="flow__adminnote">이미지 생성은 관리자 전용 — <Link href="/admin">/admin 로그인</Link></span>
                 )}
               </div>
-              <div className="flow__rail">
+              <motion.div className="flow__rail" variants={listV} initial="hidden" animate="show" key={`p${genId}`}>
                 {deck.cards.map((c, i) => (
-                  <figure className="flow__pcard" key={i}>
+                  <motion.figure className="flow__pcard" key={i} variants={itemV} whileHover={reduce ? undefined : { y: -6 }} transition={{ duration: 0.2, ease: EASE }}>
                     <div className="flow__pcard-inner">
                       <CardFace card={c} magazine={MAGAZINE} ctx="slide" ratio="4:5" total={n} />
                     </div>
@@ -425,11 +482,11 @@ export default function FlowClient() {
                         : <button type="button" className="flow__pcardbtn" onClick={() => genOne(i)} disabled={imgWorking} aria-busy={genIdx === i}>{genIdx === i ? '◌ 생성…' : '✦ 이미지'}</button>
                       )}
                     </figcaption>
-                  </figure>
+                  </motion.figure>
                 ))}
-              </div>
+              </motion.div>
             </section>
-          </>
+          </div>
         )}
       </main>
 

@@ -125,7 +125,54 @@
 .flow__pcardbtn:hover:not(:disabled) { border-color: var(--ink); color: var(--ink); }
 .flow__pcardbtn:disabled { opacity: .5; cursor: not-allowed; }
 
+/* ── 진행 스텝 ─────────────────────────────────────────────── */
+.flow__steps { position: relative; display: flex; justify-content: space-between; gap: 8px; margin: 26px 0 22px; padding: 0 6px; }
+.flow__steps-line { position: absolute; left: 28px; right: 28px; top: 15px; height: 2px; background: var(--line); border-radius: 2px; overflow: hidden; z-index: 0; }
+.flow__steps-line i { display: block; height: 100%; background: var(--ink); border-radius: 2px; transition: width .55s cubic-bezier(.22,.61,.36,1); }
+.flow__step { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 7px; flex: 1; min-width: 0; }
+.flow__stepdot { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-family: var(--mono); font-size: 12px; font-weight: 700; background: var(--paper); border: 2px solid var(--line); color: var(--ink-3); transition: background-color .25s, border-color .25s, color .25s; }
+.flow__steplb { font-size: 12px; color: var(--ink-3); font-weight: 600; transition: color .25s; text-align: center; }
+.flow__step.is-done .flow__stepdot { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+.flow__step.is-done .flow__steplb { color: var(--ink-2); }
+.flow__step.is-current .flow__stepdot { border-color: var(--ink); color: var(--ink); box-shadow: 0 0 0 4px color-mix(in srgb, var(--ink) 12%, transparent); animation: flowPulse 2s ease-in-out infinite; }
+.flow__step.is-current .flow__steplb { color: var(--ink); }
+@keyframes flowPulse { 0%,100% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--ink) 12%, transparent); } 50% { box-shadow: 0 0 0 7px color-mix(in srgb, var(--ink) 5%, transparent); } }
+
+/* ── 생성 중 스켈레톤 (스피너 대신) ────────────────────────────── */
+.flow__skeleton { margin-top: 26px; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.flow__skelmsg { display: flex; align-items: center; gap: 9px; padding: 13px 16px; background: var(--wash); border-bottom: 1px solid var(--line); font-size: 13.5px; font-weight: 600; color: var(--ink-2); }
+.flow__skeldot { width: 9px; height: 9px; border-radius: 50%; background: var(--ink); animation: flowBlink 1s ease-in-out infinite; flex: 0 0 auto; }
+@keyframes flowBlink { 0%,100% { opacity: .25; } 50% { opacity: 1; } }
+.flow__skelrow { display: grid; grid-template-columns: 38px 116px 1fr 1.3fr; gap: 10px; padding: 12px; border-bottom: 1px solid var(--line); opacity: 0; animation: flowFadeIn .45s cubic-bezier(.22,.61,.36,1) forwards; }
+.flow__skelrow:last-child { border-bottom: 0; }
+@keyframes flowFadeIn { to { opacity: 1; } }
+.sk { display: block; border-radius: 6px; background: linear-gradient(90deg, var(--wash-2) 0%, var(--line) 45%, var(--wash-2) 80%); background-size: 200% 100%; animation: flowShimmer 1.3s linear infinite; }
+.sk--num { height: 12px; margin-top: 8px; } .sk--role { height: 30px; } .sk--title { height: 36px; } .sk--body { height: 36px; }
+@keyframes flowShimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+/* ── 마이크로 인터랙션 ─────────────────────────────────────────── */
+.flow__chip { transition: transform .15s, border-color .15s, color .15s, background-color .15s; }
+.flow__chip:hover { transform: translateY(-1px); }
+.flow__btn--primary.is-ready { animation: flowReady 2.4s ease-in-out infinite; }
+@keyframes flowReady { 0%,100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--ink) 0%, transparent); } 50% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--ink) 10%, transparent); } }
+.flow__pcard-inner { transition: box-shadow .2s ease; }
+.flow__pcard:hover .flow__pcard-inner { box-shadow: 0 1px 2px rgba(17,17,16,.08), 0 26px 46px -24px rgba(17,17,16,.6); }
+
+/* ── 모션 최소화 선호 ─────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .flow__step.is-current .flow__stepdot,
+  .flow__btn--primary.is-ready,
+  .flow__skeldot,
+  .flow__skelrow,
+  .sk { animation: none; }
+  .flow__steps-line i { transition: none; }
+  .sk { background: var(--wash-2); }
+}
+
 @media (max-width: 720px) {
+  .flow__steps { gap: 2px; }
+  .flow__steplb { font-size: 10.5px; }
+  .flow__skelrow { grid-template-columns: 30px 1fr 1fr; }
   .flow__form { grid-template-columns: 1fr; }
   .flow__row { grid-template-columns: 30px 1fr 30px; grid-template-areas: "num role act" "title title title" "body body body"; row-gap: 8px; }
   .flow__num { grid-area: num; } .flow__role { grid-area: role; flex-direction: row; align-items: center; flex-wrap: wrap; }

@@ -1,6 +1,7 @@
 import type { FlowCard, FlowDeck, FlowInput, FlowRole } from '@/types/db';
 import { DEFAULT_FLOW_TONE } from '@/components/studio/data';
 import { renumberDeck, roleToKind, VALID_ROLES } from './flowShared';
+import { loadFlowPromptRules } from './flowRules';
 
 /**
  * 자동 카드뉴스 흐름 (design-system/card-flow.md).
@@ -15,9 +16,6 @@ import { renumberDeck, roleToKind, VALID_ROLES } from './flowShared';
  * ⚠️ 이미지는 만들지 않는다 — 이 함수는 "카드 구성표"(텍스트)만 만든다.
  *    이미지는 사람이 구성표를 승인한 뒤 NB2(lib/image.ts)로 생성한다.
  */
-
-const MIN_STEPS = 1;
-const MAX_STEPS = 6; // 총 10장 상한 (card-flow.md §3)
 
 /** 잘못된 마커(====, **) 가 카드로 새지 않게 정리. CardFace 파서와 동일 철학. */
 function sanitizeMarkers(text: string): string {
@@ -96,34 +94,27 @@ export function mockDeck(input: FlowInput): FlowDeck {
   return { meta: { ...input, total: out.length }, cards: out };
 }
 
-function buildSystemPrompt(input: FlowInput): string {
-  return [
-    '너는 한국어 인스타그램 카드뉴스 기획자다. 입력으로 "카드 구성표"를 만든다. (이미지는 만들지 않는다.)',
-    '흐름: Hook → Pain → Steps(내용에 맞게 N장) → Result → CTA.',
-    '규칙:',
-    '1) 카드 순서대로 role 을 붙인다: 첫 장 "hook", 그 다음 "pain", 중간 단계들 "step", 마지막 직전 "result", 마지막 "cta".',
-    `2) Steps: 내용상 단계 수만큼 각각 다른 step 카드로 만든다(2개면 2장, 5개면 5장). 한 장에 여러 단계 압축 금지. step 은 ${MIN_STEPS}~${MAX_STEPS}개.`,
-    '3) hook: 큰 제목 하나(title)만. body 는 빈 문자열 "".',
-    '4) hook 을 제외한 모든 카드: title 과 body 둘 다 비어있지 않게 채운다.',
-    `5) 총 장수 = step 수 + 4. 내용에 맞게 정한다(5~10장). 빈 단계로 억지로 늘리지 마라.`,
-    '6) title: 2줄 이내, 어절 단위 줄바꿈은 \\n 으로. body: 1~2문장, 짧고 구체적으로.',
-    `7) 톤: ${input.tone || DEFAULT_FLOW_TONE}. 추상적 조언("꾸준히","적당히") 금지 — 숫자·순서·도구명 등 따라할 행동으로.`,
-    `8) 마지막 cta 는 최종행동("${input.goal}")을 지금 바로 하게 만든다. hashtags 3~5개(한글, #포함).`,
-    '9) 핵심어 강조: 가장 중요한 구절 1개를 ==형광펜==, 수치·키워드는 **굵게**. 카드당 과하지 않게(형광펜 1, 굵게 최대 2). 마커는 정확히 2개씩(==단어==, **단어**).',
-    'JSON으로만 응답한다: {"cards":[{"role","title","body","hashtags?"}]}',
-  ].join('\n');
-}
-
 export async function composeDeck(input: FlowInput): Promise<FlowDeck> {
   const apiKey = process.env.LLM_API_KEY;
   if (!apiKey) return mockDeck(input);
 
+  // 시스템 프롬프트 = card-flow.md §8 의 단일 원본(런타임에 읽음, 캐시 없음).
+  // 읽기 실패 시엔 잘못된(낡은) 규칙으로 생성하지 않고 mock 으로 폴백한다.
+  let systemRules: string;
+  try {
+    systemRules = await loadFlowPromptRules();
+  } catch (err) {
+    console.error('[flow] card-flow.md 프롬프트 규칙 로드 실패 — mock 으로 폴백:', err);
+    return mockDeck(input);
+  }
+
   const baseUrl = process.env.LLM_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
   const user = [
+    '[입력]',
     `주제: ${input.topic}`,
-    `타깃: ${input.target}`,
+    `타깃: ${input.target || '(미지정)'}`,
     `톤: ${input.tone || DEFAULT_FLOW_TONE}`,
-    `최종행동: ${input.goal}`,
+    `최종행동: ${input.goal || '(미지정)'}`,
   ].join('\n');
 
   try {
@@ -134,7 +125,7 @@ export async function composeDeck(input: FlowInput): Promise<FlowDeck> {
         model: process.env.LLM_MODEL || 'gemini-2.5-flash',
         response_format: { type: 'json_object' },
         messages: [
-          { role: 'system', content: buildSystemPrompt(input) },
+          { role: 'system', content: systemRules },
           { role: 'user', content: user },
         ],
       }),

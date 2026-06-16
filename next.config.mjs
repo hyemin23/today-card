@@ -6,6 +6,11 @@ const nextConfig = {
   turbopack: {
     root: import.meta.dirname,
   },
+  // /api/flow 가 런타임에 design-system/card-flow.md(생성 규칙 단일 원본)를
+  // fs 로 읽으므로, 서버리스 번들에 이 파일이 포함되도록 추적에 명시한다.
+  outputFileTracingIncludes: {
+    '/api/flow': ['./design-system/card-flow.md'],
+  },
 };
 
 export default nextConfig;

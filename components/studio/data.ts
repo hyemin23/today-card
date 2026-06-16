@@ -16,6 +16,9 @@ export const FONTS: { key: string; label: string; css: string }[] = [
 
 export const FONT_CSS: Record<string, string> = Object.fromEntries(FONTS.map((f) => [f.key, f.css]));
 
+/** 자동 카드뉴스 흐름(card-flow.md)의 기본 톤 */
+export const DEFAULT_FLOW_TONE = '현실적·직설적, 초보자도 그대로 따라할 수 있게';
+
 export const TEXT_COLORS = ['#ffffff', '#111110', '#e7d9b8', '#b8c6e7'];
 export const BG_SWATCHES = ['#111110', '#ffffff', '#f6f4ef', '#1a2b22', '#2a2438'];
 export const ACCENT_SWATCHES = ['#ffffff', '#111110', '#9a8456', '#7c8f6b'];

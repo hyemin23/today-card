@@ -14,6 +14,7 @@ export default function Nav() {
         <nav className="nav__links" aria-label="주요">
           <Link className="nav__link is-active" href="/" aria-current="page">홈</Link>
           <Link className="nav__link" href="/studio">스튜디오</Link>
+          <Link className="nav__link" href="/flow">자동 흐름</Link>
           <a className="nav__link" href="#how">이용 방법</a>
         </nav>
         <div className="nav__right">

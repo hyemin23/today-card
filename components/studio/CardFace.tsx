@@ -90,7 +90,7 @@ export function alignIndex(align: string): number {
   return Number.isNaN(n) || !(n in ALIGN) ? 6 : n;
 }
 
-export default function CardFace({ card, magazine, ctx, hint = true, ratio }: { card: Card; magazine: Magazine; ctx: Ctx; hint?: boolean; ratio?: '1:1' | '4:5' }) {
+export default function CardFace({ card, magazine, ctx, hint = true, ratio, total = 5 }: { card: Card; magazine: Magazine; ctx: Ctx; hint?: boolean; ratio?: '1:1' | '4:5'; total?: number }) {
   const dark = card.kind !== 'body';
   const bg = dark ? magazine.bgColor : '#ffffff';
   const fg = card.textColor || (dark ? '#ffffff' : '#111110');
@@ -104,7 +104,9 @@ export default function CardFace({ card, magazine, ctx, hint = true, ratio }: { 
   const sizeBump = ratio === '4:5' && ctx !== 'thumb' ? 1.4 : 1;
   const titleSize = Math.round(titleBase * (ctx === 'thumb' ? 1 : card.fontScale) * sizeBump);
   const align = ALIGN[alignIndex(card.align)];
-  const num = `0${card.idx + 1} / 05`;
+  // 페이지번호 0n / 0T (가변 길이 덱 지원; total 기본 5 → 기존 스튜디오 출력과 동일)
+  const pad2 = (n: number) => String(n).padStart(2, '0');
+  const num = `${pad2(card.idx + 1)} / ${pad2(total)}`;
   const mono = { fontFamily: 'var(--mono)' } as const;
   /* 'trend' cover layout (benchmark: full-bleed visual, letterspaced watermark
      top-right, outlined category pill sitting right above the headline) */
@@ -176,7 +178,7 @@ export default function CardFace({ card, magazine, ctx, hint = true, ratio }: { 
         ) : ctx !== 'thumb' && (() => {
           const numEl = card.hideNum ? null : <span>{num}</span>;
           const pill = card.category ? <span style={{ border: `1px solid ${dark ? 'rgba(255,255,255,.4)' : 'rgba(17,17,16,.3)'}`, borderRadius: 100, padding: '4px 10px' }}>{card.category}</span> : null;
-          const label = card.hideLabel ? null : <span>{card.kind === 'cta' ? 'CTA' : '본문'}</span>;
+          const label = card.hideLabel ? null : <span>{card.label || (card.kind === 'cta' ? 'CTA' : '본문')}</span>;
           let left: ReactNode = null, right: ReactNode = null;
           if (card.kind === 'cover') { left = pill; right = numEl; }
           else if (card.kind === 'body') { left = label; right = numEl; }

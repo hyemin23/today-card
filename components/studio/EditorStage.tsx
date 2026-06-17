@@ -4,7 +4,8 @@ import { useId, useRef, useState } from 'react';
 import type { Card, Magazine } from '@/types/db';
 import CardFace, { alignIndex, stripEmphasis, cleanMarkers } from './CardFace';
 import { TEXT_COLORS, FONTS } from './data';
-import { fileToDataUrl, resizeDataUrl } from './imageFile';
+import { fileToDataUrl } from './imageFile';
+import { buildImagePrompt, generateCardImage, imagePatch } from '@/lib/imageGen';
 import { IconSpark } from '@/components/icons';
 
 const MAX_UPLOAD_MB = 12;
@@ -144,26 +145,14 @@ export default function EditorStage({
     </span>
   );
   // admin only — server re-verifies the session cookie before any (paid) generation
+  // (프롬프트 구성·호출·축소·스크림 보정은 lib/imageGen 공유 — /flow와 동일 로직)
   async function requestImage(c: Card): Promise<string> {
-    // body cards carry the substance in `body` — fold it into the prompt so the
-    // image reflects the card's actual content, not just a generic heading
-    const promptTitle = c.body ? `${c.title} — ${c.body.slice(0, 90)}` : c.title;
-    const res = await fetch('/api/image', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title: promptTitle, category: c.category || '뉴스', style: magazine.coverStyle || 'trend', imageStyle: magazine.benchImagePrompt || '' }),
+    return generateCardImage({
+      title: buildImagePrompt(c.title, c.body),
+      category: c.category || '뉴스',
+      style: magazine.coverStyle || 'trend',
+      imageStyle: magazine.benchImagePrompt || '',
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || '생성 실패');
-    // squeeze the megabyte PNG base64 down before it hits state/sessionStorage
-    return resizeDataUrl(data.image);
-  }
-
-  /** Image patch + readability: a white body card gains the dark scrim, so flip its default ink text to white. */
-  function imagePatch(c: Card, imageUrl: string): Partial<Card> {
-    return c.kind === 'body' && c.textColor === '#111110'
-      ? { imageUrl, textColor: '#ffffff' }
-      : { imageUrl };
   }
 
   async function genImage() {

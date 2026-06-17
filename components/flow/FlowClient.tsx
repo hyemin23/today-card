@@ -8,7 +8,8 @@ import type { Card, FlowCard, FlowDeck, FlowInput, FlowRole } from '@/types/db';
 import { DEFAULT_FLOW_TONE, MAGAZINES } from '@/components/studio/data';
 import { FLOW_HANDOFF_KEY, type FlowHandoff, renumberDeck } from '@/lib/flowShared';
 import CardFace, { stripEmphasis } from '@/components/studio/CardFace';
-import { resizeDataUrl } from '@/components/studio/imageFile';
+import { renderCardNode, downloadPngZip } from '@/lib/cardExport';
+import { buildImagePrompt, generateCardImage, imagePatch } from '@/lib/imageGen';
 import ThemeToggle from '@/components/ThemeToggle';
 
 const STUDIO_SESSION_KEY = 'ink.studio.v1'; // 기존 작업 보호용(StudioClient SESSION_KEY)
@@ -28,8 +29,6 @@ const EXAMPLES: FlowInput[] = [
   { topic: '사회초년생 첫 적금 시작하기', target: '막 취업한 20대, 저축 처음', tone: DEFAULT_FLOW_TONE, goal: '오늘 자유적금 1개 개설 + 자동이체 걸기' },
   { topic: '노션으로 가계부 시작하기', target: '가계부를 3일이면 포기하는 직장인', tone: DEFAULT_FLOW_TONE, goal: '오늘 노션 가계부 템플릿 복제하고 첫 기록' },
 ];
-
-let cachedFontCss: string | null = null;
 
 export default function FlowClient() {
   const router = useRouter();
@@ -121,13 +120,6 @@ export default function FlowClient() {
     commitCards(deck.cards.filter((_, i) => i !== idx));
   }
 
-  async function renderCard(node: HTMLElement): Promise<string> {
-    const htmlToImage = await import('html-to-image');
-    await document.fonts.ready;
-    if (cachedFontCss === null) cachedFontCss = await htmlToImage.getFontEmbedCSS(node);
-    return htmlToImage.toPng(node, { pixelRatio: 2, width: RENDER_SIZE, height: RENDER_H, fontEmbedCSS: cachedFontCss });
-  }
-
   async function downloadZip() {
     if (!deck || busy) return;
     const count = deck.cards.length; // 스냅샷: 렌더 중 편집돼도 노드 수와 어긋나지 않게
@@ -135,21 +127,14 @@ export default function FlowClient() {
     setError('');
     setStatus(`PNG ${count}장을 만드는 중…`);
     try {
-      const JSZip = (await import('jszip')).default;
-      const zip = new JSZip();
       const nodes = renderRef.current?.children;
       if (!nodes || nodes.length !== count) throw new Error('render targets out of sync');
+      const files: { name: string; dataUrl: string }[] = [];
       for (let i = 0; i < count; i++) {
-        const dataUrl = await renderCard(nodes[i] as HTMLElement);
-        zip.file(`card-${String(i + 1).padStart(2, '0')}.png`, dataUrl.split(',')[1], { base64: true });
+        const dataUrl = await renderCardNode(nodes[i] as HTMLElement, { width: RENDER_SIZE, height: RENDER_H });
+        files.push({ name: `card-${String(i + 1).padStart(2, '0')}.png`, dataUrl });
       }
-      const blob = await zip.generateAsync({ type: 'blob' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `cardnews-${count}컷.zip`;
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(url), 10000);
+      await downloadPngZip(files, `cardnews-${count}컷.zip`);
       setCopied('zip');
       setStatus(`카드 ${count}장을 ZIP으로 저장했어요.`);
       setTimeout(() => setCopied(''), 1800);
@@ -190,24 +175,13 @@ export default function FlowClient() {
     }
   }
 
-  // ── 이미지 생성 (NB2, 관리자 전용 — 기존 /api/image 재사용) ─────────────
+  // ── 이미지 생성 (NB2, 관리자 전용 — lib/imageGen 공유) ─────────────────
   async function requestImage(c: FlowCard): Promise<string> {
-    const title = stripEmphasis(c.title).replace(/\n/g, ' ').trim();
-    const body = c.body ? stripEmphasis(c.body).replace(/\n/g, ' ').trim() : '';
-    const promptTitle = body ? `${title} — ${body.slice(0, 90)}` : title;
-    const res = await fetch('/api/image', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title: promptTitle, category: deck?.meta.topic?.slice(0, 40) || '카드뉴스', style: imgStyle, imageStyle: '' }),
+    return generateCardImage({
+      title: buildImagePrompt(c.title, c.body),
+      category: deck?.meta.topic?.slice(0, 40) || '카드뉴스',
+      style: imgStyle,
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data?.error || '이미지 생성 실패');
-    return resizeDataUrl(data.image); // 메가바이트 PNG → 축소
-  }
-
-  /** 흰 배경 body 카드에 이미지를 깔면 스크림으로 어두워지므로 글자색을 흰색으로 뒤집는다. */
-  function imagePatch(c: FlowCard, imageUrl: string): Partial<FlowCard> {
-    return c.kind === 'body' && c.textColor === '#111110' ? { imageUrl, textColor: '#ffffff' } : { imageUrl };
   }
 
   async function genOne(idx: number) {

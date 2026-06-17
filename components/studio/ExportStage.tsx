@@ -3,13 +3,10 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Card, Magazine } from '@/types/db';
 import CardFace from './CardFace';
+import { renderCardNode, downloadPngZip, saveUrl } from '@/lib/cardExport';
 import './export-fixes.css';
 
 const RENDER_SIZE = 540; // rendered at 540×540, exported at pixelRatio 2 → 1080×1080
-
-// font-embed CSS is identical for every card → compute once per page load
-// and reuse across PNG/ZIP/share renders (big speedup for 5-card ZIPs)
-let cachedFontCss: string | null = null;
 
 function fileBase(magazine: Magazine) {
   // "INK Daily" → INK-DAILY (prototype: INK-DAILY-0604.ZIP); Korean-only names fall back to the handle
@@ -18,13 +15,6 @@ function fileBase(magazine: Magazine) {
   const d = new Date();
   const mmdd = `${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
   return `${slug}-${mmdd}`;
-}
-
-function saveUrl(url: string, name: string) {
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = name;
-  a.click();
 }
 
 export default function ExportStage({
@@ -145,17 +135,7 @@ export default function ExportStage({
   async function renderCard(i: number): Promise<string> {
     const node = renderRef.current?.children[i] as HTMLElement | undefined;
     if (!node) throw new Error('render node missing');
-    const htmlToImage = await import('html-to-image');
-    await document.fonts.ready; // make sure webfonts are loaded before rasterizing
-    // NOTE: no cacheBust — it appends '?t=…' to image URLs, which breaks
-    // blob:/data: photo sources; same-document rendering doesn't need it
-    if (cachedFontCss === null) cachedFontCss = await htmlToImage.getFontEmbedCSS(node);
-    return htmlToImage.toPng(node, {
-      pixelRatio: 2,
-      width: RENDER_SIZE,
-      height: renderH,
-      fontEmbedCSS: cachedFontCss,
-    });
+    return renderCardNode(node, { width: RENDER_SIZE, height: renderH });
   }
 
   // aria-disabled + a guard (not the `disabled` attribute) so the clicked
@@ -179,20 +159,14 @@ export default function ExportStage({
     setBusy('zip');
     report('전체 ZIP을 만드는 중…');
     try {
-      const JSZip = (await import('jszip')).default;
-      const zip = new JSZip();
+      const base = fileBase(magazine);
+      const files: { name: string; dataUrl: string }[] = [];
       for (let i = 0; i < n; i++) {
         report(`${i + 1}/${n}장 렌더 중…`);
-        const dataUrl = await renderCard(i);
-        zip.file(`${fileBase(magazine)}-0${i + 1}.png`, dataUrl.split(',')[1], { base64: true });
+        files.push({ name: `${base}-0${i + 1}.png`, dataUrl: await renderCard(i) });
       }
       report('ZIP 압축 중…');
-      const blob = await zip.generateAsync({ type: 'blob' });
-      const url = URL.createObjectURL(blob);
-      saveUrl(url, `${fileBase(magazine)}.zip`);
-      // revoking synchronously can kill the download before it starts in some
-      // browsers — release the object URL well after the download kicks off
-      setTimeout(() => URL.revokeObjectURL(url), 10_000);
+      await downloadPngZip(files, `${base}.zip`);
       report(`카드 ${n}장을 ZIP으로 저장했어요`);
     } catch {
       report('ZIP 생성에 실패했어요. 잠시 후 다시 시도해 주세요.', true);

@@ -4,6 +4,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import type { Magazine } from '@/types/db';
 import { MAGAZINES, BG_SWATCHES, ACCENT_SWATCHES } from './data';
 import { fileToDataUrl } from './imageFile';
+import { fetchStyleProfile } from '@/lib/styleProfile';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 
@@ -129,17 +130,7 @@ export default function MagazineDrawer({
     setBenchBusy(true);
     setBenchMsg(images?.length ? '스크린샷을 분석하는 중…' : '계정 게시물을 가져와 분석하는 중…');
     try {
-      const res = await fetch('/api/style-analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(images?.length ? { images, username: benchUser.trim() } : { username: benchUser.trim() }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setBenchMsg(data.error || '분석에 실패했어요.');
-        return;
-      }
-      const p = data.profile;
+      const p = await fetchStyleProfile(images?.length ? { images, username: benchUser.trim() } : { username: benchUser.trim() });
       set({
         coverStyle: p.layout,
         bgColor: p.bgColor,
@@ -150,8 +141,8 @@ export default function MagazineDrawer({
         benchImagePrompt: p.imagePrompt,
       });
       setBenchMsg('');
-    } catch {
-      setBenchMsg('분석 요청에 실패했어요. 잠시 후 다시 시도해주세요.');
+    } catch (e: any) {
+      setBenchMsg(e?.message || '분석 요청에 실패했어요. 잠시 후 다시 시도해주세요.');
     } finally {
       setBenchBusy(false);
     }

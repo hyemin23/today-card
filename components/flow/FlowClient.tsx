@@ -4,17 +4,19 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion, useReducedMotion, type Variants } from 'framer-motion';
-import type { Card, FlowCard, FlowDeck, FlowInput, FlowRole } from '@/types/db';
+import type { Card, FlowCard, FlowDeck, FlowInput, FlowRole, Magazine } from '@/types/db';
 import { DEFAULT_FLOW_TONE, MAGAZINES } from '@/components/studio/data';
 import { FLOW_HANDOFF_KEY, type FlowHandoff, renumberDeck } from '@/lib/flowShared';
 import CardFace, { stripEmphasis } from '@/components/studio/CardFace';
 import { renderCardNode, downloadPngZip } from '@/lib/cardExport';
 import { buildImagePrompt, generateCardImage, imagePatch } from '@/lib/imageGen';
+import { fetchStyleProfile } from '@/lib/styleProfile';
+import { fileToDataUrl } from '@/components/studio/imageFile';
+import type { StyleProfile } from '@/lib/styleAnalyze';
 import ThemeToggle from '@/components/ThemeToggle';
 
 const STUDIO_SESSION_KEY = 'ink.studio.v1'; // 기존 작업 보호용(StudioClient SESSION_KEY)
 
-const MAGAZINE = MAGAZINES[0]; // 미리보기용 기본 매거진(INK Daily) — 색·핸들 기준
 const RENDER_SIZE = 540; // 4:5 → 1080×1350 (pixelRatio 2)
 const RENDER_H = Math.round((RENDER_SIZE * 5) / 4); // 675
 const MAX_STEPS = 6; // 총 10장 상한 (card-flow.md §3)
@@ -36,6 +38,7 @@ const FLOW_SESSION_KEY = 'ink.flow.v1';
 interface PersistedFlow {
   input: FlowInput;
   deck: FlowDeck | null;
+  magazine?: Magazine;
 }
 
 function loadFlowJSON<T>(key: string): T | null {
@@ -75,8 +78,11 @@ export default function FlowClient() {
   const [genId, setGenId] = useState(0); // 생성 회차 — 결과 입장 애니메이션 재실행 키
   const [genStage, setGenStage] = useState(0); // 생성 중 단계 메시지 인덱스
   const [restored, setRestored] = useState(false); // 작업 복구 패스 완료 여부(이후에만 저장)
+  const [magazine, setMagazine] = useState<Magazine>(MAGAZINES[0]); // 미리보기·이미지 톤 기준(레퍼런스 스타일 적용 대상)
+  const [benchBusy, setBenchBusy] = useState(false); // 레퍼런스 스타일 분석 중
   const renderRef = useRef<HTMLDivElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
+  const benchShotRef = useRef<HTMLInputElement>(null);
   const imgWorking = genIdx !== null || !!batchMsg;
   const reduce = useReducedMotion();
 
@@ -101,14 +107,15 @@ export default function FlowClient() {
     const saved = loadFlowJSON<PersistedFlow>(FLOW_SESSION_KEY);
     if (saved?.input) setInput(saved.input);
     if (saved?.deck?.cards?.length) { setDeck(saved.deck); setGenId((g) => g + 1); }
+    if (saved?.magazine?.id) setMagazine(saved.magazine);
     setRestored(true);
   }, []);
 
   // 의미 있는 변경마다 저장(복구 패스 이후에만 — 빈 초기 상태가 저장본을 덮지 않게). 이미지는 빼고 저장(쿼터 보호).
   useEffect(() => {
     if (!restored) return;
-    saveFlowJSON(FLOW_SESSION_KEY, { input, deck: deckWithoutImages(deck) } satisfies PersistedFlow);
-  }, [restored, input, deck]);
+    saveFlowJSON(FLOW_SESSION_KEY, { input, deck: deckWithoutImages(deck), magazine } satisfies PersistedFlow);
+  }, [restored, input, deck, magazine]);
 
   // 구성표가 있거나 입력 중이면 탭 닫기/새로고침 전에 경고(sessionStorage는 탭을 닫으면 사라짐)
   useEffect(() => {
@@ -129,7 +136,7 @@ export default function FlowClient() {
       const res = await fetch('/api/flow', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(input),
+        body: JSON.stringify({ ...input, styleTone: magazine.benchTone || '' }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || '생성에 실패했어요.');
@@ -234,6 +241,7 @@ export default function FlowClient() {
       title: buildImagePrompt(c.title, c.body),
       category: deck?.meta.topic?.slice(0, 40) || '카드뉴스',
       style: imgStyle,
+      imageStyle: magazine.benchImagePrompt || '', // 레퍼런스 아트디렉션(있으면)
     });
   }
 
@@ -284,6 +292,46 @@ export default function FlowClient() {
     const patch: Partial<FlowCard> = { imageUrl: null };
     if (c.kind === 'body' && c.textColor === '#ffffff') patch.textColor = '#111110'; // 흰 글자 되돌리기
     updateCard(idx, patch);
+  }
+
+  // ── 레퍼런스 스타일 적용 (관리자 전용 — /studio MagazineDrawer와 동일 분석 경로) ──
+  function applyProfile(p: StyleProfile) {
+    setMagazine((m) => ({
+      ...m,
+      coverStyle: p.layout,
+      bgColor: p.bgColor,
+      accentColor: p.accentColor,
+      benchName: p.name,
+      benchSummary: p.summary,
+      benchTone: p.tone,
+      benchImagePrompt: p.imagePrompt,
+    }));
+    setImgStyle(p.layout); // 풀컬러/흑백 토글도 분석 결과에 맞춤
+  }
+  function clearBench() {
+    setMagazine((m) => ({ ...m, benchName: '', benchSummary: '', benchTone: '', benchImagePrompt: '' }));
+  }
+  async function onBenchShots(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files || []).slice(0, 4);
+    e.target.value = '';
+    if (!files.length || benchBusy) return;
+    setBenchBusy(true);
+    setError('');
+    setStatus('레퍼런스 스타일을 분석하는 중…');
+    try {
+      const images = await Promise.all(
+        files.filter((f) => f.type.startsWith('image/')).map((f) => fileToDataUrl(f, { maxEdge: 900, quality: 0.8 }))
+      );
+      if (!images.length) throw new Error('이미지 파일(JPG·PNG)만 올릴 수 있어요.');
+      const p = await fetchStyleProfile({ images });
+      applyProfile(p);
+      setStatus(`‘${p.name}’ 스타일을 입혔어요 — 색·이미지 톤에 반영, 말투는 다시 생성 시 적용돼요.`);
+    } catch (e2: any) {
+      setError(e2?.message || '스타일 분석에 실패했어요.');
+      setStatus('');
+    } finally {
+      setBenchBusy(false);
+    }
   }
 
   // ── 스튜디오 편집기로 보내기 ────────────────────────────────────────────
@@ -490,6 +538,17 @@ export default function FlowClient() {
                     <button type="button" className="flow__btn flow__btn--primary" onClick={genAll} disabled={imgWorking} aria-busy={!!batchMsg}>
                       {batchMsg || '✦ 전체 이미지 생성 (NB2)'}
                     </button>
+                    {magazine.benchName ? (
+                      <span className="flow__benchchip" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
+                        ✦ {magazine.benchName}
+                        <button type="button" onClick={clearBench} aria-label="레퍼런스 스타일 해제" style={{ textDecoration: 'underline' }}>해제</button>
+                      </span>
+                    ) : (
+                      <button type="button" className="flow__btn flow__btn--ghost" onClick={() => benchShotRef.current?.click()} disabled={benchBusy || imgWorking} aria-busy={benchBusy} title="레퍼런스 카드뉴스 스크린샷(최대 4장)을 올리면 색·이미지 톤·말투를 비슷하게 맞춰요">
+                        {benchBusy ? '◌ 분석 중…' : '✦ 레퍼런스로 스타일'}
+                      </button>
+                    )}
+                    <input ref={benchShotRef} type="file" accept="image/*" multiple hidden onChange={onBenchShots} aria-label="레퍼런스 스크린샷 선택(최대 4장)" />
                   </div>
                 )}
                 {isAdmin === false && (
@@ -500,7 +559,7 @@ export default function FlowClient() {
                 {deck.cards.map((c, i) => (
                   <motion.figure className="flow__pcard" key={i} variants={itemV} whileHover={reduce ? undefined : { y: -6 }} transition={{ duration: 0.2, ease: EASE }}>
                     <div className="flow__pcard-inner">
-                      <CardFace card={c} magazine={MAGAZINE} ctx="slide" ratio="4:5" total={n} />
+                      <CardFace card={c} magazine={magazine} ctx="slide" ratio="4:5" total={n} />
                     </div>
                     <figcaption>
                       <span>{String(i + 1).padStart(2, '0')} · {ROLE_KO[c.role]}</span>
@@ -522,7 +581,7 @@ export default function FlowClient() {
         <div ref={renderRef} aria-hidden style={{ position: 'fixed', left: -9999, top: 0, pointerEvents: 'none' }}>
           {deck.cards.map((c, i) => (
             <div key={i} style={{ position: 'relative', width: RENDER_SIZE, maxWidth: RENDER_SIZE, height: RENDER_H, overflow: 'hidden' }}>
-              <CardFace card={c} magazine={MAGAZINE} ctx="canvas" hint={false} ratio="4:5" total={n} />
+              <CardFace card={c} magazine={magazine} ctx="canvas" hint={false} ratio="4:5" total={n} />
             </div>
           ))}
         </div>

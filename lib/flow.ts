@@ -94,7 +94,7 @@ export function mockDeck(input: FlowInput): FlowDeck {
   return { meta: { ...input, total: out.length }, cards: out };
 }
 
-export async function composeDeck(input: FlowInput): Promise<FlowDeck> {
+export async function composeDeck(input: FlowInput, opts?: { styleTone?: string }): Promise<FlowDeck> {
   const apiKey = process.env.LLM_API_KEY;
   if (!apiKey) return mockDeck(input);
 
@@ -115,6 +115,8 @@ export async function composeDeck(input: FlowInput): Promise<FlowDeck> {
     `타깃: ${input.target || '(미지정)'}`,
     `톤: ${input.tone || DEFAULT_FLOW_TONE}`,
     `최종행동: ${input.goal || '(미지정)'}`,
+    // 벤치마킹 계정 분석으로 얻은 말투 지침(있으면) — 사용자 톤 위에 덧입힌다.
+    ...(opts?.styleTone ? ['', '[벤치마킹 톤 — 이 말투·후킹 습관을 따라 쓰기]', opts.styleTone] : []),
   ].join('\n');
 
   try {

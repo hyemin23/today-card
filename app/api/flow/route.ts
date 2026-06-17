@@ -8,7 +8,7 @@ export const maxDuration = 30; // LLM
 // POST /api/flow  body: { topic, target, tone, goal }
 // 가변 길이 카드 구성표(텍스트)를 만든다. 이미지는 생성하지 않는다.
 export async function POST(req: NextRequest) {
-  let input: Partial<FlowInput>;
+  let input: Partial<FlowInput> & { styleTone?: string };
   try {
     input = await req.json();
   } catch {
@@ -25,9 +25,11 @@ export async function POST(req: NextRequest) {
     tone: str(input.tone).slice(0, 300).trim(),
     goal: str(input.goal).slice(0, 300).trim(),
   };
+  // 벤치마킹 스타일(선택) — 분석된 말투 지침을 텍스트 생성에 덧입힌다.
+  const styleTone = str(input.styleTone).slice(0, 800).trim();
 
   try {
-    const deck = await composeDeck(safe);
+    const deck = await composeDeck(safe, styleTone ? { styleTone } : undefined);
     return NextResponse.json(deck);
   } catch (e: any) {
     return NextResponse.json({ error: e?.message || 'compose failed' }, { status: 502 });

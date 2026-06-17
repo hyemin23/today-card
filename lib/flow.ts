@@ -32,6 +32,13 @@ function sanitizeMarkers(text: string): string {
   return out;
 }
 
+/** step 카드 제목 앞의 단계 번호 접두어 제거 — 라벨이 'STEP n / N'으로 자동 표기하므로 중복.
+    "Step 1." · "스텝1" · "1단계:" · "단계 2 -" 등 흔한 형태를 잡는다. (LLM이 가끔 무시해서 코드로도 보강) */
+function stripStepPrefix(title: string): string {
+  const t = title.replace(/^\s*(?:step\s*\d+|스텝\s*\d+|\d+\s*단계|단계\s*\d+)\s*[:.)\-–·]?\s*/i, '').trimStart();
+  return t || title;
+}
+
 function coerceRole(raw: any, i: number, n: number): FlowRole {
   if (VALID_ROLES.includes(raw)) return raw;
   if (i === 0) return 'hook';
@@ -62,6 +69,9 @@ function normalize(parsed: any, input: FlowInput): FlowDeck {
   for (let i = 1; i < cards.length - 1; i++) {
     if (cards[i].role === 'hook' || cards[i].role === 'cta') cards[i].role = 'step';
   }
+
+  // step 제목의 단계 번호 접두어 제거(라벨과 중복 방지)
+  for (const c of cards) if (c.role === 'step') c.title = stripStepPrefix(c.title);
 
   // cta 해시태그 시드
   const cta = cards[cards.length - 1];

@@ -231,7 +231,7 @@ export default function CardFace({ card, magazine, ctx, hint = true, ratio, tota
           {ctx !== 'thumb' && card.kind === 'body' && card.body && (
             <>
               <div style={{ height: 1, background: 'currentColor', opacity: 0.16, margin: `${ctx === 'canvas' ? 16 : 10}px 0` }} />
-              <div style={{ fontSize: Math.round((ctx === 'canvas' ? TOKENS.body.canvas : TOKENS.body.slide) * sizeBump), lineHeight: TOKENS.body.lineHeight, opacity: TOKENS.body.opacity, whiteSpace: 'pre-line', wordBreak: 'keep-all', overflowWrap: 'break-word' }}>{em(card.body)}</div>
+              <div style={{ fontFamily: headlineFont, fontSize: Math.round((ctx === 'canvas' ? TOKENS.body.canvas : TOKENS.body.slide) * sizeBump), lineHeight: TOKENS.body.lineHeight, opacity: TOKENS.body.opacity, whiteSpace: 'pre-line', wordBreak: 'keep-all', overflowWrap: 'break-word' }}>{em(card.body)}</div>
             </>
           )}
           {ctx !== 'thumb' && card.kind === 'cta' && (() => {

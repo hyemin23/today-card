@@ -9,6 +9,8 @@ export interface Magazine {
   logoText: string;
   logoUrl?: string | null;
   coverStyle?: CoverStyle;
+  /** 템플릿 헤드라인 글씨체 키(FONTS in studio/data.ts); '' 또는 미설정 = 기본 Pretendard */
+  fontKey?: string;
   /** benchmark style profile (계정 분석 결과) — overrides tone/image direction when set */
   benchName?: string;
   benchSummary?: string;

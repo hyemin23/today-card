@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from 'react';
 import type { Magazine } from '@/types/db';
-import { MAGAZINES, BG_SWATCHES, ACCENT_SWATCHES } from './data';
+import { MAGAZINES, BG_SWATCHES, ACCENT_SWATCHES, FONT_CSS } from './data';
 import { fileToDataUrl } from './imageFile';
 import { fetchStyleProfile } from '@/lib/styleProfile';
 import { Input } from '@/components/ui/input';
@@ -205,7 +205,7 @@ export default function MagazineDrawer({
         </div>
         <div className="drawer__body">
           <section className="fset" aria-labelledby={`${id}-s1`}>
-            <div className="fset__t"><span className="idx" aria-hidden="true">01</span><h3 id={`${id}-s1`}>매거진 선택</h3></div>
+            <div className="fset__t"><span className="idx" aria-hidden="true">01</span><h3 id={`${id}-s1`}>매거진 · 템플릿 <span style={{ color: 'var(--ink-3)', fontWeight: 400, fontSize: 12 }}>· 글씨체·색·스타일</span></h3></div>
             <div className="mags" role="group" aria-labelledby={`${id}-s1`}>
               {MAGAZINES.map((m) => (
                 <button
@@ -216,7 +216,7 @@ export default function MagazineDrawer({
                   onClick={() => setDraft(m)}
                 >
                   <span className="sw" style={{ background: m.bgColor }} aria-hidden="true" />
-                  <span className="nm">{m.name}</span>
+                  <span className="nm" style={{ fontFamily: FONT_CSS[m.fontKey || ''] }}>{m.name}</span>
                 </button>
               ))}
             </div>

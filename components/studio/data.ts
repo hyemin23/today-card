@@ -23,8 +23,11 @@ export const TEXT_COLORS = ['#ffffff', '#111110', '#e7d9b8', '#b8c6e7'];
 export const BG_SWATCHES = ['#111110', '#ffffff', '#f6f4ef', '#1a2b22', '#2a2438'];
 export const ACCENT_SWATCHES = ['#ffffff', '#111110', '#9a8456', '#7c8f6b'];
 
+/** 템플릿 = 글씨체(fontKey) + 색(bg/accent) + 표지 스타일(coverStyle) 묶음. 고르면 덱 전체에 일괄 적용. */
 export const MAGAZINES: Magazine[] = [
-  { id: 'ink', name: 'INK Daily', logoText: 'INK.', handle: '@ink.daily', ctaHeadline: '팔로우하고 더 보기', ctaCopy: '매일 한 편, 가볍게 읽는 오늘의 뉴스. 저장하고 친구에게 공유해요.', hashtags: [], bgColor: '#111110', accentColor: '#ffffff', isDefault: true },
-  { id: 'soso', name: '소소한 기록', logoText: 'soso', handle: '@soso.log', ctaHeadline: '팔로우하고 더 보기', ctaCopy: '', hashtags: [], bgColor: '#f6f4ef', accentColor: '#111110' },
-  { id: 'green', name: '초록잡지', logoText: 'GREEN', handle: '@green.zine', ctaHeadline: '팔로우하고 더 보기', ctaCopy: '', hashtags: [], bgColor: '#1a2b22', accentColor: '#ffffff' },
+  { id: 'ink',    name: '잉크',   fontKey: '',         coverStyle: 'editorial', logoText: 'INK.',  handle: '@ink.daily',  ctaHeadline: '팔로우하고 더 보기', ctaCopy: '매일 한 편, 가볍게 읽는 오늘의 뉴스. 저장하고 친구에게 공유해요.', hashtags: [], bgColor: '#111110', accentColor: '#ffffff', isDefault: true },
+  { id: 'impact', name: '임팩트', fontKey: 'blackhan', coverStyle: 'trend',     logoText: 'BOLD',  handle: '@bold.zine',  ctaHeadline: '팔로우하고 더 보기', ctaCopy: '', hashtags: [], bgColor: '#111110', accentColor: '#ffffff' },
+  { id: 'soft',   name: '소프트', fontKey: 'jua',      coverStyle: 'trend',     logoText: 'soft',  handle: '@soft.log',   ctaHeadline: '팔로우하고 더 보기', ctaCopy: '', hashtags: [], bgColor: '#f6f4ef', accentColor: '#111110' },
+  { id: 'mag',    name: '매거진', fontKey: 'myeongjo', coverStyle: 'editorial', logoText: 'MAG',   handle: '@mag.zine',   ctaHeadline: '팔로우하고 더 보기', ctaCopy: '', hashtags: [], bgColor: '#f6f4ef', accentColor: '#111110' },
+  { id: 'green',  name: '초록',   fontKey: 'dohyeon',  coverStyle: 'trend',     logoText: 'GREEN', handle: '@green.zine', ctaHeadline: '팔로우하고 더 보기', ctaCopy: '', hashtags: [], bgColor: '#1a2b22', accentColor: '#ffffff' },
 ];

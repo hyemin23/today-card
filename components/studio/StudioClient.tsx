@@ -297,6 +297,7 @@ export default function StudioClient() {
         idx: i,
         category: article.category,
         source: article.source,
+        fontFamily: magazine.fontKey || c.fontFamily, // 템플릿 글씨체 일괄 적용
       }));
       // the LLM writes a hook-style cover headline — keep it; the raw article
       // title is only the fallback (and stays reachable via 원래 문구 되돌리기)
@@ -330,14 +331,16 @@ export default function StudioClient() {
   /** Drawer save — CTA text settings flow into the live CTA card, but only the
       fields the user actually changed (hand-edited card text stays untouched). */
   function saveMagazine(next: Magazine) {
+    const fontChanged = (next.fontKey || '') !== (magazine.fontKey || ''); // 템플릿 글씨체 변경 시 전 카드 적용
     setCards((cs) =>
       cs.map((c) => {
-        if (c.kind !== 'cta') return c;
+        const base = fontChanged ? { ...c, fontFamily: next.fontKey || '' } : c;
+        if (c.kind !== 'cta') return base;
         const patch: Partial<Card> = {};
         if (next.ctaHeadline !== magazine.ctaHeadline) patch.title = next.ctaHeadline;
         if (next.ctaCopy !== magazine.ctaCopy) patch.body = next.ctaCopy;
         if (next.hashtags.join(' ') !== magazine.hashtags.join(' ')) patch.hashtags = next.hashtags;
-        return Object.keys(patch).length ? { ...c, ...patch } : c;
+        return Object.keys(patch).length ? { ...base, ...patch } : base;
       })
     );
     setMagazine(next);

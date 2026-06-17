@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion, useReducedMotion, type Variants } from 'framer-motion';
 import type { Card, FlowCard, FlowDeck, FlowInput, FlowRole, Magazine } from '@/types/db';
-import { DEFAULT_FLOW_TONE, MAGAZINES } from '@/components/studio/data';
+import { DEFAULT_FLOW_TONE, MAGAZINES, FONT_CSS } from '@/components/studio/data';
 import { FLOW_HANDOFF_KEY, type FlowHandoff, renumberDeck } from '@/lib/flowShared';
 import CardFace, { stripEmphasis } from '@/components/studio/CardFace';
 import { renderCardNode, downloadPngZip } from '@/lib/cardExport';
@@ -127,6 +127,13 @@ export default function FlowClient() {
 
   const setField = (k: keyof FlowInput, v: string) => setInput((s) => ({ ...s, [k]: v }));
 
+  /** 템플릿(매거진) 선택 = 글씨체+색+표지 스타일을 덱 전체에 일괄 적용. */
+  function applyTemplate(m: Magazine) {
+    setMagazine(m);
+    setImgStyle(m.coverStyle || 'trend');
+    setDeck((d) => (d ? { ...d, cards: d.cards.map((c) => ({ ...c, fontFamily: m.fontKey || '' })) } : d));
+  }
+
   async function generate() {
     if (!input.topic.trim() || loading) return;
     setLoading(true);
@@ -140,7 +147,9 @@ export default function FlowClient() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || '생성에 실패했어요.');
-      setDeck(data as FlowDeck);
+      const built = data as FlowDeck;
+      // 선택된 템플릿 글씨체를 새 덱 전 카드에 적용
+      setDeck(magazine.fontKey ? { ...built, cards: built.cards.map((c) => ({ ...c, fontFamily: magazine.fontKey })) } : built);
       setGenId((g) => g + 1); // 결과 입장 애니메이션 재실행
       setStatus(`카드 ${data?.cards?.length ?? 0}장 구성표를 만들었어요. 확인·수정 후 이미지를 만들 수 있어요.`);
       setTimeout(() => resultRef.current?.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' }), 120);
@@ -425,6 +434,27 @@ export default function FlowClient() {
           <div className="flow__field flow__field--wide">
             <label htmlFor="f-tone">톤</label>
             <input id="f-tone" value={input.tone} onChange={(e) => setField('tone', e.target.value)} />
+          </div>
+          <div className="flow__field flow__field--wide">
+            <label>템플릿 <span style={{ color: 'var(--ink-3)', fontWeight: 400 }}>· 글씨체·색·스타일 한 번에</span></label>
+            <div className="flow__examples" role="group" aria-label="템플릿 선택">
+              {MAGAZINES.map((m) => {
+                const on = magazine.id === m.id;
+                return (
+                  <button
+                    key={m.id}
+                    type="button"
+                    className="flow__chip"
+                    aria-pressed={on}
+                    onClick={() => applyTemplate(m)}
+                    style={{ fontFamily: FONT_CSS[m.fontKey || ''], outline: on ? '2px solid var(--ink, #111110)' : undefined, outlineOffset: 1 }}
+                  >
+                    <span style={{ display: 'inline-block', width: 9, height: 9, borderRadius: '50%', background: m.bgColor, border: '1px solid var(--line-2, #d4d0c6)', marginRight: 6, verticalAlign: 'middle' }} />
+                    {m.name}
+                  </button>
+                );
+              })}
+            </div>
           </div>
           <div className="flow__actions">
             <div className="flow__examples">

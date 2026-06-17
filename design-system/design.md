@@ -29,7 +29,7 @@
 4. 색은 **고대비 흑/백** + 포인트색 1개만. 한 덱(deck)에 팔레트 1세트.
 5. 이야기 흐름: **Hook → Pain → Steps → Result → CTA**. Steps는 **단계 수만큼 장을 늘린다.** *(가변 길이는 디자인 목표 — 현재 생성기는 5장 고정, → §5)*
 6. 장식(말풍선·알림카드·`.zip`·세로 막대)은 **장당 1개까지**. 헤드라인을 이기면 안 됨.
-7. 이미지 생성 API는 **제미나이 나노바나나 2(NB2)만** 사용. (→ §8)
+7. 이미지 생성 API는 **Gemini 이미지 모델만** 사용 — 기본 NB1(저비용), 고품질은 NB2. (→ §8)
 8. 레퍼런스 **복제 금지** — 로고·문구·사진·시그니처 장치를 그대로 쓰지 않는다. (→ §7)
 
 ---
@@ -211,13 +211,13 @@
 
 ---
 
-## 8. 이미지 생성 API 조건 — 제미나이 나노바나나 2(NB2)만 사용
+## 8. 이미지 생성 API 조건 — Gemini 네이티브 이미지 모델만 사용 (기본 NB1, 고품질은 NB2)
 
-> **규칙: 카드 배경/표지 이미지를 생성하는 모든 API 호출은 오직 Gemini 나노바나나 2(NB2) 이미지 모델만 쓴다.** 다른 이미지 생성기(Imagen, DALL·E, Midjourney, Stable Diffusion 등) 금지.
+> **규칙: 카드 배경/표지 이미지를 생성하는 모든 API 호출은 오직 Gemini 네이티브 이미지 모델만 쓴다.** 기본값은 저비용 **나노바나나(NB1)**, 더 높은 품질이 필요하면 **나노바나나 2/프로(NB2)** 로 올린다. 다른 이미지 생성기(Imagen, DALL·E, Midjourney, Stable Diffusion 등) 금지.
 
 ### 8.1 "나노바나나"가 뭔가요? (용어 정리)
-- **나노바나나(NB1)** = 구글의 `gemini-2.5-flash-image` 별칭.
-- **나노바나나 2 / 나노바나나 프로(NB2)** = `gemini-3-pro-image-preview`. ← **우리가 쓸 것.**
+- **나노바나나(NB1)** = 구글의 `gemini-2.5-flash-image` 별칭. ← **기본값(저비용, ~$0.039/장).**
+- **나노바나나 2 / 나노바나나 프로(NB2)** = `gemini-3-pro-image-preview`. 고품질 옵션(~$0.134/장) — `IMAGE_MODEL`로 전환.
 
 ### 8.2 구현 위치 & 스위치 (단일 진실원)
 - 파일: **`lib/image.ts`** — 상수 `MODEL`이 이미지 모델 ID. 환경변수 **`IMAGE_MODEL`** 로 덮어쓴다.
@@ -225,29 +225,30 @@
 - 호출 방식(유지): `POST https://generativelanguage.googleapis.com/v1beta/models/{MODEL}:generateContent`,
   body `{ contents:[{ parts:[{ text: <프롬프트> }] }], generationConfig:{ responseModalities:['IMAGE'] } }`,
   헤더 `x-goog-api-key: <LLM_API_KEY>`. 응답에서 `inlineData.data`(base64) 추출.
-- **`lib/image.ts`는 2단계다:** ① **컨셉(텍스트)** 호출 — OpenAI 호환 chat(`.../openai/chat/completions`, `Authorization: Bearer <LLM_API_KEY>`, 모델 `gemini-2.5-flash`)로 장면 아이디어를 만들고 → ② **NB2 이미지** 호출(위 `x-goog-api-key` + native `generateContent`)로 그린다. 그래서 한 파일에서 **인증 방식(Bearer vs x-goog-api-key)·URL이 두 종류** 나타난다. (①이 실패하면 직접 프롬프트로 폴백 — 베스트에포트.) **§8 규칙(NB2 고정)은 ②이미지 호출에만 적용**된다.
+- **`lib/image.ts`는 2단계다:** ① **컨셉(텍스트)** 호출 — OpenAI 호환 chat(`.../openai/chat/completions`, `Authorization: Bearer <LLM_API_KEY>`, 모델 `gemini-2.5-flash`)로 장면 아이디어를 만들고 → ② **이미지 모델** 호출(위 `x-goog-api-key` + native `generateContent`)로 그린다. 그래서 한 파일에서 **인증 방식(Bearer vs x-goog-api-key)·URL이 두 종류** 나타난다. (①이 실패하면 직접 프롬프트로 폴백 — 베스트에포트.) **§8 규칙(Gemini 이미지 모델 고정)은 ②이미지 호출에만 적용**된다.
 
 ```bash
-# .env.local — 이미지 생성은 NB2로 고정
-IMAGE_MODEL=gemini-3-pro-image-preview
+# .env.local — 이미지 모델(미설정 시 코드 기본값 NB1 사용)
+# IMAGE_MODEL=gemini-2.5-flash-image     # 기본(NB1, 저비용 ~$0.039/장) — 생략 가능
+# IMAGE_MODEL=gemini-3-pro-image-preview # 고품질(NB2/Pro, ~$0.134/장)
 LLM_API_KEY=AIza...   # https://aistudio.google.com/apikey
 ```
 
-> **설정 확인:** 코드 기본값을 NB2(`gemini-3-pro-image-preview`)로 맞춰 두었습니다.
+> **설정 확인:** 코드 기본값을 NB1(`gemini-2.5-flash-image`, 저비용)으로 맞춰 두었습니다. 더 높은 품질이 필요하면 `IMAGE_MODEL`로 NB2를 켜세요.
 >
-> ⚠️ **처음 실행 시 401/403/404가 나면** 키에 `gemini-3-pro-image-preview` 권한이 없는 것입니다(프리뷰 모델은 신규 키에서 비활성인 경우가 흔함). 해결: ① [AI Studio](https://aistudio.google.com/)에서 해당 모델 ID가 활성인지 확인하거나, ② `IMAGE_MODEL`을 키에서 쓸 수 있는 **다른 NB2 ID**로 바꾸거나, ③ 임시로 NB1(`gemini-2.5-flash-image`)로 되돌리세요. (규칙상 정식 운영은 NB2로.)
+> ⚠️ **401/403/404가 나면** 키에 해당 모델 권한이 없는 것입니다. NB1은 대개 활성이고, NB2(`gemini-3-pro-image-preview`)는 프리뷰라 신규 키에서 비활성일 수 있어요 — 그땐 `IMAGE_MODEL`을 생략해 NB1으로 쓰면 됩니다.
 
 ### 8.3 프롬프트에 항상 박는 제약(브랜드 안전)
 - 글자/숫자/로고/워터마크 **금지**, 실존 인물 **금지**, **하단을 어둡게**(흰 헤드라인 가독성). → 실제 문구는 **§8.5 `IMG-CONSTRAINTS` 블록이 단일 원본**(`lib/image.ts`가 런타임에 읽음).
 - 2단계 생성(컨셉→이미지)으로 스톡사진 같은 진부함을 피함. 기본 룩은 풀컬러·현실적·고CTR(`trend`), 흑백 에디토리얼(`editorial`) 옵션. → 룩 문구도 §8.5 블록이 원본.
 
 ### 8.4 "이미지 생성"과 "텍스트 생성"은 다른 호출
-- **이미지(NB2 규칙 적용):** `lib/image.ts` → 위 모델.
+- **이미지(이 §8 규칙 적용):** `lib/image.ts` → 위 모델.
 - **텍스트/문구/해시태그/컨셉/계정분석:** `lib/ai.ts`, `lib/styleAnalyze.ts`, `imagineConcept` → **텍스트 모델 `gemini-2.5-flash`**(별개). 이 규칙(§8)은 **이미지 생성에만** 적용된다.
 
 ### 8.5 이미지 프롬프트 원본 (코드가 런타임에 읽음)
 
-> ⭐ 아래 세 블록이 **이미지 프롬프트의 단일 원본**입니다. `lib/image.ts`가 NB2 호출 직전 이 블록들을
+> ⭐ 아래 세 블록이 **이미지 프롬프트의 단일 원본**입니다. `lib/image.ts`가 이미지 호출 직전 이 블록들을
 > 읽어 최종 프롬프트(장면 + 룩 + 제약)를 조립합니다 — **캐시 없음**이라 고치면 다음 생성부터 즉시 반영되고,
 > 코드에 사본이 없어 문서와 절대 어긋나지 않습니다. 영문은 모델 지시문이라 그대로 둡니다.
 > 마커(`IMG-*:START`/`END`)와 코드펜스는 지우지 마세요.
@@ -287,7 +288,7 @@ Render as dramatic high-contrast BLACK AND WHITE editorial photography / photo-i
 | 4:5 기본·세션 마이그레이션 | `components/studio/StudioClient.tsx` | `ratio` 기본 `'4:5'`, `ratioExplicit` |
 | 내보내기 치수 | `components/studio/ExportStage.tsx` | 540 미리보기 → ×2 → 1080×1080 / **1080×1350(4:5)** |
 | 문구(5컷) 생성 | `lib/ai.ts` | 5컷 JSON 계약(표지+본문×3+CTA) — Steps 가변화 대상 |
-| **이미지 생성(NB2)** | `lib/image.ts` + `app/api/image/route.ts` | `IMAGE_MODEL` = NB2 |
+| **이미지 생성** | `lib/image.ts` + `app/api/image/route.ts` | 기본 `gemini-2.5-flash-image`(NB1), `IMAGE_MODEL`로 NB2 전환 |
 | 벤치마크 계정 스타일 분석 | `lib/styleAnalyze.ts` | `benchImagePrompt` → 이미지 `customLook` |
 | 디자인 토큰(사이트) | `app/globals.css`, `tailwind.config.ts` | `--ink/--paper/--wash/--line` 등 |
 
@@ -316,7 +317,7 @@ Render as dramatic high-contrast BLACK AND WHITE editorial photography / photo-i
 - [ ] 폰트가 덱 전체 **하나**인가? 팔레트 1세트인가? 포인트색 1개인가?
 - [ ] 흐름이 **Hook→Pain→Steps→Result→CTA**인가? Steps는 **단계마다 한 장**인가?
 - [ ] 장식은 **장당 1개 이하**, 헤드라인을 안 이기는가?
-- [ ] 이미지 생성은 **NB2(`gemini-3-pro-image-preview`)** 인가?
+- [ ] 이미지 생성은 **Gemini 이미지 모델**(기본 NB1 `gemini-2.5-flash-image`)인가?
 - [ ] 레퍼런스의 로고·사진·문구를 **복제하지 않았는가?**
 
 ---

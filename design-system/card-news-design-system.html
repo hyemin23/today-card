@@ -356,18 +356,17 @@
 <!-- 7. NB2 -->
 <section><div class="wrap">
   <div class="sec-no">07 — Image API</div>
-  <h2>이미지 생성은 Gemini 나노바나나 2(NB2)만</h2>
-  <p class="sub">카드 배경/표지 이미지를 만드는 <b>모든 API 호출</b>은 오직 NB2만 사용합니다. (Imagen·DALL·E·Midjourney·SD 금지)</p>
+  <h2>이미지 생성은 Gemini 이미지 모델만 (기본 NB1)</h2>
+  <p class="sub">카드 배경/표지 이미지를 만드는 <b>모든 API 호출</b>은 오직 Gemini 이미지 모델만 사용합니다. (Imagen·DALL·E·Midjourney·SD 금지)</p>
   <table>
     <tr><th>구분</th><th>모델</th><th>위치</th></tr>
-    <tr><td>나노바나나 (NB1)</td><td><code>gemini-2.5-flash-image</code></td><td>이전 기본값</td></tr>
-    <tr><td><b>나노바나나 2 (NB2)</b></td><td><code>gemini-3-pro-image-preview</code> ← 사용</td><td><code>IMAGE_MODEL</code> · <code>lib/image.ts</code></td></tr>
+    <tr><td><b>나노바나나 (NB1)</b></td><td><code>gemini-2.5-flash-image</code> ← 기본 (~$0.039/장)</td><td><code>lib/image.ts</code> 기본값</td></tr>
+    <tr><td>나노바나나 2 / 프로 (NB2)</td><td><code>gemini-3-pro-image-preview</code> (~$0.134/장)</td><td>고품질 옵션 · <code>IMAGE_MODEL</code></td></tr>
     <tr><td>텍스트/문구/해시태그 (별개)</td><td><code>gemini-2.5-flash</code></td><td><code>lib/ai.ts</code> · 이 규칙 미적용</td></tr>
   </table>
   <div class="note" style="margin-top:16px">
-    <b>설정</b> — <code>.env.local</code> 에 <code>IMAGE_MODEL=gemini-3-pro-image-preview</code>.
+    <b>설정</b> — 코드 기본값이 NB1이라 <code>.env.local</code>에 별도 설정이 필요 없습니다. 고품질이 필요하면 <code>IMAGE_MODEL=gemini-3-pro-image-preview</code>.
     프롬프트엔 항상 <b>글자·로고·실존인물 금지 + 하단 어둡게</b>(흰 헤드라인 가독성)를 박습니다.
-    키에 NB2 접근 권한이 없으면 <code>IMAGE_MODEL</code>을 가용한 ID로 교체하세요.
   </div>
 </div></section>
 

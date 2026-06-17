@@ -30,4 +30,5 @@ export const MAGAZINES: Magazine[] = [
   { id: 'soft',   name: '소프트', fontKey: 'jua',      coverStyle: 'trend',     logoText: 'soft',  handle: '@soft.log',   ctaHeadline: '팔로우하고 더 보기', ctaCopy: '', hashtags: [], bgColor: '#f6f4ef', accentColor: '#111110' },
   { id: 'mag',    name: '매거진', fontKey: 'myeongjo', coverStyle: 'editorial', logoText: 'MAG',   handle: '@mag.zine',   ctaHeadline: '팔로우하고 더 보기', ctaCopy: '', hashtags: [], bgColor: '#f6f4ef', accentColor: '#111110' },
   { id: 'green',  name: '초록',   fontKey: 'dohyeon',  coverStyle: 'trend',     logoText: 'GREEN', handle: '@green.zine', ctaHeadline: '팔로우하고 더 보기', ctaCopy: '', hashtags: [], bgColor: '#1a2b22', accentColor: '#ffffff' },
+  { id: 'hand',   name: '손글씨', fontKey: 'pen',      coverStyle: 'trend',     logoText: 'note',  handle: '@hand.note',  ctaHeadline: '팔로우하고 더 보기', ctaCopy: '', hashtags: [], bgColor: '#f6f4ef', accentColor: '#9a8456' },
 ];

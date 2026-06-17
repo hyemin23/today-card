@@ -224,16 +224,16 @@ export default function LandingPage() {
         <div className="wrap">
           <span className="kicker reveal">Start now</span>
           <h2 className="reveal" style={{ marginTop: 18 }}>나만의 매거진,<br /><em>지금</em> 시작해보세요</h2>
-          <p className="lead reveal">기사를 고르면 AI가 카드뉴스 5컷을 뚝딱. 이름·로고·색 입혀 완성하세요.</p>
+          <p className="lead reveal">기사를 고르면 AI가 카드뉴스 5컷을 뚝딱. 주제만 있다면 ‘주제로 기획하기’로 구성표부터 잡아요.</p>
           <div className="reveal" style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap' }}>
             <Button asChild variant="ink" size="pillLg" className="group">
               <Link href="/studio" data-magnetic>
-                지금 만들기
+                기사로 만들기
                 <span className="transition-transform duration-200 group-hover:translate-x-[3px]" aria-hidden="true">→</span>
               </Link>
             </Button>
             <Button asChild variant="inkGhost" size="pillLg">
-              <Link href="/studio" data-magnetic>스튜디오 열기</Link>
+              <Link href="/flow" data-magnetic>주제로 기획하기</Link>
             </Button>
           </div>
         </div>

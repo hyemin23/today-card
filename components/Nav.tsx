@@ -13,8 +13,8 @@ export default function Nav() {
         </Link>
         <nav className="nav__links" aria-label="주요">
           <Link className="nav__link is-active" href="/" aria-current="page">홈</Link>
-          <Link className="nav__link" href="/studio">스튜디오</Link>
-          <Link className="nav__link" href="/flow">카드 기획</Link>
+          <Link className="nav__link" href="/studio">기사로 만들기</Link>
+          <Link className="nav__link" href="/flow">주제로 기획</Link>
           <a className="nav__link" href="#how">이용 방법</a>
         </nav>
         <div className="nav__right">

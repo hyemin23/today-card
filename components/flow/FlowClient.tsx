@@ -279,17 +279,17 @@ export default function FlowClient() {
       <header className="flow__top">
         <Link className="flow__brand" href="/">INK<span>.</span> <small>카드 기획</small></Link>
         <div className="flow__topr">
-          <Link className="flow__homelink" href="/studio">스튜디오 →</Link>
+          <Link className="flow__homelink" href="/studio">기사로 만들기 →</Link>
           <ThemeToggle />
         </div>
       </header>
 
       <main className="flow__main">
         <section className="flow__intro">
-          <span className="flow__kicker">CARD-FLOW · 카드 기획</span>
-          <h1>주제만 넣으면 <b>카드 구성표</b>부터</h1>
-          <p>입력 4개로 <b>Hook → Pain → Steps(단계만큼) → Result → CTA</b> 흐름을 짭니다. 단계 수에 따라 장수가 늘어나요(5~10장).
-            <br /><strong>이미지는 구성표를 확인·수정한 뒤에 만듭니다.</strong></p>
+          <span className="flow__kicker">CARD-FLOW · 주제로 기획</span>
+          <h1>주제와 목표만으로 <b>카드 구성표</b>부터</h1>
+          <p>주제·타깃·톤·최종행동 4개만 넣으면 <b>Hook → Pain → Steps(단계만큼) → Result → CTA</b> 흐름을 짭니다. 단계 수에 따라 5~10장으로 늘어나요.
+            <br /><strong>구성이 마음에 들면 ‘✎ 스튜디오에서 편집’으로 넘겨 색·글자·위치를 다듬어요.</strong> 기사로 바로 만들려면 <Link href="/studio">기사로 만들기</Link>.</p>
         </section>
 
         {/* 진행 스텝 — 스튜디오(편집)와 달리 '기획 → 이미지 → 내보내기' 흐름임을 보여줌 */}

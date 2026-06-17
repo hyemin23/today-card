@@ -1,4 +1,4 @@
-import type { Card, FlowCard, FlowRole } from '@/types/db';
+import type { Card, FlowCard, FlowRole, Magazine } from '@/types/db';
 
 /** 흐름 역할 → 렌더러 카드 종류. 클라이언트·서버 공용(순수 함수, env 미사용). */
 export const roleToKind = (r: FlowRole): Card['kind'] => (r === 'hook' ? 'cover' : r === 'cta' ? 'cta' : 'body');
@@ -10,6 +10,8 @@ export interface FlowHandoff {
   caption: string;
   hashtags: string[];
   source: string;
+  /** /flow에서 고른 템플릿(매거진) — 스튜디오가 같은 색·표지 스타일로 받게 함께 전달 */
+  magazine?: Magazine;
 }
 
 export const VALID_ROLES: FlowRole[] = ['hook', 'pain', 'step', 'result', 'cta'];

@@ -364,7 +364,7 @@ export default function FlowClient() {
     } catch { /* ignore */ }
     const cards: Card[] = deck.cards.map((c, i) => ({ ...c, idx: i }));
     const cta = deck.cards.find((c) => c.role === 'cta');
-    const handoff: FlowHandoff = { cards, caption: buildCaption(deck), hashtags: cta?.hashtags || [], source: deck.meta.topic || '카드뉴스' };
+    const handoff: FlowHandoff = { cards, caption: buildCaption(deck), hashtags: cta?.hashtags || [], source: deck.meta.topic || '카드뉴스', magazine };
     try {
       sessionStorage.setItem(FLOW_HANDOFF_KEY, JSON.stringify(handoff));
     } catch {

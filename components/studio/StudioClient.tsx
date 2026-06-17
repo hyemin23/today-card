@@ -111,6 +111,8 @@ export default function StudioClient() {
     if (handoff?.cards?.length) {
       try { sessionStorage.removeItem(FLOW_HANDOFF_KEY); } catch { /* private mode */ }
       const built = handoff.cards.map((c, i) => ({ ...c, idx: i }));
+      // /flow에서 고른 템플릿(색·표지 스타일)을 우선 적용 — 위의 localStorage 매거진보다 핸드오프가 우선
+      if (handoff.magazine?.id) setMagazine(handoff.magazine);
       setCards(built);
       setOriginalCards(built.map((c) => ({ ...c })));
       setCaption(handoff.caption || '');

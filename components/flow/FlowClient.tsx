@@ -30,6 +30,35 @@ const EXAMPLES: FlowInput[] = [
   { topic: '노션으로 가계부 시작하기', target: '가계부를 3일이면 포기하는 직장인', tone: DEFAULT_FLOW_TONE, goal: '오늘 노션 가계부 템플릿 복제하고 첫 기록' },
 ];
 
+// 작업(입력 + 구성표) 자동 저장 — 새로고침/뒤로가기에도 같은 탭에서 살아있게(StudioClient와 동일 철학).
+const FLOW_SESSION_KEY = 'ink.flow.v1';
+
+interface PersistedFlow {
+  input: FlowInput;
+  deck: FlowDeck | null;
+}
+
+function loadFlowJSON<T>(key: string): T | null {
+  try {
+    const raw = sessionStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as T) : null;
+  } catch {
+    return null;
+  }
+}
+function saveFlowJSON(key: string, value: unknown) {
+  try {
+    sessionStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    /* quota / private mode — 편집은 계속되고, 저장만 안 될 뿐 */
+  }
+}
+/** 저장 전 이미지 data URL을 비운다 — 메가바이트 PNG가 sessionStorage 쿼터를 넘겨
+    텍스트 구성표까지 통째로 못 저장하는 일이 없게(이미지는 관리자가 다시 생성 가능). */
+function deckWithoutImages(deck: FlowDeck | null): FlowDeck | null {
+  return deck ? { ...deck, cards: deck.cards.map((c) => ({ ...c, imageUrl: null })) } : null;
+}
+
 export default function FlowClient() {
   const router = useRouter();
   const [input, setInput] = useState<FlowInput>({ topic: '', target: '', tone: DEFAULT_FLOW_TONE, goal: '' });
@@ -45,6 +74,7 @@ export default function FlowClient() {
   const [batchMsg, setBatchMsg] = useState(''); // 전체 이미지 생성 진행률
   const [genId, setGenId] = useState(0); // 생성 회차 — 결과 입장 애니메이션 재실행 키
   const [genStage, setGenStage] = useState(0); // 생성 중 단계 메시지 인덱스
+  const [restored, setRestored] = useState(false); // 작업 복구 패스 완료 여부(이후에만 저장)
   const renderRef = useRef<HTMLDivElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
   const imgWorking = genIdx !== null || !!batchMsg;
@@ -64,6 +94,29 @@ export default function FlowClient() {
     const id = setInterval(() => setGenStage((s) => Math.min(s + 1, GEN_STAGES.length - 1)), 2400);
     return () => clearInterval(id);
   }, [loading]);
+
+  // 작업 복구: 새로고침/뒤로가기로 돌아와도 입력·구성표가 살아있게(같은 탭).
+  // hydration 불일치를 피하려 마운트 후 1회. 이미지는 저장하지 않으므로 복구되지 않는다.
+  useEffect(() => {
+    const saved = loadFlowJSON<PersistedFlow>(FLOW_SESSION_KEY);
+    if (saved?.input) setInput(saved.input);
+    if (saved?.deck?.cards?.length) { setDeck(saved.deck); setGenId((g) => g + 1); }
+    setRestored(true);
+  }, []);
+
+  // 의미 있는 변경마다 저장(복구 패스 이후에만 — 빈 초기 상태가 저장본을 덮지 않게). 이미지는 빼고 저장(쿼터 보호).
+  useEffect(() => {
+    if (!restored) return;
+    saveFlowJSON(FLOW_SESSION_KEY, { input, deck: deckWithoutImages(deck) } satisfies PersistedFlow);
+  }, [restored, input, deck]);
+
+  // 구성표가 있거나 입력 중이면 탭 닫기/새로고침 전에 경고(sessionStorage는 탭을 닫으면 사라짐)
+  useEffect(() => {
+    if (!deck && !input.topic.trim()) return;
+    function onBeforeUnload(e: BeforeUnloadEvent) { e.preventDefault(); e.returnValue = ''; }
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => window.removeEventListener('beforeunload', onBeforeUnload);
+  }, [deck, input.topic]);
 
   const setField = (k: keyof FlowInput, v: string) => setInput((s) => ({ ...s, [k]: v }));
 

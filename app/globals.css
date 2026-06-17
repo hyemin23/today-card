@@ -20,7 +20,7 @@
 @font-face { font-family: 'Jua'; font-weight: 400; font-display: swap; src: url('https://cdn.jsdelivr.net/fontsource/fonts/jua@5/korean-400-normal.woff2') format('woff2'); }
 @font-face { font-family: 'Do Hyeon'; font-weight: 400; font-display: swap; src: url('https://cdn.jsdelivr.net/fontsource/fonts/do-hyeon@5/korean-400-normal.woff2') format('woff2'); }
 @font-face { font-family: 'Nanum Myeongjo'; font-weight: 400 800; font-display: swap; src: url('https://cdn.jsdelivr.net/fontsource/fonts/nanum-myeongjo@5/korean-400-normal.woff2') format('woff2'); }
-@font-face { font-family: 'Nanum Pen Script'; font-weight: 400; font-display: swap; src: url('https://cdn.jsdelivr.net/fontsource/fonts/nanum-pen-script@5/korean-400-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Gaegu'; font-weight: 400; font-display: swap; src: url('https://cdn.jsdelivr.net/fontsource/fonts/gaegu@5/korean-400-normal.woff2') format('woff2'); }
 
 /* ---- Tokens ---- */
 :root {

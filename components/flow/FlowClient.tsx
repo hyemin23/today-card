@@ -73,6 +73,7 @@ export default function FlowClient() {
   const [status, setStatus] = useState(''); // 보조기기 안내(aria-live)
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [imgStyle, setImgStyle] = useState<'trend' | 'editorial'>('trend');
+  const [imgProvider, setImgProvider] = useState<'gemini' | 'higgsfield'>('gemini');
   const [genIdx, setGenIdx] = useState<number | null>(null); // 개별 이미지 생성 중인 카드
   const [batchMsg, setBatchMsg] = useState(''); // 전체 이미지 생성 진행률
   const [genId, setGenId] = useState(0); // 생성 회차 — 결과 입장 애니메이션 재실행 키
@@ -251,6 +252,7 @@ export default function FlowClient() {
       category: deck?.meta.topic?.slice(0, 40) || '카드뉴스',
       style: imgStyle,
       imageStyle: magazine.benchImagePrompt || '', // 레퍼런스 아트디렉션(있으면)
+      provider: imgProvider,
     });
   }
 
@@ -564,6 +566,10 @@ export default function FlowClient() {
                     <div className="flow__styletoggle" role="group" aria-label="이미지 스타일">
                       <button type="button" className={imgStyle === 'trend' ? 'on' : ''} aria-pressed={imgStyle === 'trend'} onClick={() => setImgStyle('trend')} disabled={imgWorking}>풀컬러</button>
                       <button type="button" className={imgStyle === 'editorial' ? 'on' : ''} aria-pressed={imgStyle === 'editorial'} onClick={() => setImgStyle('editorial')} disabled={imgWorking}>흑백</button>
+                    </div>
+                    <div className="flow__styletoggle" role="group" aria-label="이미지 생성 제공자">
+                      <button type="button" className={imgProvider === 'gemini' ? 'on' : ''} aria-pressed={imgProvider === 'gemini'} onClick={() => setImgProvider('gemini')} disabled={imgWorking} title="기본 제공자 — 나노바나나(Gemini)">Gemini</button>
+                      <button type="button" className={imgProvider === 'higgsfield' ? 'on' : ''} aria-pressed={imgProvider === 'higgsfield'} onClick={() => setImgProvider('higgsfield')} disabled={imgWorking} title="대체 제공자 — Higgsfield">Higgsfield</button>
                     </div>
                     <button type="button" className="flow__btn flow__btn--primary" onClick={genAll} disabled={imgWorking} aria-busy={!!batchMsg}>
                       {batchMsg || '✦ 전체 이미지 생성 (NB2)'}

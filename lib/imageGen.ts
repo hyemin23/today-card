@@ -22,6 +22,8 @@ export interface CardImageParams {
   style: string;
   /** 벤치마킹 아트디렉션(매거진 benchImagePrompt). 없으면 '' */
   imageStyle?: string;
+  /** 이미지 생성 제공자. 'higgsfield' 명시 시에만 전환, 없으면 서버 기본값(gemini) */
+  provider?: 'gemini' | 'higgsfield';
 }
 
 /**
@@ -48,6 +50,7 @@ export async function generateCardImage(params: CardImageParams): Promise<string
       category: params.category,
       style: params.style,
       imageStyle: params.imageStyle || '',
+      provider: params.provider,
     }),
   });
   const data = await res.json();

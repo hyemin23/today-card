@@ -53,6 +53,7 @@ export default function EditorStage({
   const [imgBusy, setImgBusy] = useState(false);
   const [batchBusy, setBatchBusy] = useState(false);
   const [batchMsg, setBatchMsg] = useState('');
+  const [provider, setProvider] = useState<'gemini' | 'higgsfield'>('gemini');
   const [uploading, setUploading] = useState(false);
   const [emphHint, setEmphHint] = useState('');
   const card = cards[sel];
@@ -152,6 +153,7 @@ export default function EditorStage({
       category: c.category || '뉴스',
       style: magazine.coverStyle || 'trend',
       imageStyle: magazine.benchImagePrompt || '',
+      provider,
     });
   }
 
@@ -254,6 +256,28 @@ export default function EditorStage({
             </div>
             {isAdmin && (
               <>
+                <div className="btnrow" role="group" aria-label="이미지 생성 제공자" style={{ marginTop: 8 }}>
+                  <button
+                    type="button"
+                    className="minib"
+                    aria-pressed={provider === 'gemini'}
+                    disabled={imgBusy || batchBusy}
+                    onClick={() => setProvider('gemini')}
+                    title="기본 제공자 — 나노바나나(Gemini)"
+                  >
+                    {provider === 'gemini' ? '● ' : '○ '}Gemini
+                  </button>
+                  <button
+                    type="button"
+                    className="minib"
+                    aria-pressed={provider === 'higgsfield'}
+                    disabled={imgBusy || batchBusy}
+                    onClick={() => setProvider('higgsfield')}
+                    title="대체 제공자 — Higgsfield (HF_API_KEY/HF_API_SECRET 필요)"
+                  >
+                    {provider === 'higgsfield' ? '● ' : '○ '}Higgsfield
+                  </button>
+                </div>
                 <button
                   className="minib"
                   style={{ width: '100%', marginTop: 8 }}

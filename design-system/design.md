@@ -214,9 +214,9 @@
 
 ---
 
-## 8. 이미지 생성 API 조건 — Gemini 네이티브 이미지 모델만 사용 (기본 NB1, 고품질은 NB2)
+## 8. 이미지 생성 API 조건 — 기본은 Gemini 네이티브 이미지 모델 (기본 NB1, 고품질은 NB2), Higgsfield는 옵트인 대체 제공자
 
-> **규칙: 카드 배경/표지 이미지를 생성하는 모든 API 호출은 오직 Gemini 네이티브 이미지 모델만 쓴다.** 기본값은 저비용 **나노바나나(NB1)**, 더 높은 품질이 필요하면 **나노바나나 2/프로(NB2)** 로 올린다. 다른 이미지 생성기(Imagen, DALL·E, Midjourney, Stable Diffusion 등) 금지.
+> **규칙: 카드 배경/표지 이미지 생성의 기본 제공자는 Gemini 네이티브 이미지 모델이다.** 기본값은 저비용 **나노바나나(NB1)**, 더 높은 품질이 필요하면 **나노바나나 2/프로(NB2)** 로 올린다. **Higgsfield(§8.6)만 예외적으로 허용된 대체 제공자**이며, 요청에서 명시적으로 선택했을 때만 쓰인다 — 그 외 다른 이미지 생성기(Imagen, DALL·E, Midjourney, Stable Diffusion 등)는 여전히 금지.
 
 > 🔗 **순서 주의 — 글이 먼저, 이미지는 그다음.** 이 §8 이미지 생성은 **카드 구성표를 확정한 뒤**에만 호출한다(`card-flow.md §4`). 구성(제목·본문·장수)이 틀리면 이미지를 다시 뽑아야 하므로, 구성표 → (사람 확인) → 이미지 순서를 지킨다.
 
@@ -279,6 +279,16 @@ Render as dramatic high-contrast BLACK AND WHITE editorial photography / photo-i
 ```
 <!-- IMG-EDITORIAL:END -->
 
+### 8.6 대체 제공자: Higgsfield (옵트인)
+
+> 개발자 API(cloud.higgsfield.ai)로 전환한 카드 배경 생성. **기본값이 아니다** — 관리자가 화면(스튜디오/플로우)에서 "Higgsfield"를 명시적으로 선택하거나, 서버 자체 기본값을 바꾸고 싶을 때 `IMAGE_PROVIDER=higgsfield`로만 켜진다.
+
+- 파일: **`lib/higgsfield.ts`** — 제출(`POST /{model}`) → 폴링(`GET /requests/{id}/status`) → 완료 시 이미지를 내려받아 base64 data URL로 변환(Gemini 경로와 반환 형태 통일).
+- 인증: `Authorization: Key {HF_API_KEY}:{HF_API_SECRET}` (`.env.local`, https://cloud.higgsfield.ai/api-keys 에서 발급).
+- 모델/비율: `HF_IMAGE_MODEL`(기본 `higgsfield-ai/soul/standard`), `HF_ASPECT_RATIO`(기본 `3:4` — 이 모델은 카드 비율 4:5를 지원하지 않아 가장 가까운 값으로 근사).
+- 프롬프트(장면+룩+제약)는 §8.5 원본을 Gemini와 **공유**한다 — `lib/image.ts`가 프롬프트를 만든 뒤 제공자에만 따라 호출을 분기(`generateCardImage(..., provider)`).
+- 호출 경로: `app/api/image/route.ts`가 요청 바디의 `provider: 'higgsfield'`만 신뢰해 전달(그 외 값은 서버 기본값으로 무시) — 관리자 세션 게이트는 기존과 동일.
+
 ---
 
 ## 9. 프로젝트 연결 지도 (이 규칙 ↔ 코드)
@@ -294,6 +304,7 @@ Render as dramatic high-contrast BLACK AND WHITE editorial photography / photo-i
 | 내보내기 치수 | `components/studio/ExportStage.tsx` | 540 미리보기 → ×2 → 1080×1080 / **1080×1350(4:5)** |
 | 문구(5컷) 생성 | `lib/ai.ts` | 5컷 JSON 계약(표지+본문×3+CTA) — Steps 가변화 대상 |
 | **이미지 생성** | `lib/image.ts` + `app/api/image/route.ts` | 기본 `gemini-2.5-flash-image`(NB1), `IMAGE_MODEL`로 NB2 전환 |
+| **이미지 생성(대체 제공자)** | `lib/higgsfield.ts` | 옵트인, `provider='higgsfield'`/`IMAGE_PROVIDER`로만 활성 |
 | 벤치마크 계정 스타일 분석 | `lib/styleAnalyze.ts` | `benchImagePrompt` → 이미지 `customLook` |
 | 디자인 토큰(사이트) | `app/globals.css`, `tailwind.config.ts` | `--ink/--paper/--wash/--line` 등 |
 

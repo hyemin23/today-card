@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { generateCardImage } from '@/lib/image';
+import { generateCardImage, type ImageProvider } from '@/lib/image';
 import { verifySession, ADMIN_COOKIE } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: '관리자만 이미지를 생성할 수 있어요. /admin에서 로그인하세요.' }, { status: 403 });
   }
 
-  let body: { title?: string; category?: string; style?: string; imageStyle?: string };
+  let body: { title?: string; category?: string; style?: string; imageStyle?: string; provider?: string };
   try {
     body = await req.json();
   } catch {
@@ -28,9 +28,11 @@ export async function POST(req: NextRequest) {
   // default to vivid full-color ('trend'); only opt into B&W when explicitly asked
   const style = body.style === 'editorial' ? 'editorial' : 'trend';
   const customLook = typeof body.imageStyle === 'string' ? body.imageStyle.slice(0, 600).trim() : '';
+  // 대체 제공자(§8.6): 명시적으로 요청했을 때만, 그 외엔 lib/image.ts가 IMAGE_PROVIDER/기본값(gemini)으로 판단
+  const provider: ImageProvider | undefined = body.provider === 'higgsfield' ? 'higgsfield' : undefined;
 
   try {
-    const image = await generateCardImage(title, body.category || '뉴스', style, customLook || undefined);
+    const image = await generateCardImage(title, body.category || '뉴스', style, customLook || undefined, provider);
     return NextResponse.json({ image });
   } catch (e: any) {
     return NextResponse.json({ error: e.message || 'image generation failed' }, { status: 502 });

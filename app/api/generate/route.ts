@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { generateCards } from '@/lib/ai';
 import { fetchArticleBody } from '@/lib/news';
 import { getServerSupabase, getServiceSupabase } from '@/lib/supabase/server';
+import { verifySession, ADMIN_COOKIE } from '@/lib/auth';
 import type { Article } from '@/types/db';
 
 export const dynamic = 'force-dynamic';
@@ -10,7 +11,17 @@ export const maxDuration = 30; // article body fetch + LLM
 const DAILY_LIMIT = 10;
 
 // POST /api/generate  body: Article
+// Admin-only (paid LLM usage): gated by the admin session cookie, same as
+// /api/image and /api/style-analyze — so anyone hitting the endpoint directly
+// (or a non-logged-in visitor) can never trigger paid card generation.
 export async function POST(req: NextRequest) {
+  if (!process.env.ADMIN_KEY) {
+    return NextResponse.json({ error: '카드 생성이 비활성화되어 있어요(관리자 미설정).' }, { status: 503 });
+  }
+  if (!verifySession(req.cookies.get(ADMIN_COOKIE)?.value)) {
+    return NextResponse.json({ error: '관리자만 카드를 생성할 수 있어요. /admin에서 로그인하세요.' }, { status: 403 });
+  }
+
   let article: Article & { styleTone?: string; autoHashtags?: boolean };
   try {
     article = await req.json();

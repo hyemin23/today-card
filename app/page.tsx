@@ -209,7 +209,8 @@ export default function LandingPage() {
             <aside className="notes__aside">
               <div className="box">
                 <h4>이용 규칙</h4>
-                <p>· 1인당 하루 10회까지 생성할 수 있어요.</p>
+                <p>· 로그인 없이는 체험 모드 — 예시 문구로 전체 흐름을 볼 수 있어요.</p>
+                <p>· 실제 AI 문구·이미지 생성은 관리자(베타) 전용이에요.</p>
                 <p>· 생성한 카드는 개인 체험·비상업 용도로 사용해 주세요.</p>
                 <p>· 직접 올린 이미지·기사 내용의 저작권은 원 저작권자에게 있어요.</p>
                 <p style={{ marginBottom: 0, color: 'rgba(255,255,255,.5)', fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '.05em', marginTop: 18 }}>※ 본 서비스는 비상업 체험용입니다.</p>

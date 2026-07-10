@@ -49,6 +49,7 @@ export default function EditorStage({
   const fileRef = useRef<HTMLInputElement>(null);
   const titleTaRef = useRef<HTMLTextAreaElement>(null);
   const bodyTaRef = useRef<HTMLTextAreaElement>(null);
+  const batchCancelRef = useRef(false); // 일괄 이미지 생성 중단 플래그 — 다음 장 호출 전에 검사
   const titleId = useId();
   const [imgBusy, setImgBusy] = useState(false);
   const [batchBusy, setBatchBusy] = useState(false);
@@ -177,21 +178,26 @@ export default function EditorStage({
       alert('모든 카드에 이미 이미지가 있어요. 비우고 싶은 카드에서 ↺로 제거한 뒤 다시 시도하세요.');
       return;
     }
-    if (!window.confirm(`이미지가 없는 카드 ${targets.length}장의 배경을 AI로 일괄 생성할까요?\n(이미지가 있는 카드는 건너뛰어요)`)) return;
+    if (!window.confirm(`이미지가 없는 카드 ${targets.length}장의 배경을 AI로 일괄 생성할까요?\n(장당 유료 호출이 발생해요 · 진행 중 언제든 중단할 수 있어요)`)) return;
     setBatchBusy(true);
+    batchCancelRef.current = false;
     let failed = 0;
+    let done = 0;
     for (let k = 0; k < targets.length; k++) {
+      if (batchCancelRef.current) break; // 중단 — 남은 장수는 호출하지 않음(비용 보호)
       const { c, i } = targets[k];
       setBatchMsg(`${k + 1}/${targets.length} 생성 중…`);
       try {
         updateCard(i, imagePatch(c, await requestImage(c)));
+        done++;
       } catch {
         failed++;
       }
     }
     setBatchBusy(false);
     setBatchMsg('');
-    if (failed > 0) alert(`${failed}장은 생성에 실패했어요. 해당 카드에서 개별 생성으로 다시 시도해 주세요.`);
+    if (batchCancelRef.current) alert(`중단했어요 — ${done}장 완료, 나머지는 생성하지 않았어요.`);
+    else if (failed > 0) alert(`${failed}장은 생성에 실패했어요. 해당 카드에서 개별 생성으로 다시 시도해 주세요.`);
   }
 
   return (
@@ -284,7 +290,7 @@ export default function EditorStage({
                   onClick={genImage}
                   aria-disabled={imgBusy || batchBusy}
                   aria-busy={imgBusy}
-                  title="이 카드의 주제 기반 흑백 에디토리얼 배경을 생성합니다 (관리자 전용)"
+                  title="이 카드의 주제 기반 배경 이미지를 생성합니다 (관리자 전용 · 장당 유료)"
                 >
                   {imgBusy ? '◌ AI 이미지 생성 중…' : <><IconSpark width={13} height={13} /> 이 카드 AI 이미지</>}
                 </button>
@@ -294,10 +300,20 @@ export default function EditorStage({
                   onClick={genAllImages}
                   aria-disabled={imgBusy || batchBusy}
                   aria-busy={batchBusy}
-                  title="이미지가 없는 카드 전체의 배경을 순서대로 생성합니다 (관리자 전용)"
+                  title="이미지가 없는 카드 전체의 배경을 순서대로 생성합니다 (관리자 전용 · 장당 유료)"
                 >
                   {batchBusy ? `◌ ${batchMsg}` : <><IconSpark width={13} height={13} /> 빈 카드 전체 일괄 생성</>}
                 </button>
+                {batchBusy && (
+                  <button
+                    className="minib"
+                    style={{ width: '100%', marginTop: 8 }}
+                    onClick={() => { batchCancelRef.current = true; }}
+                    title="현재 장까지만 만들고 멈춰요 — 남은 장은 호출하지 않아요"
+                  >
+                    ⏹ 일괄 생성 중단
+                  </button>
+                )}
               </>
             )}
             <input ref={fileRef} type="file" accept="image/*" hidden onChange={onUpload} aria-label="이미지 파일 선택" />

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import type { Article, Card, GenerateResult, Magazine } from '@/types/db';
 import { FLOW_HANDOFF_KEY, type FlowHandoff } from '@/lib/flowShared';
@@ -82,7 +83,8 @@ export default function StudioClient() {
   const [genFallback, setGenFallback] = useState(false);
   const [ratio, setRatio] = useState<'1:1' | '4:5'>('4:5'); // 인스타 출력 비율 (기본 4:5 — 2025 그리드 변경 후 인스타 권장)
   const [ratioExplicit, setRatioExplicit] = useState(false); // 사용자가 직접 비율을 골랐는지 — 아니면 현재 기본값(4:5) 적용
-  const [isAdmin, setIsAdmin] = useState(false);
+  // null = 확인 중(배너·관리자 버튼 모두 숨김) → status 응답 후 true/false 확정
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [restored, setRestored] = useState(false);
 
   const uiRef = useRef<HTMLDivElement>(null);
@@ -362,6 +364,11 @@ export default function StudioClient() {
 
         <div className="stagewrap" id="studio-main" role="main" ref={wrapRef}>
           <section className={`stage-pane ${stage === 1 ? 'is-active' : ''}`} tabIndex={-1} aria-label="1단계: 주제" aria-hidden={stage !== 1}>
+            {isAdmin === false && (
+              <div className="mocknote" style={{ maxWidth: 860, margin: '18px auto 0' }}>
+                <p><b>지금은 체험 모드예요.</b> 기사를 고르면 예시 문구로 카드 흐름을 볼 수 있어요. 실제 AI 문구·이미지 생성은 <Link href="/admin" style={{ textDecoration: 'underline' }}>관리자 로그인</Link> 후 가능해요.</p>
+              </div>
+            )}
             <TopicStage initialTopic={initialTopic} onPick={pickArticle} />
           </section>
           <section className={`stage-pane ${stage === 2 ? 'is-active' : ''}`} tabIndex={-1} aria-label="2단계: 편집" aria-hidden={stage !== 2}>
@@ -371,8 +378,13 @@ export default function StudioClient() {
                 <button type="button" className="btn btn--ghost btn--sm" onClick={retryGenerate}>↻ 다시 생성</button>
               </div>
             )}
+            {isAdmin === false && !genFallback && cards.length > 0 && (
+              <div className="fbnote">
+                <p><b>체험 모드 — 예시 문구예요.</b> 편집·내보내기는 그대로 쓸 수 있고, 실제 AI 문구·이미지는 <Link href="/admin" style={{ textDecoration: 'underline' }}>관리자 로그인</Link> 후 생성돼요.</p>
+              </div>
+            )}
             {cards.length > 0 && (
-              <EditorStage cards={cards} sel={sel} setSel={setSel} updateCard={updateCard} restoreCard={restoreCard} hasOriginals={originalCards.length > 0} magazine={magazine} onGo={setStage} isAdmin={isAdmin} ratio={ratio} />
+              <EditorStage cards={cards} sel={sel} setSel={setSel} updateCard={updateCard} restoreCard={restoreCard} hasOriginals={originalCards.length > 0} magazine={magazine} onGo={setStage} isAdmin={!!isAdmin} ratio={ratio} />
             )}
           </section>
           <section className={`stage-pane ${stage === 3 ? 'is-active' : ''}`} tabIndex={-1} aria-label="3단계: 내보내기" aria-hidden={stage !== 3}>

@@ -74,6 +74,7 @@ export default function FlowClient() {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [imgStyle, setImgStyle] = useState<'trend' | 'editorial'>('trend');
   const [imgProvider, setImgProvider] = useState<'gemini' | 'higgsfield'>('gemini');
+  const [demo, setDemo] = useState(false); // 서버가 mock:true로 응답한 체험 모드 덱
   const [genIdx, setGenIdx] = useState<number | null>(null); // 개별 이미지 생성 중인 카드
   const [batchMsg, setBatchMsg] = useState(''); // 전체 이미지 생성 진행률
   const [genId, setGenId] = useState(0); // 생성 회차 — 결과 입장 애니메이션 재실행 키
@@ -84,6 +85,7 @@ export default function FlowClient() {
   const renderRef = useRef<HTMLDivElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
   const benchShotRef = useRef<HTMLInputElement>(null);
+  const batchCancelRef = useRef(false); // 일괄 이미지 생성 중단 플래그 — 다음 장 호출 전에 검사
   const imgWorking = genIdx !== null || !!batchMsg;
   const reduce = useReducedMotion();
 
@@ -148,7 +150,8 @@ export default function FlowClient() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || '생성에 실패했어요.');
-      const built = data as FlowDeck;
+      const built = data as FlowDeck & { mock?: boolean };
+      setDemo(!!built.mock); // 체험 모드(예시 덱) 여부 — 결과 배너에 표시
       // 선택된 템플릿 글씨체를 새 덱 전 카드에 적용
       setDeck(magazine.fontKey ? { ...built, cards: built.cards.map((c) => ({ ...c, fontFamily: magazine.fontKey })) } : built);
       setGenId((g) => g + 1); // 결과 입장 애니메이션 재실행
@@ -245,7 +248,7 @@ export default function FlowClient() {
     }
   }
 
-  // ── 이미지 생성 (NB2, 관리자 전용 — lib/imageGen 공유) ─────────────────
+  // ── 이미지 생성 (관리자 전용, Gemini/Higgsfield — lib/imageGen 공유) ─────
   async function requestImage(c: FlowCard): Promise<string> {
     return generateCardImage({
       title: buildImagePrompt(c.title, c.body),
@@ -280,21 +283,30 @@ export default function FlowClient() {
       setError('이미 모든 카드에 이미지가 있어요. 카드별 “↺ 이미지 제거” 후 다시 시도하세요.');
       return;
     }
+    if (!window.confirm(`이미지가 없는 카드 ${targets.length}장의 배경을 일괄 생성할까요?\n(장당 유료 호출이 발생해요 · 진행 중 언제든 중단할 수 있어요)`)) return;
     setError('');
+    batchCancelRef.current = false;
     let failed = 0;
+    let done = 0;
     for (let k = 0; k < targets.length; k++) {
+      if (batchCancelRef.current) break; // 사용자가 중단 — 남은 장수는 호출하지 않음(비용 보호)
       const { c, i } = targets[k];
       setBatchMsg(`이미지 생성 중… ${k + 1}/${targets.length}`);
       setStatus(`이미지 생성 중… ${k + 1}/${targets.length}`);
       try {
         updateCard(i, imagePatch(c, await requestImage(c)));
+        done++;
       } catch {
         failed++;
       }
     }
     setBatchMsg('');
-    setStatus(failed ? `완료 — ${failed}장 실패. 다시 시도해 보세요.` : `이미지 ${targets.length}장을 모두 만들었어요.`);
-    if (failed) setError(`${failed}장 생성에 실패했어요(관리자 로그인·NB2 권한을 확인하세요).`);
+    if (batchCancelRef.current) {
+      setStatus(`중단했어요 — ${done}장 완료, 나머지는 생성하지 않았어요.`);
+    } else {
+      setStatus(failed ? `완료 — ${failed}장 실패. 다시 시도해 보세요.` : `이미지 ${targets.length}장을 모두 만들었어요.`);
+      if (failed) setError(`${failed}장 생성에 실패했어요(관리자 로그인 상태와 이미지 모델 권한을 확인하세요).`);
+    }
   }
 
   function clearImage(idx: number) {
@@ -470,6 +482,11 @@ export default function FlowClient() {
             </button>
           </div>
           {error && <p className="flow__error" role="alert">{error}</p>}
+          {isAdmin === false && (
+            <p className="flow__adminnote" style={{ marginTop: 8 }}>
+              지금은 체험 모드 — 예시 구성표로 흐름을 볼 수 있어요. 실제 AI 생성은 <Link href="/admin">관리자 로그인</Link> 후 가능해요.
+            </p>
+          )}
         </section>
 
         {/* 진행/완료 안내 (스크린리더) */}
@@ -501,8 +518,8 @@ export default function FlowClient() {
         {deck && (
           <div className="flow__result" ref={resultRef}>
             <motion.div className="flow__banner" variants={fadeV} initial="hidden" animate="show" key={`b${genId}`}>
-              📋 <b>카드 구성표</b> · 총 {n}장 (단계 {stepCount}개)
-              <span>확인·수정 후 아래 미리보기에서 이미지(NB2) 생성</span>
+              📋 <b>카드 구성표</b> · 총 {n}장 (단계 {stepCount}개){demo && <b> · 체험 모드(예시)</b>}
+              <span>확인·수정 후 아래 미리보기에서 이미지 생성</span>
             </motion.div>
 
             {/* 카드 구성표 (편집 가능) */}
@@ -572,8 +589,13 @@ export default function FlowClient() {
                       <button type="button" className={imgProvider === 'higgsfield' ? 'on' : ''} aria-pressed={imgProvider === 'higgsfield'} onClick={() => setImgProvider('higgsfield')} disabled={imgWorking} title="대체 제공자 — Higgsfield">Higgsfield</button>
                     </div>
                     <button type="button" className="flow__btn flow__btn--primary" onClick={genAll} disabled={imgWorking} aria-busy={!!batchMsg}>
-                      {batchMsg || '✦ 전체 이미지 생성 (NB2)'}
+                      {batchMsg || '✦ 전체 이미지 생성'}
                     </button>
+                    {!!batchMsg && (
+                      <button type="button" className="flow__btn flow__btn--ghost" onClick={() => { batchCancelRef.current = true; }} title="현재 장까지만 만들고 멈춰요 — 남은 장은 호출하지 않아요">
+                        ⏹ 중단
+                      </button>
+                    )}
                     {magazine.benchName ? (
                       <span className="flow__benchchip" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
                         ✦ {magazine.benchName}

@@ -95,9 +95,11 @@ export default function AdminPage() {
             관리자 로그인
           </CardTitle>
           <CardDescription className="leading-relaxed">
-            로그인하면 스튜디오 편집 화면에서{' '}
-            <b className="font-semibold text-foreground">AI 이미지 생성</b>이
-            열립니다. 일반 사용에는 필요하지 않아요.
+            로그인하면{' '}
+            <b className="font-semibold text-foreground">
+              실제 AI 카드 문구·이미지 생성
+            </b>
+            이 열립니다. 로그인 없이는 예시 문구로 동작하는 체험 모드예요.
           </CardDescription>
         </CardHeader>
 

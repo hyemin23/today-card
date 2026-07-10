@@ -145,7 +145,8 @@ function normalize(parsed: any, article: Article, autoHashtags: boolean): Genera
   };
 }
 
-function mockGenerate(article: Article, autoHashtags = false): GenerateResult {
+/** 결정적 목업 5컷 — LLM 호출 없음(비용 0). 비관리자 체험 모드와 실패 폴백이 공유한다. */
+export function mockGenerate(article: Article, autoHashtags = false): GenerateResult {
   const sentences = article.summary.split(/(?<=[.!?다])\s+/).filter(Boolean);
   const s0 = sentences[0] || article.summary;
   const s1 = sentences[1] || article.summary;

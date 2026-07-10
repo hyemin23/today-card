@@ -7,7 +7,7 @@
 
 만든 카드는 템플릿(글씨체·색·표지 스타일)을 입혀 실시간으로 다듬고, PNG/ZIP·캡션으로 내보냅니다.
 
-`Next.js 14 App Router + TypeScript`로 구현했고, 디자인 규칙의 단일 원본은 `design-system/` 폴더입니다.
+`Next.js 16 App Router + TypeScript`로 구현했고, 디자인 규칙의 단일 원본은 `design-system/` 폴더입니다.
 
 ---
 
@@ -21,9 +21,10 @@ npm run dev                  # http://localhost:3000
 
 > **뉴스 검색은 키 없이도 실데이터로 동작합니다.** `/api/search`가 Daum 뉴스 검색
 > 페이지를 직접 가져와 파싱하므로 별도 API 키가 필요 없어요(막히면 Google News RSS →
-> 목업으로 폴백). **카드 문구 생성**(`/api/generate`, `/api/flow`)은 `LLM_API_KEY`가
-> 없으면 현실적인 **목업 카드**로 폴백하므로, 키가 없어도 전체 플로우(검색 → 생성 →
-> 편집 → 내보내기)를 그대로 체험할 수 있습니다. 키를 채우면 실제 Gemini 생성으로 바뀝니다.
+> 목업으로 폴백). **카드 문구 생성**(`/api/generate`, `/api/flow`)은 유료 LLM 호출이라
+> **관리자 로그인 시에만 실제 생성**되고, 비로그인/키 없음일 때는 **목업 카드(체험 모드,
+> 비용 0)**로 폴백합니다 — 전체 플로우(검색 → 생성 → 편집 → 내보내기)는 누구나 체험할
+> 수 있습니다. **이미지 생성·스타일 분석**은 관리자 전용입니다.
 
 ---
 
@@ -53,7 +54,7 @@ app/
     search/route.ts         # GET 뉴스 검색 (Daum → Google RSS → 목업)
     generate/route.ts       # POST 기사 → 5컷 카드 JSON (LLM + 레이트리밋, 목업 폴백)
     flow/route.ts           # POST 브리프 → 가변 길이 덱 구성표 (LLM, 목업 폴백)
-    image/route.ts          # POST 카드 배경/표지 이미지 생성 (Gemini, 관리자 전용)
+    image/route.ts          # POST 카드 배경/표지 이미지 생성 (Gemini/Higgsfield, 관리자 전용)
     style-analyze/route.ts  # POST 레퍼런스 스타일 분석 (Gemini 비전, 관리자 전용)
     admin/                  # login·logout·status (관리자 세션 쿠키)
 components/
@@ -121,14 +122,17 @@ supabase/migrations/0001_init.sql   # 스키마 + RLS
 
 ## 이미지 생성
 
-카드 배경/표지 이미지는 **Gemini 네이티브 이미지 모델만** 사용합니다(정책: `design-system/design.md` §8).
+카드 배경/표지 이미지는 **Gemini 네이티브 이미지 모델이 기본**이고, 관리자 UI에서
+**Higgsfield**(Cloud API)를 장별로 옵트인할 수 있습니다(정책: `design-system/design.md` §8·§8.6).
 
 | | 모델 ID | 비용(대략) | 비고 |
 |---|---|---|---|
 | **NB1**(기본) | `gemini-2.5-flash-image` | ~$0.039/장 | 미설정 시 코드 기본값 |
 | **NB2**(고품질) | `gemini-3-pro-image-preview` | ~$0.134/장 | `IMAGE_MODEL`로 전환 |
+| **Higgsfield**(옵트인) | Soul 등 | 크레딧 과금 | `HF_API_KEY`·`HF_API_SECRET` 설정 + UI 토글 |
 
-- 구현은 `lib/image.ts`(컨셉 텍스트 → 이미지의 2단계 호출), 호출부 공유 로직은 `lib/imageGen.ts`.
+- 구현은 `lib/image.ts`(컨셉 텍스트 → 이미지의 2단계 호출) + `lib/higgsfield.ts`(대체 제공자),
+  호출부 공유 로직은 `lib/imageGen.ts`.
 - 유료 호출이라 **관리자 전용**입니다 — `/api/image`가 관리자 세션 쿠키를 재검증하므로 일반 사용자나
   엔드포인트 직접 호출로는 트리거되지 않아요.
 

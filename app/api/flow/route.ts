@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { composeDeck } from '@/lib/flow';
+import { composeDeck, mockDeck } from '@/lib/flow';
 import { verifySession, ADMIN_COOKIE } from '@/lib/auth';
 import type { FlowInput } from '@/types/db';
 
@@ -8,14 +8,10 @@ export const maxDuration = 30; // LLM
 
 // POST /api/flow  body: { topic, target, tone, goal }
 // 가변 길이 카드 구성표(텍스트)를 만든다. 이미지는 생성하지 않는다.
-// Admin-only (paid LLM usage): 관리자 세션 쿠키로 게이트 — /api/image·generate와 동일.
+// 유료 LLM 생성은 관리자 세션에서만 — 비관리자는 결정적 목업 덱(비용 0)으로
+// 체험하고, 응답의 mock:true 로 클라이언트가 "체험 모드"를 안내한다.
 export async function POST(req: NextRequest) {
-  if (!process.env.ADMIN_KEY) {
-    return NextResponse.json({ error: '구성표 생성이 비활성화되어 있어요(관리자 미설정).' }, { status: 503 });
-  }
-  if (!verifySession(req.cookies.get(ADMIN_COOKIE)?.value)) {
-    return NextResponse.json({ error: '관리자만 구성표를 만들 수 있어요. /admin에서 로그인하세요.' }, { status: 403 });
-  }
+  const isAdmin = !!process.env.ADMIN_KEY && verifySession(req.cookies.get(ADMIN_COOKIE)?.value);
 
   let input: Partial<FlowInput> & { styleTone?: string };
   try {
@@ -36,6 +32,11 @@ export async function POST(req: NextRequest) {
   };
   // 벤치마킹 스타일(선택) — 분석된 말투 지침을 텍스트 생성에 덧입힌다.
   const styleTone = str(input.styleTone).slice(0, 800).trim();
+
+  // 체험 모드: LLM을 태우지 않는 목업 덱으로 즉시 응답
+  if (!isAdmin) {
+    return NextResponse.json({ ...mockDeck(safe), mock: true });
+  }
 
   try {
     const deck = await composeDeck(safe, styleTone ? { styleTone } : undefined);

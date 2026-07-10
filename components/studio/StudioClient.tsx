@@ -81,6 +81,7 @@ export default function StudioClient() {
   const [hashtags, setHashtags] = useState<string[]>([]);
   const [source, setSource] = useState('뉴스');
   const [genFallback, setGenFallback] = useState(false);
+  const [genError, setGenError] = useState(''); // 서버 에러 메시지(레이트리밋 등) — 1단계 인라인 배너로 표시
   const [ratio, setRatio] = useState<'1:1' | '4:5'>('4:5'); // 인스타 출력 비율 (기본 4:5 — 2025 그리드 변경 후 인스타 권장)
   const [ratioExplicit, setRatioExplicit] = useState(false); // 사용자가 직접 비율을 골랐는지 — 아니면 현재 기본값(4:5) 적용
   // null = 확인 중(배너·관리자 버튼 모두 숨김) → status 응답 후 true/false 확정
@@ -255,6 +256,7 @@ export default function StudioClient() {
     ) return;
 
     setGenerating(true);
+    setGenError('');
     setSource(article.source);
     lastArticle.current = article;
     const started = Date.now();
@@ -280,10 +282,11 @@ export default function StudioClient() {
       failed = true; // offline / network error → editable fallback below, with a banner
     }
 
-    // rate limit etc. — stay on stage 1 and surface the server message
+    // rate limit etc. — stay on stage 1 and surface the server message inline
+    // (blocking alert() was a dead end: no retry affordance, jarring UX)
     if (error) {
       setGenerating(false);
-      alert(error);
+      setGenError(error);
       return;
     }
     if (!result?.cards?.length) {
@@ -364,6 +367,13 @@ export default function StudioClient() {
 
         <div className="stagewrap" id="studio-main" role="main" ref={wrapRef}>
           <section className={`stage-pane ${stage === 1 ? 'is-active' : ''}`} tabIndex={-1} aria-label="1단계: 주제" aria-hidden={stage !== 1}>
+            {genError && (
+              <div className="fbnote" role="alert">
+                <p><b>카드 생성에 실패했어요.</b> {genError}</p>
+                <button type="button" className="btn btn--ghost btn--sm" onClick={retryGenerate}>↻ 다시 시도</button>
+                <button type="button" className="btn btn--ghost btn--sm" onClick={() => setGenError('')} aria-label="알림 닫기">✕</button>
+              </div>
+            )}
             {isAdmin === false && (
               <div className="mocknote" style={{ maxWidth: 860, margin: '18px auto 0' }}>
                 <p><b>지금은 체험 모드예요.</b> 기사를 고르면 예시 문구로 카드 흐름을 볼 수 있어요. 실제 AI 문구·이미지 생성은 <Link href="/admin" style={{ textDecoration: 'underline' }}>관리자 로그인</Link> 후 가능해요.</p>

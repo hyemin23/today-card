@@ -12,6 +12,7 @@ import EditorStage from './EditorStage';
 import ExportStage from './ExportStage';
 import MagazineDrawer from './MagazineDrawer';
 import GenOverlay from './GenOverlay';
+import Toasts from '@/components/ui/toast';
 
 /** Client-side fallback so the flow never lands on an empty editor (network failure etc.). */
 function fallbackCards(article: Article): GenerateResult {
@@ -407,6 +408,7 @@ export default function StudioClient() {
 
       <GenOverlay show={generating} onCancel={cancelGenerate} />
       <MagazineDrawer open={drawerOpen} current={magazine} onClose={() => setDrawerOpen(false)} onSave={saveMagazine} />
+      <Toasts />
     </div>
   );
 }

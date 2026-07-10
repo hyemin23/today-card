@@ -7,6 +7,7 @@ import { fileToDataUrl } from './imageFile';
 import { fetchStyleProfile } from '@/lib/styleProfile';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { toast } from '@/components/ui/toast';
 
 const COLOR_NAME: Record<string, string> = {
   '#111110': '잉크 블랙',
@@ -174,15 +175,15 @@ export default function MagazineDrawer({
     const f = e.target.files?.[0];
     e.target.value = '';
     if (!f || logoBusy) return;
-    if (!f.type.startsWith('image/')) { alert('이미지 파일만 올릴 수 있어요. (PNG 권장)'); return; }
-    if (f.size > 4 * 1024 * 1024) { alert('로고가 너무 커요. 4MB 이하로 올려주세요.'); return; }
+    if (!f.type.startsWith('image/')) { toast('이미지 파일만 올릴 수 있어요. (PNG 권장)', 'error'); return; }
+    if (f.size > 4 * 1024 * 1024) { toast('로고가 너무 커요. 4MB 이하로 올려주세요.', 'error'); return; }
     setLogoBusy(true);
     try {
       // PNG keeps the recommended transparent background intact
       const dataUrl = await fileToDataUrl(f, { maxEdge: 360, mime: 'image/png' });
       set({ logoUrl: dataUrl });
     } catch {
-      alert('이 이미지를 불러오지 못했어요. PNG로 변환해 다시 올려주세요.');
+      toast('이 이미지를 불러오지 못했어요. PNG로 변환해 다시 올려주세요.', 'error');
     } finally {
       setLogoBusy(false);
     }

@@ -7,6 +7,7 @@ import { TEXT_COLORS, FONTS } from './data';
 import { fileToDataUrl } from './imageFile';
 import { buildImagePrompt, generateCardImage, imagePatch } from '@/lib/imageGen';
 import { IconSpark } from '@/components/icons';
+import { toast } from '@/components/ui/toast';
 
 const MAX_UPLOAD_MB = 12;
 
@@ -68,11 +69,11 @@ export default function EditorStage({
     e.target.value = '';
     if (!f || uploading) return;
     if (!f.type.startsWith('image/')) {
-      alert('이미지 파일만 올릴 수 있어요. (JPG · PNG 등)');
+      toast('이미지 파일만 올릴 수 있어요. (JPG · PNG 등)', 'error');
       return;
     }
     if (f.size > MAX_UPLOAD_MB * 1024 * 1024) {
-      alert(`이미지가 너무 커요. ${MAX_UPLOAD_MB}MB 이하로 올려주세요.`);
+      toast(`이미지가 너무 커요. ${MAX_UPLOAD_MB}MB 이하로 올려주세요.`, 'error');
       return;
     }
     setUploading(true);
@@ -81,7 +82,7 @@ export default function EditorStage({
       const dataUrl = await fileToDataUrl(f);
       updateCard(sel, { imageUrl: dataUrl });
     } catch {
-      alert('이 이미지를 불러오지 못했어요. JPG나 PNG로 변환해 다시 올려주세요.');
+      toast('이 이미지를 불러오지 못했어요. JPG나 PNG로 변환해 다시 올려주세요.', 'error');
     } finally {
       setUploading(false);
     }
@@ -164,7 +165,7 @@ export default function EditorStage({
     try {
       updateCard(sel, imagePatch(card, await requestImage(card)));
     } catch (e: any) {
-      alert('AI 이미지 생성 실패: ' + (e.message || ''));
+      toast('AI 이미지 생성 실패: ' + (e.message || ''), 'error');
     } finally {
       setImgBusy(false);
     }
@@ -175,7 +176,7 @@ export default function EditorStage({
     if (!isAdmin || imgBusy || batchBusy) return;
     const targets = cards.map((c, i) => ({ c, i })).filter(({ c }) => !c.imageUrl);
     if (targets.length === 0) {
-      alert('모든 카드에 이미 이미지가 있어요. 비우고 싶은 카드에서 ↺로 제거한 뒤 다시 시도하세요.');
+      toast('모든 카드에 이미 이미지가 있어요. 비우고 싶은 카드에서 ↺로 제거한 뒤 다시 시도하세요.');
       return;
     }
     if (!window.confirm(`이미지가 없는 카드 ${targets.length}장의 배경을 AI로 일괄 생성할까요?\n(장당 유료 호출이 발생해요 · 진행 중 언제든 중단할 수 있어요)`)) return;
@@ -196,8 +197,9 @@ export default function EditorStage({
     }
     setBatchBusy(false);
     setBatchMsg('');
-    if (batchCancelRef.current) alert(`중단했어요 — ${done}장 완료, 나머지는 생성하지 않았어요.`);
-    else if (failed > 0) alert(`${failed}장은 생성에 실패했어요. 해당 카드에서 개별 생성으로 다시 시도해 주세요.`);
+    if (batchCancelRef.current) toast(`중단했어요 — ${done}장 완료, 나머지는 생성하지 않았어요.`);
+    else if (failed > 0) toast(`${failed}장은 생성에 실패했어요. 해당 카드에서 개별 생성으로 다시 시도해 주세요.`, 'error');
+    else toast(`이미지 ${targets.length}장을 모두 만들었어요.`); // 성공도 조용히 알림 — 완료 피드백 부재 해소
   }
 
   return (

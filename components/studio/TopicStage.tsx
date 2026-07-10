@@ -19,6 +19,7 @@ export default function TopicStage({
   const [count, setCount] = useState(0);
   const [results, setResults] = useState<Article[] | null>(null);
   const [isMock, setIsMock] = useState(false);
+  const [failed, setFailed] = useState(false); // 요청 실패 — '기사 없음'과 구분해 재시도 안내
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
   const reveal = useRef<ReturnType<typeof setTimeout> | null>(null);
   const resultsHeadRef = useRef<HTMLHeadingElement>(null);
@@ -61,14 +62,16 @@ export default function TopicStage({
     setCount(0);
 
     setIsMock(false);
+    setFailed(false);
     const q = topic || tags[0] || '';
     const cat = tags.find((t) => CATEGORIES.includes(t));
-    let fetched: { items: Article[]; mock: boolean } | null = null;
+    let fetched: { items: Article[]; mock: boolean; failed?: boolean } | null = null;
     const qs = `q=${encodeURIComponent(q)}${cat ? `&category=${encodeURIComponent(cat)}` : ''}`;
-    const fetchPromise = fetch(`/api/search?${qs}`)
+    // 요청 실패는 '기사 없음'과 구분해 재시도를 안내한다 (+15초 타임아웃으로 매달림 방지)
+    const fetchPromise = fetch(`/api/search?${qs}`, { signal: AbortSignal.timeout(15000) })
       .then((r) => r.json())
-      .then((d) => ({ items: (d.items as Article[]) || [], mock: !!d.mock }))
-      .catch(() => ({ items: [] as Article[], mock: false }))
+      .then((d) => ({ items: (d.items as Article[]) || [], mock: !!d.mock, failed: false }))
+      .catch(() => ({ items: [] as Article[], mock: false, failed: true }))
       .then((res) => { fetched = res; return res; });
 
     let p = 0;
@@ -81,9 +84,10 @@ export default function TopicStage({
       if (p >= 100) {
         clearInterval(iv);
         timer.current = null;
-        fetchPromise.then(({ items, mock }) => {
+        fetchPromise.then(({ items, mock, failed: didFail }) => {
           setCount(items.length);
           setIsMock(mock);
+          setFailed(!!didFail);
           reveal.current = setTimeout(() => {
             setResults(items);
             setCrawling(false);
@@ -188,7 +192,12 @@ export default function TopicStage({
             <h2 id="results-head" ref={resultsHeadRef} tabIndex={-1}>모아온 기사 <b>{results.length}</b>건 · <span style={{ color: 'var(--ink-3)' }}>{scope}</span></h2>
             <div className="sort" aria-hidden="true"><span className="on">최신순</span></div>
           </div>
-          {results.length === 0 ? (
+          {failed ? (
+            <div className="mocknote" role="alert">
+              <p><b>뉴스를 불러오지 못했어요.</b> 네트워크 상태를 확인하고 다시 시도해 주세요.</p>
+              <button type="button" className="btn btn--ghost btn--sm" onClick={() => runCrawl()}>↻ 다시 시도</button>
+            </div>
+          ) : results.length === 0 ? (
             <p style={{ padding: '28px 4px', color: 'var(--ink-2)', fontSize: 14 }}>
               관련 기사를 찾지 못했어요. 다른 주제나 태그로 다시 시도해 보세요.
             </p>

@@ -12,7 +12,7 @@ import EditorStage from './EditorStage';
 import ExportStage from './ExportStage';
 import MagazineDrawer from './MagazineDrawer';
 import GenOverlay from './GenOverlay';
-import Toasts from '@/components/ui/toast';
+import Toasts, { toast } from '@/components/ui/toast';
 
 /** Client-side fallback so the flow never lands on an empty editor (network failure etc.). */
 function fallbackCards(article: Article): GenerateResult {
@@ -58,11 +58,13 @@ function loadJSON<T>(storage: Storage, key: string): T | null {
     return null;
   }
 }
-function saveJSON(storage: Storage, key: string, value: unknown) {
+function saveJSON(storage: Storage, key: string, value: unknown): boolean {
   try {
     storage.setItem(key, JSON.stringify(value));
+    return true;
   } catch {
-    /* quota / private mode — editing still works, it just won't survive reload */
+    /* quota / private mode — 호출부가 축소 저장으로 폴백할 수 있게 실패를 알린다 */
+    return false;
   }
 }
 
@@ -95,6 +97,7 @@ export default function StudioClient() {
   const abortRef = useRef<AbortController | null>(null);
   const lastArticle = useRef<Article | null>(null);
   const mounted = useRef(false);
+  const quotaWarned = useRef(false); // 세션 저장 쿼터 경고는 1회만
 
   // studio.css ships body{overflow:hidden} — scope it to this route so it
   // doesn't leak to the landing page after a client-side navigation
@@ -145,6 +148,8 @@ export default function StudioClient() {
       // 사용자가 직접 고른 비율만 복원 — 안 골랐으면(옛 세션의 기본 1:1 포함) 새 기본값 4:5 유지
       if (s.ratioExplicit && (s.ratio === '1:1' || s.ratio === '4:5')) { setRatio(s.ratio); setRatioExplicit(true); }
       lastArticle.current = s.article;
+      // 예전 작업이 무통지로 열리면 사용자가 상황을 모름 — 한 줄 안내(role=status로 보조기기도 낭독)
+      toast('이전 작업을 복원했어요 — 이어서 편집하거나 1단계에서 새 기사를 고를 수 있어요.');
     }
     setRestored(true);
   }, []);
@@ -153,10 +158,27 @@ export default function StudioClient() {
   // so an empty initial state can't clobber a stored session)
   useEffect(() => {
     if (!restored || cards.length === 0) return;
-    saveJSON(sessionStorage, SESSION_KEY, {
-      cards, originalCards, caption, hashtags, source, stage, maxReached, sel, genFallback, ratio, ratioExplicit,
+    const base = {
+      caption, hashtags, source, stage, maxReached, sel, genFallback, ratio, ratioExplicit,
       article: lastArticle.current,
+      // restoreCard는 텍스트 필드만 쓰므로 원본의 이미지 보관은 쿼터 낭비 — 빼고 저장
+      originalCards: originalCards.map((c) => ({ ...c, imageUrl: null })),
+    };
+    if (saveJSON(sessionStorage, SESSION_KEY, { ...base, cards } satisfies PersistedSession)) return;
+    // 쿼터 초과(이미지 data URL이 큼) — 이미지를 뺀 축소본으로 재시도해 문구 편집만은 살린다
+    const ok = saveJSON(sessionStorage, SESSION_KEY, {
+      ...base,
+      cards: cards.map((c) => ({ ...c, imageUrl: null })),
     } satisfies PersistedSession);
+    if (!quotaWarned.current) {
+      quotaWarned.current = true;
+      toast(
+        ok
+          ? '저장 공간이 가득 차 이미지는 새로고침 시 복구되지 않아요 — 문구는 계속 저장돼요.'
+          : '브라우저 저장이 막혀 있어 새로고침하면 작업이 사라질 수 있어요.',
+        'error'
+      );
+    }
   }, [restored, cards, originalCards, caption, hashtags, source, stage, maxReached, sel, genFallback, ratio, ratioExplicit]);
 
   useEffect(() => {
@@ -239,13 +261,23 @@ export default function StudioClient() {
   function restoreCard(idx: number) {
     const orig = originalCards[idx];
     if (!orig) return;
+    // 수기 편집이 있을 때만 확인 — 이미 원본과 같으면 조용히 통과
+    const cur = cards[idx];
+    const edited = cur && (cur.title !== orig.title || (cur.body || '') !== (orig.body || ''));
+    if (edited && !window.confirm('지금 편집한 문구를 버리고 AI가 써준 원래 문구로 되돌릴까요?')) return;
     updateCard(idx, { title: orig.title, body: orig.body, hashtags: orig.hashtags, category: orig.category });
+  }
+
+  /** 오버레이 취소·에러 뒤 키보드 포커스가 body로 떨어지지 않게 활성 pane으로 복귀 */
+  function focusActivePane() {
+    wrapRef.current?.querySelector<HTMLElement>('.stage-pane.is-active')?.focus({ preventScroll: true });
   }
 
   function cancelGenerate() {
     abortRef.current?.abort();
     if (genTimeout.current) clearTimeout(genTimeout.current);
     setGenerating(false);
+    focusActivePane();
   }
 
   async function pickArticle(article: Article, opts?: { force?: boolean }) {
@@ -277,7 +309,15 @@ export default function StudioClient() {
       if (!res.ok) {
         error = data?.error || '';
         if (!error) failed = true; // 504/HTML error page — no JSON message to show
-      } else result = data;
+      } else {
+        result = data;
+        // 관리자로 알고 있는데 목업이 왔다 = 세션 만료·타 탭 로그아웃 — 예시 문구를
+        // 실제 AI 결과로 오인하지 않게 상태를 재동기화하고 알린다(체험 배너도 자동 노출)
+        if (data?.mock && isAdmin === true) {
+          setIsAdmin(false);
+          toast('관리자 세션이 만료되어 체험 모드(예시 문구)로 생성됐어요 — /admin에서 다시 로그인하세요.', 'error');
+        }
+      }
     } catch (e) {
       if ((e as Error)?.name === 'AbortError') { setGenerating(false); return; }
       failed = true; // offline / network error → editable fallback below, with a banner
@@ -288,6 +328,7 @@ export default function StudioClient() {
     if (error) {
       setGenerating(false);
       setGenError(error);
+      focusActivePane(); // 배너는 role=alert로 낭독되고, 포커스는 1단계 pane으로 복귀
       return;
     }
     if (!result?.cards?.length) {
@@ -347,7 +388,7 @@ export default function StudioClient() {
         const patch: Partial<Card> = {};
         if (next.ctaHeadline !== magazine.ctaHeadline) patch.title = next.ctaHeadline;
         if (next.ctaCopy !== magazine.ctaCopy) patch.body = next.ctaCopy;
-        if (next.hashtags.join(' ') !== magazine.hashtags.join(' ')) patch.hashtags = next.hashtags;
+        if (next.hashtags.join(' ') !== magazine.hashtags.join(' ')) patch.hashtags = next.hashtags;
         return Object.keys(patch).length ? { ...base, ...patch } : base;
       })
     );
@@ -364,6 +405,7 @@ export default function StudioClient() {
           onGo={setStage}
           magazine={magazine}
           onOpenDrawer={() => setDrawerOpen(true)}
+          isAdmin={!!isAdmin}
         />
 
         <div className="stagewrap" id="studio-main" role="main" ref={wrapRef}>

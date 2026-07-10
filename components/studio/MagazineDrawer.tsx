@@ -347,7 +347,7 @@ export default function MagazineDrawer({
               swatches={draft.bgSwatches ?? BG_SWATCHES} value={draft.bgColor}
               onValue={(c) => set({ bgColor: c })} onSwatches={(s) => set({ bgSwatches: s })}
               lightColors={LIGHT_BG}
-              hint="표지·CTA 카드의 배경에 적용돼요. 무지개 원으로 색을 고르고 ＋로 팔레트에 추가, 스와치에 마우스를 올려 ✕로 제거해요."
+              hint="표지·CTA 카드의 배경에 적용돼요. 무지개 원으로 색을 고르고 ＋로 팔레트에 추가, 스와치의 ✕로 제거해요."
             />
             <EditablePalette
               label="포인트색" idBase={`${id}-ac`}

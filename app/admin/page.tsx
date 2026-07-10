@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 import { Button } from '@/components/ui/button';
@@ -28,7 +28,19 @@ import {
 import ThemeToggle from '@/components/ThemeToggle';
 
 export default function AdminPage() {
+  // useSearchParams는 Suspense 경계가 필요 (App Router 정적 렌더링)
+  return (
+    <Suspense fallback={null}>
+      <AdminCard />
+    </Suspense>
+  );
+}
+
+function AdminCard() {
   const router = useRouter();
+  // 로그인하러 온 화면으로 되돌려보낸다 — 내부 경로 화이트리스트(open redirect 차단)
+  const nextParam = useSearchParams().get('next');
+  const nextPath = nextParam === '/flow' ? '/flow' : '/studio';
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -57,7 +69,7 @@ export default function AdminPage() {
         setError(data.error || '로그인에 실패했어요.');
         return;
       }
-      router.push('/studio');
+      router.push(nextPath);
     } catch {
       setError('네트워크 오류로 로그인하지 못했어요.');
     } finally {
@@ -104,7 +116,12 @@ export default function AdminPage() {
         </CardHeader>
 
         <CardContent>
-          {isAdmin ? (
+          {isAdmin === null ? (
+            /* 세션 확인 전에 폼이 먼저 뜨면 로그인된 관리자에게 비밀번호 폼이 깜빡임 */
+            <p className="py-6 text-center text-sm text-muted-foreground" role="status">
+              세션 확인 중…
+            </p>
+          ) : isAdmin ? (
             <div className="space-y-4">
               <div className="flex items-center gap-2 rounded-lg border bg-secondary px-3.5 py-3 text-sm text-muted-foreground">
                 <span
@@ -115,8 +132,9 @@ export default function AdminPage() {
               </div>
               <div className="space-y-2.5">
                 <Button asChild className="w-full">
-                  <Link href="/studio">
-                    스튜디오로 가기 <span aria-hidden="true">→</span>
+                  <Link href={nextPath}>
+                    {nextPath === '/flow' ? '카드 기획으로 가기' : '스튜디오로 가기'}{' '}
+                    <span aria-hidden="true">→</span>
                   </Link>
                 </Button>
                 <Dialog>

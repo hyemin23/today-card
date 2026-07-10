@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { Card, Magazine } from '@/types/db';
 import CardFace from './CardFace';
 import { renderCardNode, downloadPngZip, saveUrl } from '@/lib/cardExport';
+import { copyText } from '@/lib/clipboard';
 import './export-fixes.css';
 
 const RENDER_SIZE = 540; // rendered at 540×540, exported at pixelRatio 2 → 1080×1080
@@ -44,6 +45,8 @@ export default function ExportStage({
   const [canShare, setCanShare] = useState(false);
   const renderRef = useRef<HTMLDivElement>(null);
   const swipeX = useRef<number | null>(null);
+  // 공유용 렌더 캐시 — cards/ratio 참조가 그대로면 재탭 시 렌더 없이 즉시 share()
+  const shareFilesRef = useRef<{ cards: Card[]; ratio: '1:1' | '4:5'; files: File[] } | null>(null);
   const n = cards.length;
   // 4:5 세로(1080×1350)는 RENDER_SIZE를 세로로 늘려 렌더 → pixelRatio 2로 1080폭 유지
   const renderH = ratio === '4:5' ? Math.round((RENDER_SIZE * 5) / 4) : RENDER_SIZE;
@@ -96,34 +99,11 @@ export default function ExportStage({
     swipeX.current = null;
   }
 
-  function legacyCopy(txt: string): boolean {
-    try {
-      const ta = document.createElement('textarea');
-      ta.value = txt;
-      ta.setAttribute('readonly', '');
-      ta.style.position = 'fixed';
-      ta.style.left = '-9999px';
-      document.body.appendChild(ta);
-      ta.select();
-      const ok = document.execCommand('copy');
-      document.body.removeChild(ta);
-      return ok;
-    } catch {
-      return false;
-    }
-  }
-
   async function copyCaption() {
     // 해시태그가 없으면(기본값) 빈 줄을 만들지 않는다
     const tags = hashtags.filter(Boolean).join(' ');
     const txt = [caption, tags, `출처 · ${source}`].filter(Boolean).join('\n\n');
-    let ok = false;
-    try {
-      await navigator.clipboard.writeText(txt);
-      ok = true;
-    } catch {
-      ok = legacyCopy(txt);
-    }
+    const ok = await copyText(txt);
     if (ok) {
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
@@ -138,6 +118,9 @@ export default function ExportStage({
     return renderCardNode(node, { width: RENDER_SIZE, height: renderH });
   }
 
+  /** 10장째부터 '-010'이 되지 않게 2자리 패딩으로 통일 */
+  const cardName = (i: number) => `${fileBase(magazine)}-${String(i + 1).padStart(2, '0')}.png`;
+
   // aria-disabled + a guard (not the `disabled` attribute) so the clicked
   // button keeps keyboard focus while the download runs
   async function downloadOne(i: number) {
@@ -145,7 +128,7 @@ export default function ExportStage({
     setBusy(`png-${i}`);
     report(`${i + 1}번 카드를 만드는 중…`);
     try {
-      saveUrl(await renderCard(i), `${fileBase(magazine)}-0${i + 1}.png`);
+      saveUrl(await renderCard(i), cardName(i));
       report(`${i + 1}번 카드 PNG를 저장했어요`);
     } catch {
       report('카드 렌더에 실패했어요. 잠시 후 다시 시도해 주세요.', true);
@@ -159,14 +142,13 @@ export default function ExportStage({
     setBusy('zip');
     report('전체 ZIP을 만드는 중…');
     try {
-      const base = fileBase(magazine);
       const files: { name: string; dataUrl: string }[] = [];
       for (let i = 0; i < n; i++) {
         report(`${i + 1}/${n}장 렌더 중…`);
-        files.push({ name: `${base}-0${i + 1}.png`, dataUrl: await renderCard(i) });
+        files.push({ name: cardName(i), dataUrl: await renderCard(i) });
       }
       report('ZIP 압축 중…');
-      await downloadPngZip(files, `${base}.zip`);
+      await downloadPngZip(files, `${fileBase(magazine)}.zip`);
       report(`카드 ${n}장을 ZIP으로 저장했어요`);
     } catch {
       report('ZIP 생성에 실패했어요. 잠시 후 다시 시도해 주세요.', true);
@@ -178,14 +160,23 @@ export default function ExportStage({
   async function shareCards() {
     if (busy) return;
     setBusy('share');
-    report('공유할 이미지를 만드는 중…');
     try {
-      const files: File[] = [];
-      for (let i = 0; i < n; i++) {
-        report(`${i + 1}/${n}장 렌더 중…`);
-        const dataUrl = await renderCard(i);
-        const blob = await (await fetch(dataUrl)).blob();
-        files.push(new File([blob], `${fileBase(magazine)}-0${i + 1}.png`, { type: 'image/png' }));
+      // navigator.share는 탭 제스처의 transient activation(~5초) 안에서만 열림 —
+      // 렌더가 오래 걸려 만료되면 실패하므로, 렌더 결과를 캐시해 재탭 시 즉시 share()
+      let files: File[];
+      const cached = shareFilesRef.current;
+      if (cached && cached.cards === cards && cached.ratio === ratio) {
+        files = cached.files;
+      } else {
+        report('공유할 이미지를 만드는 중…');
+        files = [];
+        for (let i = 0; i < n; i++) {
+          report(`${i + 1}/${n}장 렌더 중…`);
+          const dataUrl = await renderCard(i);
+          const blob = await (await fetch(dataUrl)).blob();
+          files.push(new File([blob], cardName(i), { type: 'image/png' }));
+        }
+        shareFilesRef.current = { cards, ratio, files }; // 카드/비율이 바뀌면 참조가 달라져 자동 무효화
       }
       if (typeof navigator.canShare === 'function' && !navigator.canShare({ files })) {
         throw new Error('files not shareable');
@@ -193,7 +184,9 @@ export default function ExportStage({
       await navigator.share({ files, title: `${magazine.name} 카드뉴스` });
       report(`카드 ${n}장을 공유했어요`);
     } catch (e) {
-      if ((e as DOMException)?.name === 'AbortError') report(''); // user closed the share sheet
+      const name = (e as DOMException)?.name;
+      if (name === 'AbortError') report(''); // user closed the share sheet
+      else if (name === 'NotAllowedError') report('이미지 준비에 시간이 걸려 공유 창을 못 열었어요 — 한 번 더 누르면 바로 열려요.', true);
       else report('공유에 실패했어요. 아래 ZIP 다운로드를 이용해 주세요.', true);
     } finally {
       setBusy(null);
@@ -245,8 +238,9 @@ export default function ExportStage({
       <div className="export__r">
         <div className="ratiosel" role="group" aria-label="이미지 비율">
           <span className="ratiosel__lb">비율</span>
-          <button type="button" className={ratio === '1:1' ? 'on' : ''} aria-pressed={ratio === '1:1'} onClick={() => setRatio('1:1')}>정사각 1:1</button>
-          <button type="button" className={ratio === '4:5' ? 'on' : ''} aria-pressed={ratio === '4:5'} onClick={() => setRatio('4:5')}>세로 4:5</button>
+          {/* 렌더 중 비율이 바뀌면 캡처 크기와 DOM이 어긋나 PNG가 잘림 — busy 동안 잠금 */}
+          <button type="button" className={ratio === '1:1' ? 'on' : ''} aria-pressed={ratio === '1:1'} aria-disabled={busy !== null} onClick={() => { if (busy) return; setRatio('1:1'); }}>정사각 1:1</button>
+          <button type="button" className={ratio === '4:5' ? 'on' : ''} aria-pressed={ratio === '4:5'} aria-disabled={busy !== null} onClick={() => { if (busy) return; setRatio('4:5'); }}>세로 4:5</button>
         </div>
         <div className="zip">
           <h3>전체 한 번에 받기</h3>
@@ -293,8 +287,8 @@ export default function ExportStage({
           {status}
         </p>
         <div className="dlrow">
-          <button className="btn btn--ghost btn--sm" style={{ flex: 1 }} onClick={() => onGo(2)}>← 편집으로</button>
-          <button className="btn btn--ghost btn--sm" style={{ flex: 1 }} onClick={() => onGo(1)}>새 카드뉴스</button>
+          <button className="btn btn--ghost btn--sm" style={{ flex: 1 }} aria-disabled={busy !== null} onClick={() => { if (busy) return; onGo(2); }}>← 편집으로</button>
+          <button className="btn btn--ghost btn--sm" style={{ flex: 1 }} aria-disabled={busy !== null} onClick={() => { if (busy) return; onGo(1); }}>새 카드뉴스</button>
         </div>
       </div>
 

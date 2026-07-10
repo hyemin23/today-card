@@ -10,6 +10,8 @@ import { FLOW_HANDOFF_KEY, type FlowHandoff, renumberDeck } from '@/lib/flowShar
 import CardFace, { stripEmphasis } from '@/components/studio/CardFace';
 import { renderCardNode, downloadPngZip } from '@/lib/cardExport';
 import { buildImagePrompt, generateCardImage, imagePatch } from '@/lib/imageGen';
+import { copyText } from '@/lib/clipboard';
+import Toasts, { toast } from '@/components/ui/toast';
 import { fetchStyleProfile } from '@/lib/styleProfile';
 import { fileToDataUrl } from '@/components/studio/imageFile';
 import type { StyleProfile } from '@/lib/styleAnalyze';
@@ -39,7 +41,12 @@ interface PersistedFlow {
   input: FlowInput;
   deck: FlowDeck | null;
   magazine?: Magazine;
+  hadImages?: boolean; // 저장 시점에 이미지가 있었는지 — 복원 시 "이미지는 복구 안 됨" 안내 판단용
 }
+
+// SPA 세션 내 리마운트(헤더 링크 왕복·뒤로가기) 대응 — 유료 생성 이미지는 state에만 있어
+// 클라이언트 내비게이션만으로 소멸했다. 이미지 포함 덱을 메모리에 보존한다(새로고침 유실은 beforeunload가 경고).
+let deckMemCache: FlowDeck | null = null;
 
 function loadFlowJSON<T>(key: string): T | null {
   try {
@@ -105,19 +112,38 @@ export default function FlowClient() {
   }, [loading]);
 
   // 작업 복구: 새로고침/뒤로가기로 돌아와도 입력·구성표가 살아있게(같은 탭).
-  // hydration 불일치를 피하려 마운트 후 1회. 이미지는 저장하지 않으므로 복구되지 않는다.
+  // hydration 불일치를 피하려 마운트 후 1회. 같은 SPA 세션의 리마운트면 이미지까지
+  // 메모리 캐시로 복원하고, 새로고침이면 저장본(이미지 없음)으로 복원 + 안내.
   useEffect(() => {
     const saved = loadFlowJSON<PersistedFlow>(FLOW_SESSION_KEY);
     if (saved?.input) setInput(saved.input);
-    if (saved?.deck?.cards?.length) { setDeck(saved.deck); setGenId((g) => g + 1); }
+    if (deckMemCache?.cards?.length) {
+      setDeck(deckMemCache);
+      setGenId((g) => g + 1);
+    } else if (saved?.deck?.cards?.length) {
+      setDeck(saved.deck);
+      setGenId((g) => g + 1);
+      setStatus(
+        saved.hadImages
+          ? '이전 작업을 복원했어요 — 이미지는 저장되지 않아 다시 생성이 필요해요.'
+          : '이전 작업을 복원했어요.'
+      );
+    }
     if (saved?.magazine?.id) setMagazine(saved.magazine);
     setRestored(true);
   }, []);
 
-  // 의미 있는 변경마다 저장(복구 패스 이후에만 — 빈 초기 상태가 저장본을 덮지 않게). 이미지는 빼고 저장(쿼터 보호).
+  // 의미 있는 변경마다 저장(복구 패스 이후에만 — 빈 초기 상태가 저장본을 덮지 않게).
+  // sessionStorage에는 이미지를 빼고 저장(쿼터 보호), 메모리 캐시에는 이미지 포함 원본을 보존.
   useEffect(() => {
     if (!restored) return;
-    saveFlowJSON(FLOW_SESSION_KEY, { input, deck: deckWithoutImages(deck), magazine } satisfies PersistedFlow);
+    deckMemCache = deck;
+    saveFlowJSON(FLOW_SESSION_KEY, {
+      input,
+      deck: deckWithoutImages(deck),
+      magazine,
+      hadImages: !!deck?.cards.some((c) => c.imageUrl),
+    } satisfies PersistedFlow);
   }, [restored, input, deck, magazine]);
 
   // 구성표가 있거나 입력 중이면 탭 닫기/새로고침 전에 경고(sessionStorage는 탭을 닫으면 사라짐)
@@ -190,6 +216,8 @@ export default function FlowClient() {
     if (!deck || busy) return;
     const c = deck.cards[idx];
     if (c.role === 'hook' || c.role === 'cta') return; // 표지·CTA는 유지
+    // 이미지(유료)나 작성된 본문이 있는 행만 확인 — 빈 행은 바로 삭제
+    if ((c.imageUrl || c.body?.trim()) && !window.confirm('이 카드를 삭제할까요? 작성한 문구와 이미지가 사라져요.')) return;
     commitCards(deck.cards.filter((_, i) => i !== idx));
   }
 
@@ -204,15 +232,20 @@ export default function FlowClient() {
       if (!nodes || nodes.length !== count) throw new Error('render targets out of sync');
       const files: { name: string; dataUrl: string }[] = [];
       for (let i = 0; i < count; i++) {
+        setStatus(`${i + 1}/${count}장 렌더 중…`);
         const dataUrl = await renderCardNode(nodes[i] as HTMLElement, { width: RENDER_SIZE, height: RENDER_H });
         files.push({ name: `card-${String(i + 1).padStart(2, '0')}.png`, dataUrl });
       }
+      setStatus('ZIP 압축 중…');
       await downloadPngZip(files, `cardnews-${count}컷.zip`);
       setCopied('zip');
       setStatus(`카드 ${count}장을 ZIP으로 저장했어요.`);
+      toast(`카드 ${count}장을 ZIP으로 저장했어요.`);
       setTimeout(() => setCopied(''), 1800);
     } catch {
+      // 상단 error 영역은 버튼(페이지 하단)에서 안 보임 — 토스트로도 알린다
       setError('PNG 내보내기에 실패했어요. 잠시 후 다시 시도해 주세요.');
+      toast('PNG 내보내기에 실패했어요. 잠시 후 다시 시도해 주세요.', 'error');
       setStatus('');
     } finally {
       setBusy(false);
@@ -239,12 +272,11 @@ export default function FlowClient() {
   async function copy(kind: 'md' | 'json') {
     if (!deck) return;
     const txt = kind === 'md' ? toMarkdown(deck) : JSON.stringify(deck, null, 2);
-    try {
-      await navigator.clipboard.writeText(txt);
+    if (await copyText(txt)) {
       setCopied(kind);
       setTimeout(() => setCopied(''), 1500);
-    } catch {
-      setError('복사에 실패했어요.');
+    } else {
+      toast('복사에 실패했어요 — 아래 표를 직접 선택해 복사해 주세요.', 'error');
     }
   }
 
@@ -291,6 +323,7 @@ export default function FlowClient() {
     for (let k = 0; k < targets.length; k++) {
       if (batchCancelRef.current) break; // 사용자가 중단 — 남은 장수는 호출하지 않음(비용 보호)
       const { c, i } = targets[k];
+      setGenIdx(i); // 미리보기의 해당 카드 버튼에 '◌ 생성…' 표시 — 어느 카드 차례인지 보이게
       setBatchMsg(`이미지 생성 중… ${k + 1}/${targets.length}`);
       setStatus(`이미지 생성 중… ${k + 1}/${targets.length}`);
       try {
@@ -300,6 +333,7 @@ export default function FlowClient() {
         failed++;
       }
     }
+    setGenIdx(null);
     setBatchMsg('');
     if (batchCancelRef.current) {
       setStatus(`중단했어요 — ${done}장 완료, 나머지는 생성하지 않았어요.`);
@@ -312,6 +346,8 @@ export default function FlowClient() {
   function clearImage(idx: number) {
     if (!deck || imgWorking) return;
     const c = deck.cards[idx];
+    // 유료로 생성한 이미지 — 한 클릭 유실 방지 (스튜디오 onResetImage와 동일 패턴)
+    if (c.imageUrl && !window.confirm('이 카드의 이미지를 제거할까요?')) return;
     const patch: Partial<FlowCard> = { imageUrl: null };
     if (c.kind === 'body' && c.textColor === '#ffffff') patch.textColor = '#111110'; // 흰 글자 되돌리기
     updateCard(idx, patch);
@@ -403,6 +439,7 @@ export default function FlowClient() {
       <header className="flow__top">
         <Link className="flow__brand" href="/">INK<span>.</span> <small>카드 기획</small></Link>
         <div className="flow__topr">
+          {isAdmin && <Link className="flow__homelink" href="/admin?next=/flow">관리자</Link>}
           <Link className="flow__homelink" href="/studio">기사로 만들기 →</Link>
           <ThemeToggle />
         </div>
@@ -484,7 +521,7 @@ export default function FlowClient() {
           {error && <p className="flow__error" role="alert">{error}</p>}
           {isAdmin === false && (
             <p className="flow__adminnote" style={{ marginTop: 8 }}>
-              지금은 체험 모드 — 예시 구성표로 흐름을 볼 수 있어요. 실제 AI 생성은 <Link href="/admin">관리자 로그인</Link> 후 가능해요.
+              지금은 체험 모드 — 예시 구성표로 흐름을 볼 수 있어요. 실제 AI 생성은 <Link href="/admin?next=/flow">관리자 로그인</Link> 후 가능해요.
             </p>
           )}
         </section>
@@ -543,6 +580,7 @@ export default function FlowClient() {
                     placeholder="큰 제목"
                     aria-label={`${i + 1}번 ${ROLE_KO[c.role]} 카드 · 큰 제목`}
                     onChange={(e) => updateCard(i, { title: e.target.value })}
+                    disabled={busy}
                   />
                   <textarea
                     className="flow__body"
@@ -551,6 +589,7 @@ export default function FlowClient() {
                     placeholder={c.role === 'hook' ? '(Hook은 본문 없어도 됨)' : '짧은 본문'}
                     aria-label={`${i + 1}번 ${ROLE_KO[c.role]} 카드 · 짧은 본문`}
                     onChange={(e) => updateCard(i, { body: e.target.value })}
+                    disabled={busy}
                   />
                   <span className="flow__rowact">
                     {c.role !== 'hook' && c.role !== 'cta' && (
@@ -610,7 +649,7 @@ export default function FlowClient() {
                   </div>
                 )}
                 {isAdmin === false && (
-                  <span className="flow__adminnote">이미지 생성은 관리자 전용 — <Link href="/admin">/admin 로그인</Link></span>
+                  <span className="flow__adminnote">이미지 생성은 관리자 전용 — <Link href="/admin?next=/flow">/admin 로그인</Link></span>
                 )}
               </div>
               <motion.div className="flow__rail" variants={listV} initial="hidden" animate="show" key={`p${genId}`}>
@@ -644,6 +683,7 @@ export default function FlowClient() {
           ))}
         </div>
       )}
+      <Toasts />
     </div>
   );
 }

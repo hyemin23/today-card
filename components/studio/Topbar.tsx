@@ -14,12 +14,14 @@ export default function Topbar({
   onGo,
   magazine,
   onOpenDrawer,
+  isAdmin = false,
 }: {
   stage: number;
   maxReached: number;
   onGo: (n: number) => void;
   magazine: Magazine;
   onOpenDrawer: () => void;
+  isAdmin?: boolean;
 }) {
   return (
     <header className="topbar">
@@ -54,6 +56,11 @@ export default function Topbar({
       </nav>
 
       <div className="topbar__right">
+        {isAdmin && (
+          <Link href="/admin?next=/studio" className="btn btn--ghost btn--sm" title="관리자 설정·로그아웃">
+            관리자
+          </Link>
+        )}
         <ThemeToggle />
         <button className="magsel" onClick={onOpenDrawer} aria-haspopup="dialog" aria-label={`매거진 설정 — 현재 ${magazine.name}`}>
           <span className="sw" style={{ background: magazine.bgColor }} aria-hidden="true" />

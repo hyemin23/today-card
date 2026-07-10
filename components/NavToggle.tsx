@@ -41,7 +41,8 @@ export default function NavToggle() {
         aria-label="모바일"
       >
         <Link className="nav__menu-link" href="/" onClick={close}>홈</Link>
-        <Link className="nav__menu-link" href="/studio" onClick={close}>스튜디오</Link>
+        <Link className="nav__menu-link" href="/studio" onClick={close}>기사로 만들기</Link>
+        <Link className="nav__menu-link" href="/flow" onClick={close}>주제로 기획</Link>
         <a className="nav__menu-link" href="/#how" onClick={close}>이용 방법</a>
       </nav>
     </>

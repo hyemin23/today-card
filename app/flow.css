@@ -178,4 +178,10 @@
   .flow__num { grid-area: num; } .flow__role { grid-area: role; flex-direction: row; align-items: center; flex-wrap: wrap; }
   .flow__title { grid-area: title; } .flow__body { grid-area: body; } .flow__rowact { grid-area: act; }
   .flow__row--head { display: none; }
+  /* iOS는 16px 미만 입력칸에 포커스하면 화면을 강제 확대 — studio.css·landing.css와 동일 보정 */
+  .flow input, .flow textarea, .flow__title, .flow__body { font-size: 16px; }
+  /* 터치 타깃 확대 — 행 삭제 ✕·카드별 이미지 버튼·템플릿 칩 (데스크톱 22~27px → 40px 내외) */
+  .flow__rowact button { padding: 10px; }
+  .flow__pcardbtn { padding: 9px 14px; }
+  .flow__chip { padding: 9px 13px; }
 }

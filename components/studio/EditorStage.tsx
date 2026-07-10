@@ -391,7 +391,14 @@ export default function EditorStage({
                 type="button"
                 className="minib fontsel__all"
                 title="이 글씨체를 전체 카드에 적용"
-                onClick={() => { const ff = card.fontFamily || ''; cards.forEach((_, i) => updateCard(i, { fontFamily: ff })); }}
+                onClick={() => {
+                  const ff = card.fontFamily || '';
+                  // 카드별로 다른 글씨체를 골라둔 경우에만 확인 — 모두 같으면 조용히 통과
+                  const distinct = new Set(cards.map((c) => c.fontFamily || ''));
+                  distinct.add(ff);
+                  if (distinct.size > 1 && !window.confirm('카드마다 고른 글씨체가 이 글씨체로 모두 바뀌어요. 계속할까요?')) return;
+                  cards.forEach((_, i) => updateCard(i, { fontFamily: ff }));
+                }}
               >
                 전체 적용
               </button>

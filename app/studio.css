@@ -235,6 +235,7 @@ body.studio-body { height: 100%; background: var(--wash); overflow: hidden; }
 .ratiosel button { flex: 1; padding: 9px 10px; border: 1px solid var(--line-2); border-radius: 100px; font-size: 13px; font-weight: 600; color: var(--ink-2); cursor: pointer; transition: border-color .15s var(--ease), color .15s var(--ease), background .15s var(--ease); }
 .ratiosel button:hover { border-color: var(--ink); color: var(--ink); }
 .ratiosel button.on { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.ratiosel button[aria-disabled="true"] { opacity: .45; cursor: not-allowed; } /* 내보내기 진행 중 잠금 */
 .carousel__track { display: flex; height: 100%; transition: transform .4s var(--ease); }
 .cslide { min-width: 100%; height: 100%; }
 .carousel__count { position: absolute; top: 10px; right: 10px; background: rgba(17,17,16,.7); color: #fff; font-family: var(--mono); font-size: 10px; padding: 3px 9px; border-radius: 100px; }
@@ -264,8 +265,9 @@ body.studio-body { height: 100%; background: var(--wash); overflow: hidden; }
 .hashbox { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 13px; color: var(--ink-3); line-height: 1.7; }
 .hashbox b { color: var(--ink); font-weight: 500; }
 .src-note { font-family: var(--mono); font-size: 10.5px; color: var(--ink-3); margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); letter-spacing: .03em; line-height: 1.6; }
-.dlrow { display: flex; gap: 9px; }
-.dlrow .minib { flex: 1; }
+/* 개별 받기 버튼 줄 — 6장 이상 덱에서도 잘리지 않게 줄바꿈 허용 */
+.dlrow { display: flex; flex-wrap: wrap; gap: 9px; }
+.dlrow .minib { flex: 1 1 60px; }
 
 /* ---------- Magazine drawer ---------- */
 .scrim { position: fixed; inset: 0; background: rgba(17,17,16,.36); opacity: 0; visibility: hidden; transition: opacity .3s var(--ease), visibility .3s; z-index: 60; }
@@ -280,7 +282,7 @@ body.studio-body { height: 100%; background: var(--wash); overflow: hidden; }
 .drawer__head h2 { font-family: var(--serif); font-weight: 800; letter-spacing: -.03em; font-size: 22px; }
 .drawer__head .x { width: 34px; height: 34px; border: 1px solid var(--line-2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 15px; }
 .drawer__head .x:hover { border-color: var(--ink); }
-.drawer__body { flex: 1; overflow: auto; padding: 8px 24px 24px; }
+.drawer__body { flex: 1; overflow: auto; padding: 8px 24px 24px; overscroll-behavior: contain; /* 드로어 끝에서 배경 페이지로 스크롤이 새지 않게 */ }
 .drawer__foot { flex: none; padding: 14px 24px; border-top: 1px solid var(--line); display: flex; gap: 10px; align-items: center; }
 .drawer__foot .note { font-family: var(--mono); font-size: 10.5px; color: var(--ink-3); letter-spacing: .03em; }
 
@@ -323,6 +325,10 @@ body.studio-body { height: 100%; background: var(--wash); overflow: hidden; }
 .sw-wrap { position: relative; display: inline-flex; }
 .sw-del { position: absolute; top: -4px; right: -4px; width: 17px; height: 17px; border-radius: 50%; background: var(--ink); color: var(--paper); font-size: 8.5px; line-height: 1; display: flex; align-items: center; justify-content: center; cursor: pointer; opacity: 0; transition: opacity .15s; box-shadow: 0 1px 3px rgba(17,17,16,.35); z-index: 3; }
 .sw-wrap:hover .sw-del, .sw-wrap:focus-within .sw-del { opacity: 1; }
+/* 터치 기기엔 hover가 없어 ✕가 안 보인 채 눌리기만 했음 — 상시 노출 + 크기 확대 */
+@media (hover: none) {
+  .sw-del { opacity: 1; width: 24px; height: 24px; font-size: 11px; }
+}
 .sw-add { width: 34px; height: 34px; border-radius: 50%; border: 1.5px dashed var(--line-2); background: none; color: var(--ink-3); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; font-size: 17px; line-height: 1; transition: border-color .15s var(--ease), color .15s var(--ease); }
 .sw-add:hover:not(:disabled) { border-color: var(--ink); color: var(--ink); }
 .sw-add:disabled { opacity: .35; cursor: not-allowed; }
@@ -446,6 +452,8 @@ body.studio-body { height: 100%; background: var(--wash); overflow: hidden; }
   .align { width: 132px; gap: 8px; }
   .swatch, .sw-add { width: 40px; height: 40px; }
   .seltag button { min-width: 28px; min-height: 28px; }
+  .mtool { min-width: 44px; height: 38px; } /* 굵게(B)·형광펜 — 가장 정밀조작형 컨트롤 */
+  .switch::before { content: ""; position: absolute; inset: -10px; } /* 40×24 스위치의 히트 영역을 44px 수준으로 */
 
   /* rail → touch-friendly horizontal card strip */
   .rail { flex-direction: row; align-items: center; gap: 10px; padding: 10px 14px; border-right: 0; border-bottom: 1px solid var(--line); overflow-x: auto; }
